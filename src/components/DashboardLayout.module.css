@@ -1,0 +1,13 @@
+/* Dashboard Layout Styles */
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.main {
+  flex: 1;
+  overflow-x: hidden;
+  margin-left: 260px;
+}
+

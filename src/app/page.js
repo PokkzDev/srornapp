@@ -1,66 +1,172 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client'
 
-export default function Home() {
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import styles from './page.module.css'
+
+// Test users from seed.js
+const TEST_USERS = [
+  {
+    email: 'matrona@srorn.cl',
+    nombre: 'María González',
+    role: 'Matrona',
+  },
+  {
+    email: 'medico@srorn.cl',
+    nombre: 'Dr. Carlos Pérez',
+    role: 'Médico',
+  },
+  {
+    email: 'enfermera@srorn.cl',
+    nombre: 'Ana Martínez',
+    role: 'Enfermera',
+  },
+  {
+    email: 'administrativo@srorn.cl',
+    nombre: 'Roberto Silva',
+    role: 'Administrativo',
+  },
+  {
+    email: 'jefatura@srorn.cl',
+    nombre: 'Dra. Patricia López',
+    role: 'Jefatura',
+  },
+]
+
+const DEFAULT_PASSWORD = 'Asdf1234' // Password from seed.js
+
+export default function LoginPage() {
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [isDev, setIsDev] = useState(false)
+
+  useEffect(() => {
+    // Check if we're in development mode
+    setIsDev(
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1')
+    )
+  }, [])
+
+  const handleLogin = async (userEmail, userPassword) => {
+    setError('')
+    setIsLoading(true)
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: userEmail, password: userPassword }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Error al iniciar sesión')
+        setIsLoading(false)
+        return
+      }
+
+      // Redirect to dashboard on success
+      router.push('/dashboard')
+      router.refresh()
+    } catch (err) {
+      setError('Error de conexión. Por favor intenta nuevamente.')
+      setIsLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    await handleLogin(email, password)
+  }
+
+  const handleDevLogin = async (userEmail) => {
+    await handleLogin(userEmail, DEFAULT_PASSWORD)
+  }
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.js file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <h1>Sistema SRORN</h1>
+          <p className={styles.subtitle}>Ingrese sus credenciales para continuar</p>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <form onSubmit={handleSubmit} className={styles.form}>
+          {error && (
+            <div className={styles.error} role="alert">
+              {error}
+            </div>
+          )}
+
+          <div className="form-group">
+            <label htmlFor="email">Correo electrónico</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              disabled={isLoading}
+              placeholder="usuario@srorn.cl"
             />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password">Contraseña</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              disabled={isLoading}
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className={`btn btn-primary ${styles.button}`}
+            disabled={isLoading}
           >
-            Documentation
-          </a>
-        </div>
-      </main>
+            {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+          </button>
+        </form>
+
+        {isDev && (
+          <div className={styles.devSection}>
+            <div className={styles.devDivider}>
+              <span>Desarrollo</span>
+            </div>
+            <p className={styles.devNote}>
+              Acceso rápido con cuentas de prueba
+            </p>
+            <div className={styles.devButtons}>
+              {TEST_USERS.map((user) => (
+                <button
+                  key={user.email}
+                  type="button"
+                  onClick={() => handleDevLogin(user.email)}
+                  className={`btn btn-secondary ${styles.devButton}`}
+                  disabled={isLoading}
+                >
+                  {user.role}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-  );
+  )
 }

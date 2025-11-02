@@ -1,0 +1,580 @@
+// ================================
+// DATASOURCE & GENERATOR
+// ================================
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ================================
+// ENUMS DE SOPORTE CLÍNICO
+// ================================
+enum TipoParto {
+  EUTOCICO
+  DISTOCICO // eutócico
+  CESAREA_ELECTIVA
+  CESAREA_EMERGENCIA
+}
+
+enum LugarParto {
+  SALA_PARTO
+  PABELLON
+  DOMICILIO
+  OTRO
+}
+
+enum SexoRN {
+  M
+  F
+  I
+}
+
+enum EstadoEpisodio {
+  INGRESADO
+  ALTA
+}
+
+enum TipoControlNeonatal {
+  SIGNOS_VITALES
+  GLUCEMIA
+  ALIMENTACION
+  MEDICACION
+  OTRO
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  EXPORT
+  PERMISSION_DENIED
+}
+
+enum EstadoPulsera {
+  ACTIVA
+  REEMPLAZADA
+  BAJA
+}
+
+// ================================
+// MODELO: USER (RBAC)
+// ================================
+model User {
+  id           String   @id @default(uuid()) @db.Char(36)
+  rut          String?  @unique @db.VarChar(191)
+  nombre       String   @db.VarChar(191)
+  email        String   @unique @db.VarChar(191)
+  passwordHash String   @db.VarChar(191)
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // RBAC Relations
+  roles       UserRole[]
+  permissions UserPermission[]
+
+  // Reverse relations - Clinical models
+  madresCreated        Madre[]           @relation("MadreCreatedBy")
+  madresUpdated        Madre[]           @relation("MadreUpdatedBy")
+  partosMatrona        PartoMatrona[]
+  partosMedico         PartoMedico[]
+  partosEnfermera      PartoEnfermera[]
+  partosCreated        Parto[]           @relation("PartoCreatedBy")
+  partosUpdated        Parto[]           @relation("PartoUpdatedBy")
+  recienNacidosCreated RecienNacido[]    @relation("RNCreatedBy")
+  recienNacidosUpdated RecienNacido[]    @relation("RNUpdatedBy")
+  episodiosCreated     EpisodioURNI[]    @relation("EpisodioCreatedBy")
+  episodiosUpdated     EpisodioURNI[]    @relation("EpisodioUpdatedBy")
+  episodiosMadreCreated EpisodioMadre[]  @relation("EpisodioMadreCreatedBy")
+  episodiosMadreUpdated EpisodioMadre[]  @relation("EpisodioMadreUpdatedBy")
+  atencionesMedico     AtencionURNI[]    @relation("AtencionMedico")
+  controlesEnfermera   ControlNeonatal[] @relation("ControlEnfermera")
+  reportesREM          ReporteREM[]      @relation("REMGeneradoPor")
+  informesAlta        InformeAlta[]    @relation("InformeAltaGeneradoPor")
+  auditorias           Auditoria[]       @relation("AuditoriaUsuario")
+
+  @@index([email])
+}
+
+// ================================
+// MODELO: ROLE (RBAC)
+// ================================
+model Role {
+  id          String  @id @default(uuid()) @db.Char(36)
+  name        String  @unique @db.VarChar(191)
+  description String? @db.VarChar(191)
+  isSystem    Boolean @default(false)
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("Role")
+}
+
+// ================================
+// MODELO: PERMISSION (RBAC)
+// ================================
+model Permission {
+  id          String  @id @default(uuid()) @db.Char(36)
+  code        String  @unique @db.VarChar(191)
+  description String? @db.VarChar(191)
+
+  roles RolePermission[]
+  users UserPermission[]
+
+  @@map("Permission")
+}
+
+// ================================
+// MODELO: USER_ROLE (RBAC - Many-to-Many)
+// ================================
+model UserRole {
+  userId    String   @db.Char(36)
+  roleId    String   @db.Char(36)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("UserRole")
+}
+
+// ================================
+// MODELO: ROLE_PERMISSION (RBAC - Many-to-Many)
+// ================================
+model RolePermission {
+  roleId       String     @db.Char(36)
+  permissionId String     @db.Char(36)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@id([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("RolePermission")
+}
+
+// ================================
+// MODELO: USER_PERMISSION (RBAC - Many-to-Many)
+// ================================
+model UserPermission {
+  userId       String     @db.Char(36)
+  permissionId String     @db.Char(36)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@id([userId, permissionId])
+  @@index([userId])
+  @@index([permissionId])
+  @@map("UserPermission")
+}
+
+// ================================
+// MODELO: MADRE
+// ================================
+model Madre {
+  id String @id @default(uuid()) @db.Char(36)
+
+  // Identificación
+  rut       String @unique @db.VarChar(12) // sin puntos, con guion
+  nombres   String @db.VarChar(120)
+  apellidos String @db.VarChar(120)
+
+  // Demográficos (opcionales)
+  edad            Int?
+  fechaNacimiento DateTime?
+  direccion       String?   @db.VarChar(200)
+  telefono        String?   @db.VarChar(20)
+  fichaClinica    String?   @unique @db.VarChar(30)
+
+  // Relación con partos
+  partos Parto[]
+
+  // Relación con episodios de ingreso/alta
+  episodios EpisodioMadre[]
+
+  // Metadatos
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Trazabilidad de autoría
+  createdById String? @db.Char(36)
+  updatedById String? @db.Char(36)
+  createdBy   User?   @relation("MadreCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy   User?   @relation("MadreUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([rut])
+  @@index([fichaClinica])
+  @@index([apellidos, nombres])
+}
+
+// ================================
+// MODELO: PARTO
+// ================================
+model Parto {
+  id String @id @default(uuid()) @db.Char(36)
+
+  // FK a Madre
+  madreId String @db.Char(36)
+  madre   Madre  @relation(fields: [madreId], references: [id], onDelete: Restrict)
+
+  // Datos del evento
+  fechaHora      DateTime
+  tipo           TipoParto
+  lugar          LugarParto
+  lugarDetalle   String?    @db.VarChar(120) // obligatorio si lugar=OTRO (validar en API)
+  complicaciones String?    @db.VarChar(500)
+  observaciones  String?    @db.VarChar(500)
+
+  // Relaciones many-to-many con profesionales
+  matronas    PartoMatrona[]
+  medicos     PartoMedico[]
+  enfermeras  PartoEnfermera[]
+
+  // RN relacionados
+  recienNacidos RecienNacido[]
+
+  // Informes de alta relacionados
+  informesAlta InformeAlta[]
+
+  // Metadatos
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Trazabilidad de autoría
+  createdById String? @db.Char(36)
+  updatedById String? @db.Char(36)
+  createdBy   User?   @relation("PartoCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy   User?   @relation("PartoUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([madreId])
+  @@index([fechaHora])
+  @@index([tipo])
+  @@index([lugar])
+}
+
+// ================================
+// MODELO: PARTO_MATRONA (Many-to-Many)
+// ================================
+model PartoMatrona {
+  partoId  String @db.Char(36)
+  userId   String @db.Char(36)
+  parto    Parto  @relation(fields: [partoId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([partoId, userId])
+  @@index([partoId])
+  @@index([userId])
+  @@map("PartoMatrona")
+}
+
+// ================================
+// MODELO: PARTO_MEDICO (Many-to-Many)
+// ================================
+model PartoMedico {
+  partoId  String @db.Char(36)
+  userId   String @db.Char(36)
+  parto    Parto  @relation(fields: [partoId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([partoId, userId])
+  @@index([partoId])
+  @@index([userId])
+  @@map("PartoMedico")
+}
+
+// ================================
+// MODELO: PARTO_ENFERMERA (Many-to-Many)
+// ================================
+model PartoEnfermera {
+  partoId  String @db.Char(36)
+  userId   String @db.Char(36)
+  parto    Parto  @relation(fields: [partoId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([partoId, userId])
+  @@index([partoId])
+  @@index([userId])
+  @@map("PartoEnfermera")
+}
+
+// ================================
+// MODELO: RECIÉN NACIDO (RN)
+// ================================
+model RecienNacido {
+  id String @id @default(uuid()) @db.Char(36)
+
+  // FK a Parto
+  partoId String @db.Char(36)
+  parto   Parto  @relation(fields: [partoId], references: [id], onDelete: Restrict)
+
+  // Datos RN
+  sexo          SexoRN
+  pesoGr        Int? // gramos (ej: 3250)
+  tallaCm       Int? // centímetros (ej: 50)
+  apgar1        Int? // 0..10
+  apgar5        Int? // 0..10
+  observaciones String? @db.VarChar(500)
+
+  // Relaciones asistenciales
+  episodios  EpisodioURNI[]
+  controles  ControlNeonatal[]
+  atenciones AtencionURNI[]
+  pulsera    PulseraNFC?
+
+  // Metadatos
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Trazabilidad
+  createdById String? @db.Char(36)
+  updatedById String? @db.Char(36)
+  createdBy   User?   @relation("RNCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy   User?   @relation("RNUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([partoId])
+  @@index([sexo])
+}
+
+// ================================
+// MODELO: EPISODIO MADRE (Ingreso/Alta)
+// Gestionado por Administrativo (ingreso/alta)
+// Primera toma de contacto cuando se notifica embarazo
+// ================================
+model EpisodioMadre {
+  id String @id @default(uuid()) @db.Char(36)
+
+  madreId String @db.Char(36)
+  madre   Madre  @relation(fields: [madreId], references: [id], onDelete: Restrict)
+
+  estado        EstadoEpisodio @default(INGRESADO)
+  fechaIngreso  DateTime
+  motivoIngreso String?        @db.VarChar(300)
+  hospitalAnterior String?      @db.VarChar(200) // Si fue tratada en otro hospital
+
+  fechaAlta       DateTime?
+  condicionEgreso String?       @db.VarChar(300)
+
+  // Informe de alta relacionado
+  informeAlta InformeAlta?
+
+  // Metadatos
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Trazabilidad (Administrativo normalmente)
+  createdById String? @db.Char(36)
+  updatedById String? @db.Char(36)
+  createdBy   User?   @relation("EpisodioMadreCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy   User?   @relation("EpisodioMadreUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([madreId])
+  @@index([estado])
+  @@index([fechaIngreso])
+  @@map("EpisodioMadre")
+}
+
+// ================================
+// MODELO: EPISODIO URNI (Ingreso/Alta)
+// Gestionado por Administrativo (ingreso/alta)
+// ================================
+model EpisodioURNI {
+  id String @id @default(uuid()) @db.Char(36)
+
+  rnId String       @db.Char(36)
+  rn   RecienNacido @relation(fields: [rnId], references: [id], onDelete: Restrict)
+
+  estado        EstadoEpisodio @default(INGRESADO)
+  fechaIngreso  DateTime
+  motivoIngreso String?        @db.VarChar(300)
+
+  fechaAlta       DateTime?
+  condicionEgreso String?   @db.VarChar(300)
+
+  // Relación con atenciones
+  atenciones AtencionURNI[] @relation("EpisodioAtenciones")
+
+  // Metadatos
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Trazabilidad (Administrativo normalmente)
+  createdById String? @db.Char(36)
+  updatedById String? @db.Char(36)
+  createdBy   User?   @relation("EpisodioCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy   User?   @relation("EpisodioUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([rnId])
+  @@index([estado])
+  @@index([fechaIngreso])
+}
+
+// ================================
+// MODELO: ATENCIÓN URNI (Médico)
+// Registrar evaluación/indicaciones
+// ================================
+model AtencionURNI {
+  id String @id @default(uuid()) @db.Char(36)
+
+  rnId String       @db.Char(36)
+  rn   RecienNacido @relation(fields: [rnId], references: [id], onDelete: Restrict)
+
+  episodioId String?       @db.Char(36)
+  episodio   EpisodioURNI? @relation("EpisodioAtenciones", fields: [episodioId], references: [id], onDelete: SetNull)
+
+  fechaHora    DateTime @default(now())
+  diagnostico  String?  @db.VarChar(500)
+  indicaciones String?  @db.VarChar(800)
+
+  // Trazabilidad (Médico)
+  medicoId String? @db.Char(36)
+  medico   User?   @relation("AtencionMedico", fields: [medicoId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([rnId])
+  @@index([episodioId])
+  @@index([fechaHora])
+}
+
+// ================================
+// MODELO: CONTROL NEONATAL (Enfermera)
+// Registra controles; 'datos' flexible
+// ================================
+model ControlNeonatal {
+  id String @id @default(uuid()) @db.Char(36)
+
+  rnId String       @db.Char(36)
+  rn   RecienNacido @relation(fields: [rnId], references: [id], onDelete: Restrict)
+
+  fechaHora     DateTime            @default(now())
+  tipo          TipoControlNeonatal @default(SIGNOS_VITALES)
+  datos         Json? // ej: { temp:36.7, fc:140, fr:40, spo2:98 }
+  observaciones String?             @db.VarChar(500)
+
+  // Trazabilidad (Enfermera)
+  enfermeraId String? @db.Char(36)
+  enfermera   User?   @relation("ControlEnfermera", fields: [enfermeraId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([rnId])
+  @@index([fechaHora])
+  @@index([tipo])
+}
+
+// ================================
+// MODELO: REPORTE REM (A/D)
+// Guarda snapshot de origen y totales
+// ================================
+model ReporteREM {
+  id String @id @default(uuid()) @db.Char(36)
+
+  // Periodo en formato YYYY-MM (o usa Date si prefieres)
+  periodo    String @db.VarChar(7)
+  jsonFuente Json // snapshot del set origen
+  totales    Json // agregados A/D listos para hoja REM
+
+  generadoPorId String?  @db.Char(36)
+  generadoPor   User?    @relation("REMGeneradoPor", fields: [generadoPorId], references: [id], onDelete: SetNull)
+  generadoAt    DateTime @default(now())
+
+  @@index([periodo])
+}
+
+// ================================
+// MODELO: INFORME ALTA
+// Informe generado por matrona para revisión médica
+// ================================
+model InformeAlta {
+  id String @id @default(uuid()) @db.Char(36)
+
+  // FK a Parto (el parto relacionado al informe)
+  partoId String @db.Char(36)
+  parto   Parto  @relation(fields: [partoId], references: [id], onDelete: Restrict)
+
+  // FK a EpisodioMadre (único por episodio)
+  episodioId String        @unique @db.Char(36)
+  episodio   EpisodioMadre @relation(fields: [episodioId], references: [id], onDelete: Restrict)
+
+  // Metadata del informe
+  fechaGeneracion DateTime @default(now())
+  formato         String   @db.VarChar(10) // "PDF", "DOCX", "HTML"
+  
+  // FK a User (quien generó el informe)
+  generadoPorId String? @db.Char(36)
+  generadoPor   User?   @relation("InformeAltaGeneradoPor", fields: [generadoPorId], references: [id], onDelete: SetNull)
+
+  // Contenido del informe almacenado como JSON
+  // Incluye: parto data, recienNacidos array, madre data, episodio data
+  contenido Json
+
+  // Metadatos
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partoId])
+  @@index([episodioId])
+  @@index([fechaGeneracion])
+  @@index([generadoPorId])
+  @@map("InformeAlta")
+}
+
+// ================================
+// MODELO: AUDITORÍA DE ACCIONES
+// ================================
+model Auditoria {
+  id        String   @id @default(uuid()) @db.Char(36)
+  fechaHora DateTime @default(now())
+
+  usuarioId String? @db.Char(36)
+  usuario   User?   @relation("AuditoriaUsuario", fields: [usuarioId], references: [id], onDelete: SetNull)
+  rol       String? @db.VarChar(40)
+
+  entidad       String      @db.VarChar(80) // "Madre", "Parto", "RecienNacido", etc.
+  entidadId     String?     @db.VarChar(36)
+  accion        AuditAction
+  detalleBefore Json?
+  detalleAfter  Json?
+
+  ip        String? @db.VarChar(45)
+  userAgent String? @db.VarChar(255)
+
+  @@index([fechaHora])
+  @@index([entidad, entidadId])
+  @@index([usuarioId])
+}
+
+// ================================
+// (OPCIONAL) MODELO: PULSERA NFC
+// ================================
+model PulseraNFC {
+  id     String        @id @default(uuid()) @db.Char(36)
+  uidTag String        @unique @db.VarChar(64)
+  estado EstadoPulsera @default(ACTIVA)
+
+  rnId String       @unique @db.Char(36)
+  rn   RecienNacido @relation(fields: [rnId], references: [id], onDelete: Restrict)
+
+  asignadaAt       DateTime @default(now())
+  reemplazadaPorId String?  @db.Char(36) // si se reemplaza, referencia a nueva pulsera (opcional)
+
+  @@index([estado])
+}

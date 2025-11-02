@@ -1,0 +1,469 @@
+/* Partos List Page Styles */
+.content {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.errorBox {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.errorBox h2 {
+  color: var(--color-danger);
+  margin-bottom: 1rem;
+}
+
+.errorBox p {
+  color: var(--color-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.btnSecondary {
+  display: inline-block;
+  text-decoration: none;
+  padding: 0.65rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  background: rgba(0, 102, 164, 0.08);
+  color: var(--color-primary);
+}
+
+.btnSecondary:hover {
+  background: rgba(0, 102, 164, 0.15);
+  text-decoration: none;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.headerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+}
+
+.header p {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.btnNew {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.5rem;
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 12px rgba(0, 102, 164, 0.25);
+  white-space: nowrap;
+}
+
+.btnNew:hover {
+  background: var(--color-primary-dark);
+  box-shadow: 0 6px 16px rgba(0, 102, 164, 0.3);
+  text-decoration: none;
+}
+
+.btnNew i {
+  font-size: 0.9rem;
+}
+
+.searchBar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.searchBar i {
+  color: var(--color-text-muted);
+  font-size: 1rem;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.95rem;
+  padding: 0;
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-muted);
+}
+
+.clearSearch {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease-in-out;
+}
+
+.clearSearch:hover {
+  background: var(--color-bg);
+}
+
+.alertError {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(217, 48, 37, 0.1);
+  color: var(--color-danger);
+  border: 1px solid rgba(217, 48, 37, 0.2);
+}
+
+.alertError i {
+  font-size: 1.1rem;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+}
+
+.loading i {
+  font-size: 1.5rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.emptyState i {
+  font-size: 4rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
+}
+
+.emptyState h3 {
+  font-size: 1.5rem;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+}
+
+.emptyState p {
+  color: var(--color-text-muted);
+  margin: 0 0 2rem 0;
+}
+
+.tableTopControls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.tableContainer {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: var(--color-primary-soft);
+}
+
+.table th {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.table tbody tr:hover {
+  background: var(--color-primary-soft);
+}
+
+.badge {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.detail {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.actionsCol {
+  width: 120px;
+  text-align: right;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.btnAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.btnAction:hover {
+  background: var(--color-bg);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.btnEdit:hover {
+  color: var(--color-info);
+}
+
+.btnDelete:hover {
+  color: var(--color-danger);
+}
+
+.btnAction:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.paginationInfo {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.paginationControls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.paginationBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  font-family: inherit;
+}
+
+.paginationBtn:hover:not(:disabled) {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.paginationBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paginationNumbers {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.paginationNumber {
+  min-width: 2.5rem;
+  justify-content: center;
+}
+
+.paginationActive {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.paginationActive:hover {
+  background: var(--color-primary-dark);
+  color: #fff;
+}
+
+.paginationEllipsis {
+  padding: 0 0.5rem;
+  color: var(--color-text-muted);
+}
+
+.paginationSelector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.paginationSelector label {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.paginationSelect {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  font-family: inherit;
+  outline: none;
+}
+
+.paginationSelect:hover {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.paginationSelect:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 102, 164, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .content {
+    padding: 1rem;
+  }
+
+  .headerTop {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btnNew {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tableContainer {
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 800px;
+  }
+
+  .paginationControls {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .tableTopControls {
+    justify-content: center;
+  }
+
+  .paginationSelector {
+    margin-right: 0;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .paginationNumbers {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+
+

@@ -1,0 +1,404 @@
+/* Parto Form Styles */
+.alertError,
+.alertSuccess {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.alertError {
+  background: rgba(217, 48, 37, 0.1);
+  color: var(--color-danger);
+  border: 1px solid rgba(217, 48, 37, 0.2);
+}
+
+.alertSuccess {
+  background: rgba(44, 159, 91, 0.1);
+  color: var(--color-success);
+  border: 1px solid rgba(44, 159, 91, 0.2);
+}
+
+.alertError i,
+.alertSuccess i {
+  font-size: 1.1rem;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+}
+
+.loading i {
+  font-size: 1.5rem;
+}
+
+/* Form */
+.form {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* Form Sections */
+.formSection {
+  padding: 2rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.formSection:last-of-type {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--color-primary-soft);
+}
+
+.sectionTitle i {
+  color: var(--color-primary);
+  font-size: 1.1rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroup label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.required {
+  color: var(--color-danger);
+  margin-left: 0.25rem;
+}
+
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: border 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 102, 164, 0.1);
+}
+
+.formGroup input:disabled {
+  background: var(--color-surface);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.formGroup input.inputError {
+  border-color: var(--color-danger);
+}
+
+.formGroup input.inputError:focus {
+  box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.1);
+}
+
+.select {
+  cursor: pointer;
+}
+
+.preselectedMadre {
+  padding: 0.75rem;
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+}
+
+.madreDisplay {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.madreDisplay strong {
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.madreDisplay .madreRut {
+  color: var(--color-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.errorText {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.helpText {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+/* Form Actions */
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.btnPrimary,
+.btnSecondary {
+  padding: 0.65rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btnPrimary {
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 102, 164, 0.25);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+  box-shadow: 0 6px 16px rgba(0, 102, 164, 0.3);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  background: rgba(0, 102, 164, 0.08);
+  color: var(--color-primary);
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: rgba(0, 102, 164, 0.15);
+}
+
+.btnSecondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Professional Selection Styles */
+.professionalGroup {
+  margin-bottom: 2rem;
+}
+
+.professionalGroup:last-child {
+  margin-bottom: 0;
+}
+
+.professionalLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.professionalLabel i {
+  color: var(--color-primary);
+  font-size: 1rem;
+}
+
+.professionalContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.professionalSelect {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: border 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.professionalSelect:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 102, 164, 0.1);
+}
+
+.professionalSelect:disabled {
+  background: var(--color-surface);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.selectedPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  min-height: 3rem;
+  align-items: flex-start;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  transition: all 0.15s ease-in-out;
+  max-width: 100%;
+}
+
+.pill:hover {
+  background: rgba(0, 102, 164, 0.15);
+  border-color: var(--color-primary-dark);
+}
+
+.pillName {
+  color: var(--color-text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.pillRemove {
+  background: transparent;
+  border: none;
+  color: var(--color-danger);
+  cursor: pointer;
+  padding: 0.125rem 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.pillRemove:hover {
+  background: rgba(217, 48, 37, 0.15);
+}
+
+.pillRemove i {
+  font-size: 0.75rem;
+}
+
+.emptyProfessional {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: 0.9rem;
+  margin: 0;
+  padding: 0.75rem;
+  text-align: center;
+  background: var(--color-bg);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+/* Form Actions */
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .formSection {
+    padding: 1.5rem;
+  }
+
+  .formActions {
+    padding: 1.5rem;
+    flex-direction: column-reverse;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .pillName {
+    max-width: 150px;
+  }
+
+  .btnPrimary,
+  .btnSecondary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
