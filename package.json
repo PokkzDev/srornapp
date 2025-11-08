@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0",
+    "dev:tunnel": "echo 'Start your dev server first, then run: ngrok http 3000'",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -22,7 +23,8 @@
     "next": "16.0.1",
     "prisma": "^6.18.0",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "recharts": "^2.12.7"
   },
   "devDependencies": {
     "babel-plugin-react-compiler": "1.0.0",

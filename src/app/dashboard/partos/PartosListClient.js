@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Modal from '@/components/Modal'
 import styles from './page.module.css'
 
 export default function PartosListClient({ permissions }) {
@@ -20,6 +21,18 @@ export default function PartosListClient({ permissions }) {
     limit: 20,
     total: 0,
     totalPages: 0,
+  })
+
+  // Modal state
+  const [modal, setModal] = useState({
+    isOpen: false,
+    type: 'warning',
+    title: '',
+    message: '',
+    onConfirm: null,
+    confirmText: 'Eliminar',
+    showCancel: true,
+    cancelText: 'Cancelar',
   })
 
   // Debounce search input
@@ -75,16 +88,31 @@ export default function PartosListClient({ permissions }) {
     loadPartos()
   }, [loadPartos])
 
-  const handleDelete = async (id, madreInfo) => {
-    if (
-      !window.confirm(
-        `¿Está seguro que desea eliminar el parto de ${madreInfo}? Esta acción no se puede deshacer.`
-      )
-    ) {
-      return
-    }
+  const openDeleteModal = (id, madreInfo) => {
+    setModal({
+      isOpen: true,
+      type: 'warning',
+      title: 'Confirmar Eliminación',
+      message: `¿Está seguro que desea eliminar el parto de ${madreInfo}?\n\nEsta acción no se puede deshacer.`,
+      onConfirm: () => handleDelete(id),
+      confirmText: 'Eliminar',
+      showCancel: true,
+      cancelText: 'Cancelar',
+    })
+  }
 
+  const closeModal = () => {
+    setModal({
+      ...modal,
+      isOpen: false,
+      onConfirm: null,
+    })
+  }
+
+  const handleDelete = async (id) => {
     setDeleteLoading(id)
+    closeModal()
+    
     try {
       const response = await fetch(`/api/partos/${id}`, {
         method: 'DELETE',
@@ -93,7 +121,15 @@ export default function PartosListClient({ permissions }) {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.error || 'Error al eliminar el parto')
+        setModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Error al Eliminar',
+          message: data.error || 'Error al eliminar el parto',
+          onConfirm: closeModal,
+          confirmText: 'Aceptar',
+          showCancel: false,
+        })
         setDeleteLoading(null)
         return
       }
@@ -108,7 +144,15 @@ export default function PartosListClient({ permissions }) {
       }
     } catch (err) {
       console.error('Error deleting parto:', err)
-      alert('Error al conectar con el servidor')
+      setModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error de Conexión',
+        message: 'Error al conectar con el servidor',
+        onConfirm: closeModal,
+        confirmText: 'Aceptar',
+        showCancel: false,
+      })
     } finally {
       setDeleteLoading(null)
     }
@@ -285,7 +329,7 @@ export default function PartosListClient({ permissions }) {
                       {permissions.delete && (
                         <button
                           onClick={() =>
-                            handleDelete(
+                            openDeleteModal(
                               parto.id,
                               parto.madre
                                 ? `${parto.madre.nombres} ${parto.madre.apellidos}`
@@ -377,6 +421,19 @@ export default function PartosListClient({ permissions }) {
           </div>
         </div>
       )}
+
+      {/* Modal */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={modal.onConfirm}
+        confirmText={modal.confirmText}
+        showCancel={modal.showCancel}
+        cancelText={modal.cancelText}
+      />
     </div>
   )
 }

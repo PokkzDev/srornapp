@@ -322,7 +322,6 @@ export async function DELETE(request, { params }) {
         atenciones: {
           take: 1, // Solo verificar si tiene atenciones
         },
-        pulsera: true,
       },
     })
 
@@ -335,9 +334,9 @@ export async function DELETE(request, { params }) {
 
     // Verificar que no tenga registros asociados (evitar eliminación en cascada)
     if (rnExistente.episodios.length > 0 || rnExistente.controles.length > 0 || 
-        rnExistente.atenciones.length > 0 || rnExistente.pulsera) {
+        rnExistente.atenciones.length > 0) {
       return Response.json(
-        { error: 'No se puede eliminar un recién nacido que tiene registros asociados (episodios, controles, atenciones o pulsera)' },
+        { error: 'No se puede eliminar un recién nacido que tiene registros asociados (episodios, controles o atenciones)' },
         { status: 409 }
       )
     }
@@ -389,6 +388,7 @@ export async function DELETE(request, { params }) {
     )
   }
 }
+
 
 
 

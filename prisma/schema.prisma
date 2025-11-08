@@ -61,6 +61,12 @@ enum EstadoPulsera {
   BAJA
 }
 
+enum ServicioUnidad {
+  URNI
+  UCIN
+  NEONATOLOGIA
+}
+
 // ================================
 // MODELO: USER (RBAC)
 // ================================
@@ -90,6 +96,7 @@ model User {
   recienNacidosUpdated RecienNacido[]    @relation("RNUpdatedBy")
   episodiosCreated     EpisodioURNI[]    @relation("EpisodioCreatedBy")
   episodiosUpdated     EpisodioURNI[]    @relation("EpisodioUpdatedBy")
+  episodiosResponsableClinico EpisodioURNI[] @relation("EpisodioResponsableClinico")
   episodiosMadreCreated EpisodioMadre[]  @relation("EpisodioMadreCreatedBy")
   episodiosMadreUpdated EpisodioMadre[]  @relation("EpisodioMadreUpdatedBy")
   atencionesMedico     AtencionURNI[]    @relation("AtencionMedico")
@@ -400,14 +407,19 @@ model EpisodioURNI {
   rn   RecienNacido @relation(fields: [rnId], references: [id], onDelete: Restrict)
 
   estado        EstadoEpisodio @default(INGRESADO)
-  fechaIngreso  DateTime
+  fechaHoraIngreso  DateTime
   motivoIngreso String?        @db.VarChar(300)
+  servicioUnidad ServicioUnidad?
+  responsableClinicoId String? @db.Char(36)
+  responsableClinico User? @relation("EpisodioResponsableClinico", fields: [responsableClinicoId], references: [id], onDelete: SetNull)
 
-  fechaAlta       DateTime?
+  fechaHoraAlta       DateTime?
   condicionEgreso String?   @db.VarChar(300)
 
   // Relación con atenciones
   atenciones AtencionURNI[] @relation("EpisodioAtenciones")
+  // Relación con controles neonatales
+  controles ControlNeonatal[]
 
   // Metadatos
   createdAt DateTime @default(now())
@@ -421,7 +433,8 @@ model EpisodioURNI {
 
   @@index([rnId])
   @@index([estado])
-  @@index([fechaIngreso])
+  @@index([fechaHoraIngreso])
+  @@index([responsableClinicoId])
 }
 
 // ================================
@@ -440,6 +453,7 @@ model AtencionURNI {
   fechaHora    DateTime @default(now())
   diagnostico  String?  @db.VarChar(500)
   indicaciones String?  @db.VarChar(800)
+  evolucion    String?  @db.VarChar(1000)
 
   // Trazabilidad (Médico)
   medicoId String? @db.Char(36)
@@ -463,6 +477,9 @@ model ControlNeonatal {
   rnId String       @db.Char(36)
   rn   RecienNacido @relation(fields: [rnId], references: [id], onDelete: Restrict)
 
+  episodioUrniId String?      @db.Char(36)
+  episodioUrni   EpisodioURNI? @relation(fields: [episodioUrniId], references: [id], onDelete: SetNull)
+
   fechaHora     DateTime            @default(now())
   tipo          TipoControlNeonatal @default(SIGNOS_VITALES)
   datos         Json? // ej: { temp:36.7, fc:140, fr:40, spo2:98 }
@@ -476,6 +493,7 @@ model ControlNeonatal {
   updatedAt DateTime @updatedAt
 
   @@index([rnId])
+  @@index([episodioUrniId])
   @@index([fechaHora])
   @@index([tipo])
 }

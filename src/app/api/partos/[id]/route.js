@@ -180,6 +180,15 @@ export async function PUT(request, { params }) {
       )
     }
 
+    // Validar que la fecha no sea mayor que la fecha y hora actual
+    const fechaHoraActual = new Date()
+    if (fechaHora > fechaHoraActual) {
+      return Response.json(
+        { error: 'La fecha y hora del parto no puede ser mayor que la fecha y hora actual' },
+        { status: 400 }
+      )
+    }
+
     // Validar tipo (enum)
     const tiposValidos = ['EUTOCICO', 'DISTOCICO', 'CESAREA_ELECTIVA', 'CESAREA_EMERGENCIA']
     if (!tiposValidos.includes(data.tipo)) {
@@ -254,6 +263,32 @@ export async function PUT(request, { params }) {
 
     // Validar enfermeras si se proporcionan
     const enfermerasIds = Array.isArray(data.enfermerasIds) ? data.enfermerasIds : []
+    
+    // Validar al menos una matrona (obligatorio siempre)
+    if (matronasIds.length === 0) {
+      return Response.json(
+        { error: 'Debe seleccionar al menos una matrona' },
+        { status: 400 }
+      )
+    }
+
+    // Validar al menos una enfermera (obligatorio siempre)
+    if (enfermerasIds.length === 0) {
+      return Response.json(
+        { error: 'Debe seleccionar al menos una enfermera' },
+        { status: 400 }
+      )
+    }
+
+    // Validar al menos un médico si es cesárea
+    const esCesarea = data.tipo === 'CESAREA_ELECTIVA' || data.tipo === 'CESAREA_EMERGENCIA'
+    if (esCesarea && medicosIds.length === 0) {
+      return Response.json(
+        { error: 'Debe seleccionar al menos un médico cuando el tipo de parto es cesárea' },
+        { status: 400 }
+      )
+    }
+
     if (enfermerasIds.length > 0) {
       const enfermeras = await prisma.user.findMany({
         where: {

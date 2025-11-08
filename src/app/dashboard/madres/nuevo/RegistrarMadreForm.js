@@ -80,12 +80,62 @@ function formatearRUT(valor) {
   return rut.toUpperCase()
 }
 
+// Función para formatear teléfono mientras se escribe (formato internacional: +XX...)
+function formatearTelefono(valor) {
+  if (!valor) return ''
+  
+  // Remover todo excepto números y el signo +
+  let telefono = valor.replace(/[^\d+]/g, '')
+  
+  // Si no empieza con +, agregarlo
+  if (telefono.length > 0 && !telefono.startsWith('+')) {
+    telefono = '+' + telefono.replace(/\+/g, '')
+  }
+  
+  // Limitar longitud total (código de país 1-3 dígitos + hasta 15 dígitos del número)
+  // Formato E.164 permite hasta 15 dígitos después del +
+  if (telefono.length > 16) {
+    telefono = telefono.substring(0, 16)
+  }
+  
+  return telefono
+}
+
+// Función para validar formato de teléfono internacional
+function validarTelefono(telefono) {
+  if (!telefono) return { valida: true, error: '' }
+  
+  // Debe empezar con +
+  if (!telefono.startsWith('+')) {
+    return { valida: false, error: 'El teléfono debe empezar con + seguido del código de país' }
+  }
+  
+  // Remover el + y validar que solo queden números
+  const numero = telefono.substring(1)
+  if (!/^\d+$/.test(numero)) {
+    return { valida: false, error: 'El teléfono solo puede contener números después del +' }
+  }
+  
+  // Validar longitud mínima: + (código país 1-3 dígitos) + número (mínimo 4 dígitos)
+  if (numero.length < 5) {
+    return { valida: false, error: 'El teléfono debe tener al menos 5 dígitos después del +' }
+  }
+  
+  // Validar longitud máxima según E.164 (máximo 15 dígitos después del +)
+  if (numero.length > 15) {
+    return { valida: false, error: 'El teléfono no puede tener más de 15 dígitos después del +' }
+  }
+  
+  return { valida: true, error: '' }
+}
+
 export default function RegistrarMadreForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [rutError, setRutError] = useState('')
+  const [telefonoError, setTelefonoError] = useState('')
 
   const [formData, setFormData] = useState({
     rut: '',
@@ -120,7 +170,23 @@ export default function RegistrarMadreForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
+    let valorFinal = value
+    
+    // Formatear y validar teléfono en tiempo real
+    if (name === 'telefono') {
+      valorFinal = formatearTelefono(value)
+      setFormData({ ...formData, [name]: valorFinal })
+      
+      // Validar el teléfono formateado
+      const validacion = validarTelefono(valorFinal)
+      if (!validacion.valida && valorFinal.length > 0) {
+        setTelefonoError(validacion.error)
+      } else {
+        setTelefonoError('')
+      }
+    } else {
+      setFormData({ ...formData, [name]: value })
+    }
     
     // Limpiar errores al cambiar campos
     if (error) setError('')
@@ -146,6 +212,17 @@ export default function RegistrarMadreForm() {
       setRutError('RUT inválido')
       setLoading(false)
       return
+    }
+
+    // Validar teléfono si está presente
+    if (formData.telefono) {
+      const validacionTelefono = validarTelefono(formData.telefono)
+      if (!validacionTelefono.valida) {
+        setError(validacionTelefono.error)
+        setTelefonoError(validacionTelefono.error)
+        setLoading(false)
+        return
+      }
     }
 
     try {
@@ -300,8 +377,16 @@ export default function RegistrarMadreForm() {
               name="telefono"
               value={formData.telefono}
               onChange={handleChange}
-              maxLength={20}
+              maxLength={16}
+              placeholder="+56912345678"
+              className={telefonoError ? styles.inputError : ''}
             />
+            {telefonoError && (
+              <span className={styles.errorText}>{telefonoError}</span>
+            )}
+            <small className={styles.helpText}>
+              Formato internacional: + (código de país) + número (ej: +56912345678)
+            </small>
           </div>
 
           {/* Ficha Clínica */}
@@ -334,7 +419,7 @@ export default function RegistrarMadreForm() {
           <button
             type="submit"
             className={styles.btnPrimary}
-            disabled={loading || !!rutError}
+            disabled={loading || !!rutError || !!telefonoError}
           >
             {loading ? (
               <>

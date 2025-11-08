@@ -18,6 +18,17 @@ function formatearFechaParaInput(fecha) {
   return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
+// Función para obtener la fecha y hora actual en formato datetime-local
+function obtenerFechaHoraActual() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
 export default function PartoForm({ initialData = null, isEdit = false, partoId = null, preselectedMadreId = null }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -213,9 +224,40 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
       return
     }
 
+    // Validar que la fecha no sea mayor que la fecha y hora actual
+    const fechaHoraSeleccionada = new Date(formData.fechaHora)
+    const fechaHoraActual = new Date()
+    if (fechaHoraSeleccionada > fechaHoraActual) {
+      setError('La fecha y hora del parto no puede ser mayor que la fecha y hora actual')
+      setLoading(false)
+      return
+    }
+
     // Validar lugarDetalle si lugar es OTRO
     if (formData.lugar === 'OTRO' && !formData.lugarDetalle.trim()) {
       setError('El detalle del lugar es requerido cuando el lugar es OTRO')
+      setLoading(false)
+      return
+    }
+
+    // Validar al menos una matrona (obligatorio siempre)
+    if (!formData.matronasIds || formData.matronasIds.length === 0) {
+      setError('Debe seleccionar al menos una matrona')
+      setLoading(false)
+      return
+    }
+
+    // Validar al menos una enfermera (obligatorio siempre)
+    if (!formData.enfermerasIds || formData.enfermerasIds.length === 0) {
+      setError('Debe seleccionar al menos una enfermera')
+      setLoading(false)
+      return
+    }
+
+    // Validar al menos un médico si es cesárea
+    const esCesarea = formData.tipo === 'CESAREA_ELECTIVA' || formData.tipo === 'CESAREA_EMERGENCIA'
+    if (esCesarea && (!formData.medicosIds || formData.medicosIds.length === 0)) {
+      setError('Debe seleccionar al menos un médico cuando el tipo de parto es cesárea')
       setLoading(false)
       return
     }
@@ -340,6 +382,7 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
                 name="fechaHora"
                 value={formData.fechaHora}
                 onChange={handleChange}
+                max={obtenerFechaHoraActual()}
                 required
               />
             </div>
@@ -418,7 +461,7 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
             <div className={styles.professionalGroup}>
               <label className={styles.professionalLabel}>
                 <i className="fas fa-user-nurse"></i>
-                Matronas
+                Matronas <span className={styles.required}>*</span>
               </label>
               <div className={styles.professionalContainer}>
                 <select
@@ -465,7 +508,7 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
             <div className={styles.professionalGroup}>
               <label className={styles.professionalLabel}>
                 <i className="fas fa-stethoscope"></i>
-                Médicos
+                Médicos {(formData.tipo === 'CESAREA_ELECTIVA' || formData.tipo === 'CESAREA_EMERGENCIA') && <span className={styles.required}>*</span>}
               </label>
               <div className={styles.professionalContainer}>
                 <select
@@ -512,7 +555,7 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
             <div className={styles.professionalGroup}>
               <label className={styles.professionalLabel}>
                 <i className="fas fa-user-nurse"></i>
-                Enfermeras
+                Enfermeras <span className={styles.required}>*</span>
               </label>
               <div className={styles.professionalContainer}>
                 <select

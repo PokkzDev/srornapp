@@ -167,6 +167,18 @@ export async function POST(request) {
       )
     }
 
+    // Verificar que el usuario existe en la base de datos
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+    })
+
+    if (!dbUser) {
+      return Response.json(
+        { error: 'Usuario no encontrado. Por favor, inicie sesión nuevamente.' },
+        { status: 401 }
+      )
+    }
+
     // Verificar permisos
     const permissions = await getUserPermissions()
     if (!permissions.includes('parto:create')) {
@@ -174,7 +186,7 @@ export async function POST(request) {
       try {
         await prisma.auditoria.create({
           data: {
-            usuarioId: user.id,
+            usuarioId: dbUser.id,
             rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
             entidad: 'Parto',
             accion: 'PERMISSION_DENIED',
@@ -220,6 +232,15 @@ export async function POST(request) {
     if (isNaN(fechaHora.getTime())) {
       return Response.json(
         { error: 'Fecha y hora inválida' },
+        { status: 400 }
+      )
+    }
+
+    // Validar que la fecha no sea mayor que la fecha y hora actual
+    const fechaHoraActual = new Date()
+    if (fechaHora > fechaHoraActual) {
+      return Response.json(
+        { error: 'La fecha y hora del parto no puede ser mayor que la fecha y hora actual' },
         { status: 400 }
       )
     }
@@ -298,6 +319,32 @@ export async function POST(request) {
 
     // Validar enfermeras si se proporcionan
     const enfermerasIds = Array.isArray(data.enfermerasIds) ? data.enfermerasIds : []
+    
+    // Validar al menos una matrona (obligatorio siempre)
+    if (matronasIds.length === 0) {
+      return Response.json(
+        { error: 'Debe seleccionar al menos una matrona' },
+        { status: 400 }
+      )
+    }
+
+    // Validar al menos una enfermera (obligatorio siempre)
+    if (enfermerasIds.length === 0) {
+      return Response.json(
+        { error: 'Debe seleccionar al menos una enfermera' },
+        { status: 400 }
+      )
+    }
+
+    // Validar al menos un médico si es cesárea
+    const esCesarea = data.tipo === 'CESAREA_ELECTIVA' || data.tipo === 'CESAREA_EMERGENCIA'
+    if (esCesarea && medicosIds.length === 0) {
+      return Response.json(
+        { error: 'Debe seleccionar al menos un médico cuando el tipo de parto es cesárea' },
+        { status: 400 }
+      )
+    }
+
     if (enfermerasIds.length > 0) {
       const enfermeras = await prisma.user.findMany({
         where: {
@@ -325,7 +372,7 @@ export async function POST(request) {
       fechaHora: fechaHora,
       tipo: data.tipo,
       lugar: data.lugar,
-      createdById: user.id,
+      createdById: dbUser.id,
     }
 
     // Agregar campos opcionales
@@ -417,7 +464,7 @@ export async function POST(request) {
       // Registrar auditoría
       await tx.auditoria.create({
         data: {
-          usuarioId: user.id,
+          usuarioId: dbUser.id,
           rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
           entidad: 'Parto',
           entidadId: nuevoParto.id,
@@ -451,6 +498,13 @@ export async function POST(request) {
     }
 
     if (error.code === 'P2003') {
+      // Error de foreign key constraint
+      if (error.meta?.field_name?.includes('createdById')) {
+        return Response.json(
+          { error: 'Usuario no válido. Por favor, inicie sesión nuevamente.' },
+          { status: 401 }
+        )
+      }
       return Response.json(
         { error: 'Referencia inválida en los datos proporcionados' },
         { status: 400 }

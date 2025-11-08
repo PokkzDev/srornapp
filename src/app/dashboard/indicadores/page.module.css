@@ -1,0 +1,431 @@
+/* Indicadores Page Styles */
+.content {
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.errorBox {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.errorBox h2 {
+  color: var(--color-danger);
+  margin-bottom: 1rem;
+}
+
+.errorBox p {
+  color: var(--color-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.btnSecondary {
+  display: inline-block;
+  text-decoration: none;
+  padding: 0.65rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  background: rgba(0, 102, 164, 0.08);
+  color: var(--color-primary);
+}
+
+.btnSecondary:hover {
+  background: rgba(0, 102, 164, 0.15);
+  text-decoration: none;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+}
+
+.header p {
+  color: var(--color-text-muted);
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* Submenú de Secciones */
+.sectionsMenu {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  padding: 0.5rem;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+
+.sectionTab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.sectionTab:hover {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.sectionTabActive {
+  background: var(--color-primary);
+  color: white;
+}
+
+.sectionTabActive:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.sectionTab i {
+  font-size: 0.9rem;
+}
+
+.sectionContent {
+  min-height: 400px;
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  align-items: center;
+  background: var(--color-surface);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filterGroup label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.filterInput,
+.filterSelect {
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  font-family: inherit;
+  outline: none;
+}
+
+.filterInput:hover,
+.filterSelect:hover {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+
+.filterInput:focus,
+.filterSelect:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 102, 164, 0.1);
+}
+
+.quickFilters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.quickFilterBtn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  font-family: inherit;
+}
+
+.quickFilterBtn:hover {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+
+.quickFilterBtn.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+}
+
+.error {
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  color: #721c24;
+  margin-bottom: 2rem;
+}
+
+/* Cards Grid */
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.statCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.statCardIcon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+}
+
+.statCardTitle {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  margin: 0;
+}
+
+.statCardValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.statCardSubtext {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-top: 0.5rem;
+}
+
+/* Sections */
+.section {
+  margin-bottom: 3rem;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.chartsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chartCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.chartCardTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+
+.chartContainer {
+  width: 100%;
+  height: 300px;
+  margin-top: 1rem;
+}
+
+.chartContainerLarge {
+  width: 100%;
+  height: 400px;
+  margin-top: 1rem;
+}
+
+/* Tables */
+.tableContainer {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: var(--color-primary-soft);
+}
+
+.table th {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.table tbody tr:hover {
+  background: var(--color-primary-soft);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .content {
+    padding: 1rem;
+  }
+
+  .sectionsMenu {
+    gap: 0.25rem;
+    padding: 0.25rem;
+  }
+
+  .sectionTab {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .sectionTab span {
+    display: none;
+  }
+
+  .sectionTab i {
+    font-size: 1rem;
+  }
+
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterGroup {
+    width: 100%;
+  }
+
+  .quickFilters {
+    width: 100%;
+  }
+
+  .quickFilterBtn {
+    flex: 1;
+  }
+
+  .cardsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .chartContainer,
+  .chartContainerLarge {
+    height: 250px;
+  }
+
+  .tableContainer {
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 600px;
+  }
+}
+

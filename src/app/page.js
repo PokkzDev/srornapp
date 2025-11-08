@@ -45,11 +45,16 @@ export default function LoginPage() {
 
   useEffect(() => {
     // Check if we're in development mode
-    setIsDev(
-      typeof window !== 'undefined' &&
-      (window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1')
-    )
+    // Show desarrollo accounts for localhost, 127.0.0.1, or ngrok tunnels
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname
+      const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1'
+      const isNgrok = hostname.endsWith('.ngrok.io') || hostname.endsWith('.ngrok-free.app')
+      const isCloudflare = hostname.endsWith('.trycloudflare.com')
+      const isLocaltunnel = hostname.endsWith('.loca.lt')
+      
+      setIsDev(isLocalhost || isNgrok || isCloudflare || isLocaltunnel)
+    }
   }, [])
 
   const handleLogin = async (userEmail, userPassword) => {

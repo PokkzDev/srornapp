@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Modal from '@/components/Modal'
 import styles from './page.module.css'
 
 export default function MadresListClient({ permissions }) {
@@ -14,6 +15,18 @@ export default function MadresListClient({ permissions }) {
   const [error, setError] = useState('')
   const [deleteLoading, setDeleteLoading] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
+  
+  // Modal state
+  const [modal, setModal] = useState({
+    isOpen: false,
+    type: 'warning',
+    title: '',
+    message: '',
+    onConfirm: null,
+    confirmText: 'Eliminar',
+    showCancel: true,
+    cancelText: 'Cancelar',
+  })
   const [itemsPerPage, setItemsPerPage] = useState(20)
   const [pagination, setPagination] = useState({
     page: 1,
@@ -75,16 +88,31 @@ export default function MadresListClient({ permissions }) {
     loadMadres()
   }, [loadMadres])
 
-  const handleDelete = async (id, rut) => {
-    if (
-      !window.confirm(
-        `¿Está seguro que desea eliminar a la madre con RUT ${rut}? Esta acción no se puede deshacer.`
-      )
-    ) {
-      return
-    }
+  const openDeleteModal = (id, rut, nombres, apellidos) => {
+    setModal({
+      isOpen: true,
+      type: 'warning',
+      title: 'Confirmar Eliminación',
+      message: `¿Está seguro que desea eliminar a la madre ${nombres} ${apellidos} (RUT: ${rut})?\n\nEsta acción no se puede deshacer.`,
+      onConfirm: () => handleDelete(id),
+      confirmText: 'Eliminar',
+      showCancel: true,
+      cancelText: 'Cancelar',
+    })
+  }
 
+  const closeModal = () => {
+    setModal({
+      ...modal,
+      isOpen: false,
+      onConfirm: null,
+    })
+  }
+
+  const handleDelete = async (id) => {
     setDeleteLoading(id)
+    closeModal()
+    
     try {
       const response = await fetch(`/api/madres/${id}`, {
         method: 'DELETE',
@@ -93,7 +121,15 @@ export default function MadresListClient({ permissions }) {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.error || 'Error al eliminar la madre')
+        setModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Error al Eliminar',
+          message: data.error || 'Error al eliminar la madre',
+          onConfirm: closeModal,
+          confirmText: 'Aceptar',
+          showCancel: false,
+        })
         setDeleteLoading(null)
         return
       }
@@ -108,7 +144,15 @@ export default function MadresListClient({ permissions }) {
       }
     } catch (err) {
       console.error('Error deleting madre:', err)
-      alert('Error al conectar con el servidor')
+      setModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error de Conexión',
+        message: 'Error al conectar con el servidor',
+        onConfirm: closeModal,
+        confirmText: 'Aceptar',
+        showCancel: false,
+      })
     } finally {
       setDeleteLoading(null)
     }
@@ -243,7 +287,7 @@ export default function MadresListClient({ permissions }) {
                       )}
                       {permissions.delete && (
                         <button
-                          onClick={() => handleDelete(madre.id, madre.rut)}
+                          onClick={() => openDeleteModal(madre.id, madre.rut, madre.nombres, madre.apellidos)}
                           className={`${styles.btnAction} ${styles.btnDelete}`}
                           disabled={deleteLoading === madre.id}
                           title="Eliminar"
@@ -329,6 +373,19 @@ export default function MadresListClient({ permissions }) {
           </div>
         </div>
       )}
+
+      {/* Modal */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={modal.onConfirm}
+        confirmText={modal.confirmText}
+        showCancel={modal.showCancel}
+        cancelText={modal.cancelText}
+      />
     </div>
   )
 }

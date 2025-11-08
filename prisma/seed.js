@@ -102,6 +102,9 @@ async function main() {
     { code: 'fichas:view', description: 'Visualizar fichas' },
     { code: 'atencion_urn:create', description: 'Registrar atención URN' },
     { code: 'control_neonatal:create', description: 'Registrar control neonatal' },
+    { code: 'control_neonatal:view', description: 'Visualizar controles neonatales' },
+    { code: 'control_neonatal:update', description: 'Editar controles neonatales' },
+    { code: 'control_neonatal:delete', description: 'Eliminar controles neonatales' },
     { code: 'reporte_rem:generate', description: 'Generar reporte REM' },
     { code: 'ingreso_alta:manage', description: 'Gestionar ingreso/alta' },
     { code: 'ingreso_alta:view', description: 'Visualizar ingresos/altas' },
@@ -112,6 +115,13 @@ async function main() {
     { code: 'modulo_alta:aprobar', description: 'Aprobar alta médica' },
     { code: 'auditoria:review', description: 'Revisar auditoría' },
     { code: 'indicadores:consult', description: 'Consultar indicadores' },
+    { code: 'urni:episodio:create', description: 'Crear episodio URNI' },
+    { code: 'urni:episodio:view', description: 'Ver episodios URNI' },
+    { code: 'urni:episodio:update', description: 'Actualizar episodio URNI' },
+    { code: 'urni:atencion:create', description: 'Crear atención URNI' },
+    { code: 'urni:atencion:view', description: 'Ver atenciones URNI' },
+    { code: 'urni:read', description: 'Lectura general URNI' },
+    { code: 'alta:manage', description: 'Gestionar alta URNI' },
   ]
 
   // Create permissions
@@ -149,32 +159,40 @@ async function main() {
       'registro_clinico:edit',
       'fichas:view',
       'informe_alta:generate',
+      'urni:episodio:create',
+      'urni:read',
     ],
     medico: [
       'registro_clinico:edit',
       'fichas:view',
       'atencion_urn:create',
       'modulo_alta:aprobar',
+      'urni:atencion:create',
+      'urni:atencion:view',
+      'urni:read',
+      'alta:manage',
+      'recien-nacido:view',
     ],
     enfermera: [
       'fichas:view',
       'control_neonatal:create',
+      'control_neonatal:view',
+      'control_neonatal:update',
+      'control_neonatal:delete',
+      'urni:read',
     ],
     administrativo: [
       'reporte_rem:generate',
-      'ingreso_alta:manage',
-      'ingreso_alta:view',
-      'ingreso_alta:create',
-      'ingreso_alta:update',
-      'ingreso_alta:alta',
       'madre:view_limited',
       'madre:create_limited',
       'madre:update_limited',
       'madre:delete_limited',
+      'alta:manage',
     ],
     jefatura: [
       'auditoria:review',
       'indicadores:consult',
+      'urni:atencion:view',
     ],
   }
 
@@ -765,6 +783,156 @@ async function main() {
     }
   }
 
+  // Crear episodios URNI de ejemplo para algunos recién nacidos recientes (2024)
+  console.log('🏥 Creating URNI episodes (EpisodioURNI)...')
+  const recienNacidos2024 = await prisma.recienNacido.findMany({
+    where: {
+      parto: {
+        fechaHora: {
+          gte: new Date('2024-01-01'),
+        },
+      },
+    },
+    include: {
+      parto: {
+        include: {
+          madre: {
+            select: {
+              id: true,
+              nombres: true,
+              apellidos: true,
+            },
+          },
+        },
+      },
+    },
+    take: 5, // Tomar algunos RN de 2024
+  })
+
+  const episodiosURNIData = []
+  for (let i = 0; i < Math.min(recienNacidos2024.length, 3); i++) {
+    const rn = recienNacidos2024[i]
+    const fechaIngreso = new Date(rn.parto.fechaHora)
+    fechaIngreso.setHours(fechaIngreso.getHours() + 2) // 2 horas después del parto
+    
+    episodiosURNIData.push({
+      rnId: rn.id,
+      fechaHoraIngreso: fechaIngreso,
+      motivoIngreso: i === 0 
+        ? 'Prematuridad - Requiere monitoreo en URNI'
+        : i === 1
+        ? 'Bajo peso al nacer - Control en UCIN'
+        : 'Control neonatal rutinario',
+      servicioUnidad: i === 0 ? 'URNI' : i === 1 ? 'UCIN' : 'NEONATOLOGIA',
+      responsableClinicoId: medicoUser?.id || null,
+      estado: i === 0 ? 'INGRESADO' : 'INGRESADO', // Todos ingresados para demostración
+    })
+  }
+
+  const createdEpisodiosURNI = []
+  for (const episodioData of episodiosURNIData) {
+    try {
+      // Verificar que no exista ya un episodio activo para este RN
+      const episodioExistente = await prisma.episodioURNI.findFirst({
+        where: {
+          rnId: episodioData.rnId,
+          estado: 'INGRESADO',
+        },
+      })
+
+      if (!episodioExistente) {
+        const episodio = await prisma.episodioURNI.create({
+          data: {
+            ...episodioData,
+            createdById: administrativoUser?.id,
+          },
+        })
+        createdEpisodiosURNI.push(episodio)
+        const rn = recienNacidos2024.find(r => r.id === episodioData.rnId)
+        console.log(`  ✓ Episodio URNI creado para RN de ${rn?.parto?.madre?.nombres} ${rn?.parto?.madre?.apellidos} - Estado: ${episodioData.estado}`)
+      } else {
+        console.log(`  ⏳ RN ya tiene un episodio activo, se omite`)
+      }
+    } catch (err) {
+      console.error(`  ❌ Error creando episodio URNI:`, err)
+    }
+  }
+
+  // Crear controles neonatales de ejemplo
+  console.log('👩‍⚕️ Creating neonatal controls...')
+  // Reutilizar enfermeraUser ya declarado anteriormente
+  const createdControles = []
+  
+  // Crear controles para algunos RN con episodios URNI
+  for (let i = 0; i < Math.min(createdEpisodiosURNI.length, 3); i++) {
+    const episodio = createdEpisodiosURNI[i]
+    const rn = recienNacidos2024.find(r => r.id === episodio.rnId)
+    
+    if (!rn) continue
+    
+    // Crear varios controles para cada episodio
+    const tiposControles = ['SIGNOS_VITALES', 'GLUCEMIA', 'ALIMENTACION', 'MEDICACION']
+    const datosEjemplo = [
+      { temp: 36.7, fc: 140, fr: 40, spo2: 98 },
+      { glucemia: 85 },
+      { tipo: 'Lactancia materna', cantidad: 30, unidad: 'ml' },
+      { medicamento: 'Vitamina D', dosis: '400 UI', via: 'Oral' },
+    ]
+    
+    for (let j = 0; j < Math.min(2, tiposControles.length); j++) {
+      const fechaControl = new Date(episodio.fechaHoraIngreso)
+      fechaControl.setHours(fechaControl.getHours() + (j + 1) * 4) // Cada 4 horas
+      
+      try {
+        const control = await prisma.controlNeonatal.create({
+          data: {
+            rnId: rn.id,
+            episodioUrniId: episodio.id,
+            fechaHora: fechaControl,
+            tipo: tiposControles[j],
+            datos: datosEjemplo[j],
+            observaciones: j === 0 
+              ? 'Control rutinario - RN estable'
+              : 'Seguimiento según protocolo',
+            enfermeraId: enfermeraUser?.id || null,
+          },
+        })
+        createdControles.push(control)
+        console.log(`  ✓ Control ${tiposControles[j]} creado para RN de ${rn?.parto?.madre?.nombres} ${rn?.parto?.madre?.apellidos}`)
+      } catch (err) {
+        console.error(`  ❌ Error creando control neonatal:`, err)
+      }
+    }
+  }
+  
+  // Crear algunos controles sin episodio URNI (para RN sin episodio activo)
+  const rnSinEpisodio = recienNacidos2024.filter(rn => 
+    !createdEpisodiosURNI.some(e => e.rnId === rn.id)
+  ).slice(0, 2)
+  
+  for (const rn of rnSinEpisodio) {
+    const fechaControl = new Date(rn.parto.fechaHora)
+    fechaControl.setHours(fechaControl.getHours() + 6) // 6 horas después del parto
+    
+    try {
+      const control = await prisma.controlNeonatal.create({
+        data: {
+          rnId: rn.id,
+          episodioUrniId: null,
+          fechaHora: fechaControl,
+          tipo: 'SIGNOS_VITALES',
+          datos: { temp: 36.8, fc: 135, fr: 38, spo2: 99 },
+          observaciones: 'Control post-parto - RN en buen estado',
+          enfermeraId: enfermeraUser?.id || null,
+        },
+      })
+      createdControles.push(control)
+      console.log(`  ✓ Control SIGNOS_VITALES creado para RN de ${rn?.parto?.madre?.nombres} ${rn?.parto?.madre?.apellidos} (sin episodio URNI)`)
+    } catch (err) {
+      console.error(`  ❌ Error creando control neonatal:`, err)
+    }
+  }
+
   console.log('✅ Seed completed successfully!')
   console.log('\n📋 Test accounts created:')
   console.log('  Default password for all accounts: Asdf1234')
@@ -774,11 +942,17 @@ async function main() {
   console.log(`\n👩 ${madres.length} mothers created`)
   console.log(`👶 ${partosData.length} births created`)
   console.log(`👼 ${recienNacidosData.length} newborns created`)
-  console.log(`\n🏥 ${episodiosData.length} episodes created`)
+  console.log(`\n🏥 ${episodiosData.length} episodes (EpisodioMadre) created`)
   const informesCreados = createdEpisodios.filter(e => e.crearInforme).length
   const episodiosSinInforme = createdEpisodios.filter(e => !e.crearInforme).length
   console.log(`📄 ${informesCreados} discharge reports created`)
   console.log(`⏳ ${episodiosSinInforme} episodes left without reports (for demonstration)`)
+  console.log(`\n🏥 ${createdEpisodiosURNI.length} URNI episodes created`)
+  
+  const controlesCreados = createdControles?.length || 0
+  if (controlesCreados > 0) {
+    console.log(`👩‍⚕️ ${controlesCreados} neonatal controls created`)
+  }
 }
 
 main()

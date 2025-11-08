@@ -6,6 +6,8 @@ import styles from './page.module.css'
 
 export default function InformeAltaClient() {
   const router = useRouter()
+  
+  // Estados para la sección de generar informe
   const [episodios, setEpisodios] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedEpisodioId, setSelectedEpisodioId] = useState('')
@@ -150,20 +152,6 @@ export default function InformeAltaClient() {
         <div className={styles.loading}>
           <i className="fas fa-spinner fa-spin"></i>
           Cargando episodios...
-        </div>
-      </div>
-    )
-  }
-
-  if (error && !episodios.length) {
-    return (
-      <div className={styles.content}>
-        <div className={styles.errorBox}>
-          <h2>Error</h2>
-          <p>{error}</p>
-          <button onClick={loadEpisodios} className={styles.btnSecondary}>
-            Reintentar
-          </button>
         </div>
       </div>
     )

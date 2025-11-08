@@ -88,12 +88,130 @@ function formatearFechaParaInput(fecha) {
   return date.toISOString().split('T')[0]
 }
 
+// Función para obtener la fecha actual en formato YYYY-MM-DD en zona horaria America/Santiago
+function obtenerFechaActualSantiago() {
+  const ahora = new Date()
+  // Obtener la fecha en zona horaria de Santiago usando Intl.DateTimeFormat
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Santiago',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
+  return formatter.format(ahora)
+}
+
+// Función para validar que la fecha de nacimiento no sea superior a la fecha actual
+function validarFechaNacimiento(fechaNacimiento) {
+  if (!fechaNacimiento) return { valida: true, error: '' }
+  
+  const fechaActual = obtenerFechaActualSantiago()
+  
+  // Comparar directamente las cadenas YYYY-MM-DD (comparación lexicográfica funciona correctamente)
+  if (fechaNacimiento > fechaActual) {
+    return { valida: false, error: 'La fecha de nacimiento no puede ser superior a la fecha actual' }
+  }
+  
+  return { valida: true, error: '' }
+}
+
+// Función para validar nombres y apellidos (solo letras, espacios, acentos y caracteres especiales permitidos)
+function validarNombreApellido(valor) {
+  if (!valor) return { valida: true, error: '' }
+  
+  // Permitir letras (incluyendo acentos y caracteres especiales del español), espacios, guiones y apóstrofes
+  // No permitir números
+  const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/
+  
+  if (!regex.test(valor)) {
+    return { valida: false, error: 'Solo se permiten letras, espacios y caracteres especiales (no números)' }
+  }
+  
+  return { valida: true, error: '' }
+}
+
+// Función para formatear teléfono mientras se escribe (formato internacional: +XX...)
+function formatearTelefono(valor) {
+  if (!valor) return ''
+  
+  // Remover todo excepto números y el signo +
+  let telefono = valor.replace(/[^\d+]/g, '')
+  
+  // Si no empieza con +, agregarlo
+  if (telefono.length > 0 && !telefono.startsWith('+')) {
+    telefono = '+' + telefono.replace(/\+/g, '')
+  }
+  
+  // Limitar longitud total (código de país 1-3 dígitos + hasta 15 dígitos del número)
+  // Formato E.164 permite hasta 15 dígitos después del +
+  if (telefono.length > 16) {
+    telefono = telefono.substring(0, 16)
+  }
+  
+  return telefono
+}
+
+// Función para validar formato de teléfono internacional
+function validarTelefono(telefono) {
+  if (!telefono) return { valida: true, error: '' }
+  
+  // Debe empezar con +
+  if (!telefono.startsWith('+')) {
+    return { valida: false, error: 'El teléfono debe empezar con + seguido del código de país' }
+  }
+  
+  // Remover el + y validar que solo queden números
+  const numero = telefono.substring(1)
+  if (!/^\d+$/.test(numero)) {
+    return { valida: false, error: 'El teléfono solo puede contener números después del +' }
+  }
+  
+  // Validar longitud mínima: + (código país 1-3 dígitos) + número (mínimo 4 dígitos)
+  if (numero.length < 5) {
+    return { valida: false, error: 'El teléfono debe tener al menos 5 dígitos después del +' }
+  }
+  
+  // Validar longitud máxima según E.164 (máximo 15 dígitos después del +)
+  if (numero.length > 15) {
+    return { valida: false, error: 'El teléfono no puede tener más de 15 dígitos después del +' }
+  }
+  
+  return { valida: true, error: '' }
+}
+
+// Función para calcular la edad basada en la fecha de nacimiento
+function calcularEdad(fechaNacimiento) {
+  if (!fechaNacimiento) return ''
+  
+  try {
+    // Obtener fecha actual en zona horaria de Santiago
+    const fechaActual = obtenerFechaActualSantiago()
+    const [añoActual, mesActual, diaActual] = fechaActual.split('-').map(Number)
+    const [añoNac, mesNac, diaNac] = fechaNacimiento.split('-').map(Number)
+    
+    let edad = añoActual - añoNac
+    
+    // Ajustar si aún no ha cumplido años este año
+    if (mesActual < mesNac || (mesActual === mesNac && diaActual < diaNac)) {
+      edad--
+    }
+    
+    return edad >= 0 ? edad.toString() : ''
+  } catch (error) {
+    return ''
+  }
+}
+
 export default function MadreForm({ initialData = null, isEdit = false, madreId = null, isLimited = false }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [rutError, setRutError] = useState('')
+  const [fechaNacimientoError, setFechaNacimientoError] = useState('')
+  const [nombresError, setNombresError] = useState('')
+  const [apellidosError, setApellidosError] = useState('')
+  const [telefonoError, setTelefonoError] = useState('')
 
   const [formData, setFormData] = useState({
     rut: '',
@@ -144,7 +262,54 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
+    let valorFinal = value
+    
+    // Filtrar números de nombres y apellidos mientras se escribe
+    if (name === 'nombres' || name === 'apellidos') {
+      // Remover números del valor
+      valorFinal = value.replace(/[0-9]/g, '')
+      setFormData({ ...formData, [name]: valorFinal })
+      
+      // Validar el valor filtrado
+      const validacion = validarNombreApellido(valorFinal)
+      if (!validacion.valida && valorFinal.length > 0) {
+        if (name === 'nombres') {
+          setNombresError(validacion.error)
+        } else {
+          setApellidosError(validacion.error)
+        }
+      } else {
+        if (name === 'nombres') {
+          setNombresError('')
+        } else {
+          setApellidosError('')
+        }
+      }
+    } else if (name === 'telefono') {
+      // Formatear y validar teléfono en tiempo real
+      valorFinal = formatearTelefono(value)
+      setFormData({ ...formData, [name]: valorFinal })
+      
+      // Validar el teléfono formateado
+      const validacion = validarTelefono(valorFinal)
+      if (!validacion.valida && valorFinal.length > 0) {
+        setTelefonoError(validacion.error)
+      } else {
+        setTelefonoError('')
+      }
+    } else {
+      setFormData({ ...formData, [name]: value })
+      
+      // Validar fecha de nacimiento en tiempo real
+      if (name === 'fechaNacimiento') {
+        const validacion = validarFechaNacimiento(value)
+        if (!validacion.valida) {
+          setFechaNacimientoError(validacion.error)
+        } else {
+          setFechaNacimientoError('')
+        }
+      }
+    }
     
     // Limpiar errores al cambiar campos
     if (error) setError('')
@@ -157,9 +322,24 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
     setSuccess('')
     setLoading(true)
 
-    // Validaciones básicas
+    // Validaciones básicas según esquema de BD (rut, nombres, apellidos son obligatorios)
     if (!formData.rut || !formData.nombres || !formData.apellidos) {
       setError('RUT, nombres y apellidos son requeridos')
+      setLoading(false)
+      return
+    }
+
+    // Validar que nombres y apellidos no estén vacíos (trim)
+    if (!formData.nombres.trim() || !formData.apellidos.trim()) {
+      setError('Nombres y apellidos no pueden estar vacíos')
+      setLoading(false)
+      return
+    }
+
+    // Validar fecha de nacimiento obligatoria (regla de negocio)
+    if (!formData.fechaNacimiento) {
+      setError('La fecha de nacimiento es obligatoria')
+      setFechaNacimientoError('La fecha de nacimiento es obligatoria')
       setLoading(false)
       return
     }
@@ -172,6 +352,53 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
       return
     }
 
+    // Validar nombres
+    const validacionNombres = validarNombreApellido(formData.nombres)
+    if (!validacionNombres.valida) {
+      setError(validacionNombres.error)
+      setNombresError(validacionNombres.error)
+      setLoading(false)
+      return
+    }
+
+    // Validar apellidos
+    const validacionApellidos = validarNombreApellido(formData.apellidos)
+    if (!validacionApellidos.valida) {
+      setError(validacionApellidos.error)
+      setApellidosError(validacionApellidos.error)
+      setLoading(false)
+      return
+    }
+
+    // Validar teléfono si está presente
+    if (formData.telefono) {
+      const validacionTelefono = validarTelefono(formData.telefono)
+      if (!validacionTelefono.valida) {
+        setError(validacionTelefono.error)
+        setTelefonoError(validacionTelefono.error)
+        setLoading(false)
+        return
+      }
+    }
+
+    // Validar fecha de nacimiento
+    if (formData.fechaNacimiento) {
+      const validacion = validarFechaNacimiento(formData.fechaNacimiento)
+      if (!validacion.valida) {
+        setError(validacion.error)
+        setFechaNacimientoError(validacion.error)
+        setLoading(false)
+        return
+      }
+    }
+
+    // Calcular edad automáticamente si hay fecha de nacimiento
+    const datosParaEnviar = { ...formData }
+    if (datosParaEnviar.fechaNacimiento) {
+      const edadCalculada = calcularEdad(datosParaEnviar.fechaNacimiento)
+      datosParaEnviar.edad = edadCalculada || ''
+    }
+
     try {
       const url = isEdit ? `/api/madres/${madreId}` : '/api/madres'
       const method = isEdit ? 'PUT' : 'POST'
@@ -181,7 +408,7 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(datosParaEnviar),
       })
 
       const data = await response.json()
@@ -268,7 +495,11 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
               onChange={handleChange}
               required
               maxLength={120}
+              className={nombresError ? styles.inputError : ''}
             />
+            {nombresError && (
+              <span className={styles.errorText}>{nombresError}</span>
+            )}
           </div>
 
           {/* Apellidos */}
@@ -284,33 +515,34 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
               onChange={handleChange}
               required
               maxLength={120}
+              className={apellidosError ? styles.inputError : ''}
             />
-          </div>
-
-          {/* Edad */}
-          <div className={styles.formGroup}>
-            <label htmlFor="edad">Edad</label>
-            <input
-              type="number"
-              id="edad"
-              name="edad"
-              value={formData.edad}
-              onChange={handleChange}
-              min="0"
-              max="150"
-            />
+            {apellidosError && (
+              <span className={styles.errorText}>{apellidosError}</span>
+            )}
           </div>
 
           {/* Fecha de Nacimiento */}
           <div className={styles.formGroup}>
-            <label htmlFor="fechaNacimiento">Fecha de Nacimiento</label>
+            <label htmlFor="fechaNacimiento">
+              Fecha de Nacimiento <span className={styles.required}>*</span>
+            </label>
             <input
               type="date"
               id="fechaNacimiento"
               name="fechaNacimiento"
               value={formData.fechaNacimiento}
               onChange={handleChange}
+              max={obtenerFechaActualSantiago()}
+              required
+              className={fechaNacimientoError ? styles.inputError : ''}
             />
+            {fechaNacimientoError && (
+              <span className={styles.errorText}>{fechaNacimientoError}</span>
+            )}
+            <small className={styles.helpText}>
+              La edad se calculará automáticamente
+            </small>
           </div>
 
           {/* Dirección */}
@@ -335,8 +567,16 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
               name="telefono"
               value={formData.telefono}
               onChange={handleChange}
-              maxLength={20}
+              maxLength={16}
+              placeholder="+56912345678"
+              className={telefonoError ? styles.inputError : ''}
             />
+            {telefonoError && (
+              <span className={styles.errorText}>{telefonoError}</span>
+            )}
+            <small className={styles.helpText}>
+              Formato internacional: + (código de país) + número (ej: +56912345678)
+            </small>
           </div>
 
           {/* Ficha Clínica */}
@@ -369,7 +609,7 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
           <button
             type="submit"
             className={styles.btnPrimary}
-            disabled={loading || !!rutError}
+            disabled={loading || !!rutError || !!fechaNacimientoError || !!nombresError || !!apellidosError || !!telefonoError}
           >
             {loading ? (
               <>

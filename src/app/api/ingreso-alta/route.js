@@ -122,6 +122,18 @@ export async function POST(request) {
       )
     }
 
+    // Verificar que el usuario existe en la base de datos
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+    })
+
+    if (!dbUser) {
+      return Response.json(
+        { error: 'Usuario no encontrado. Por favor, inicie sesión nuevamente.' },
+        { status: 401 }
+      )
+    }
+
     // Verificar permisos
     const permissions = await getUserPermissions()
     if (!permissions.includes('ingreso_alta:create') && !permissions.includes('ingreso_alta:manage')) {
@@ -129,7 +141,7 @@ export async function POST(request) {
       try {
         await prisma.auditoria.create({
           data: {
-            usuarioId: user.id,
+            usuarioId: dbUser.id,
             rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
             entidad: 'EpisodioMadre',
             accion: 'PERMISSION_DENIED',
@@ -184,7 +196,7 @@ export async function POST(request) {
       madreId: data.madreId,
       fechaIngreso: fechaIngreso,
       estado: 'INGRESADO',
-      createdById: user.id,
+      createdById: dbUser.id,
     }
 
     // Agregar campos opcionales
@@ -220,7 +232,7 @@ export async function POST(request) {
       // Registrar auditoría
       await tx.auditoria.create({
         data: {
-          usuarioId: user.id,
+          usuarioId: dbUser.id,
           rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
           entidad: 'EpisodioMadre',
           entidadId: nuevoEpisodio.id,
@@ -247,6 +259,13 @@ export async function POST(request) {
 
     // Manejar errores de Prisma
     if (error.code === 'P2003') {
+      // Error de foreign key constraint
+      if (error.meta?.field_name?.includes('createdById')) {
+        return Response.json(
+          { error: 'Usuario no válido. Por favor, inicie sesión nuevamente.' },
+          { status: 401 }
+        )
+      }
       return Response.json(
         { error: 'Referencia inválida en los datos proporcionados' },
         { status: 400 }

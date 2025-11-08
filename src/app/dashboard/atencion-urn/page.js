@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getCurrentUser, getUserPermissions } from '@/lib/auth'
 import DashboardLayout from '@/components/DashboardLayout'
+import AtencionURNClient from './AtencionURNClient'
 import styles from './page.module.css'
 
 export default async function AtencionURNPage() {
@@ -13,7 +14,7 @@ export default async function AtencionURNPage() {
   const permissions = await getUserPermissions()
 
   // Permisos para atención URN (solo doctor)
-  const canAccess = permissions.includes('atencion_urn:create')
+  const canAccess = permissions.includes('atencion_urn:create') || permissions.includes('urni:atencion:create')
 
   if (!canAccess) {
     return (
@@ -33,12 +34,7 @@ export default async function AtencionURNPage() {
 
   return (
     <DashboardLayout>
-      <div className={styles.content}>
-        <div className={styles.mockupBox}>
-          <p>Aqui ira la atencion URN</p>
-        </div>
-      </div>
+      <AtencionURNClient />
     </DashboardLayout>
   )
 }
-

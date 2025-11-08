@@ -171,6 +171,18 @@ export async function POST(request) {
       )
     }
 
+    // Verificar que el usuario existe en la base de datos
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+    })
+
+    if (!dbUser) {
+      return Response.json(
+        { error: 'Usuario no encontrado. Por favor, inicie sesión nuevamente.' },
+        { status: 401 }
+      )
+    }
+
     // Verificar permisos
     const permissions = await getUserPermissions()
     const hasCreatePermission = permissions.includes('madre:create') || permissions.includes('madre:create_limited')
@@ -266,7 +278,7 @@ export async function POST(request) {
       rut: rutNormalizado,
       nombres: data.nombres.trim(),
       apellidos: data.apellidos.trim(),
-      createdById: user.id,
+      createdById: dbUser.id, // Usar el ID del usuario verificado en la BD
     }
 
     // Agregar campos opcionales si están presentes
@@ -316,7 +328,7 @@ export async function POST(request) {
       // Registrar auditoría
       await tx.auditoria.create({
         data: {
-          usuarioId: user.id,
+          usuarioId: dbUser.id, // Usar el ID del usuario verificado en la BD
           rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
           entidad: 'Madre',
           entidadId: nuevaMadre.id,
@@ -354,6 +366,16 @@ export async function POST(request) {
         return Response.json(
           { error: 'Ya existe una madre registrada con esta ficha clínica' },
           { status: 409 }
+        )
+      }
+    }
+
+    if (error.code === 'P2003') {
+      // Error de foreign key constraint
+      if (error.meta?.field_name?.includes('createdById')) {
+        return Response.json(
+          { error: 'Usuario no válido. Por favor, inicie sesión nuevamente.' },
+          { status: 401 }
         )
       }
     }

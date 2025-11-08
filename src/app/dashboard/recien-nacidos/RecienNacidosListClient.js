@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Modal from '@/components/Modal'
 import styles from './page.module.css'
 
 export default function RecienNacidosListClient({ permissions }) {
@@ -20,6 +21,18 @@ export default function RecienNacidosListClient({ permissions }) {
     limit: 20,
     total: 0,
     totalPages: 0,
+  })
+
+  // Modal state
+  const [modal, setModal] = useState({
+    isOpen: false,
+    type: 'warning',
+    title: '',
+    message: '',
+    onConfirm: null,
+    confirmText: 'Eliminar',
+    showCancel: true,
+    cancelText: 'Cancelar',
   })
 
   // Debounce search input
@@ -75,16 +88,31 @@ export default function RecienNacidosListClient({ permissions }) {
     loadRecienNacidos()
   }, [loadRecienNacidos])
 
-  const handleDelete = async (id, madreInfo) => {
-    if (
-      !window.confirm(
-        `¿Está seguro que desea eliminar el recién nacido de ${madreInfo}? Esta acción no se puede deshacer.`
-      )
-    ) {
-      return
-    }
+  const openDeleteModal = (id, madreInfo) => {
+    setModal({
+      isOpen: true,
+      type: 'warning',
+      title: 'Confirmar Eliminación',
+      message: `¿Está seguro que desea eliminar el recién nacido de ${madreInfo}?\n\nEsta acción no se puede deshacer.`,
+      onConfirm: () => handleDelete(id),
+      confirmText: 'Eliminar',
+      showCancel: true,
+      cancelText: 'Cancelar',
+    })
+  }
 
+  const closeModal = () => {
+    setModal({
+      ...modal,
+      isOpen: false,
+      onConfirm: null,
+    })
+  }
+
+  const handleDelete = async (id) => {
     setDeleteLoading(id)
+    closeModal()
+    
     try {
       const response = await fetch(`/api/recien-nacidos/${id}`, {
         method: 'DELETE',
@@ -93,7 +121,15 @@ export default function RecienNacidosListClient({ permissions }) {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.error || 'Error al eliminar el recién nacido')
+        setModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Error al Eliminar',
+          message: data.error || 'Error al eliminar el recién nacido',
+          onConfirm: closeModal,
+          confirmText: 'Aceptar',
+          showCancel: false,
+        })
         setDeleteLoading(null)
         return
       }
@@ -108,7 +144,15 @@ export default function RecienNacidosListClient({ permissions }) {
       }
     } catch (err) {
       console.error('Error deleting recien nacido:', err)
-      alert('Error al conectar con el servidor')
+      setModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error de Conexión',
+        message: 'Error al conectar con el servidor',
+        onConfirm: closeModal,
+        confirmText: 'Aceptar',
+        showCancel: false,
+      })
     } finally {
       setDeleteLoading(null)
     }
@@ -272,7 +316,7 @@ export default function RecienNacidosListClient({ permissions }) {
                       {permissions.delete && (
                         <button
                           onClick={() =>
-                            handleDelete(
+                            openDeleteModal(
                               rn.id,
                               rn.parto?.madre
                                 ? `${rn.parto.madre.nombres} ${rn.parto.madre.apellidos}`
@@ -364,6 +408,19 @@ export default function RecienNacidosListClient({ permissions }) {
           </div>
         </div>
       )}
+
+      {/* Modal */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={modal.onConfirm}
+        confirmText={modal.confirmText}
+        showCancel={modal.showCancel}
+        cancelText={modal.cancelText}
+      />
     </div>
   )
 }

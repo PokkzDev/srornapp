@@ -72,6 +72,19 @@ export default async function Sidebar() {
     })
   }
 
+  // Episodios URNI
+  if (
+    permissions.includes('urni:read') ||
+    permissions.includes('urni:episodio:view')
+  ) {
+    modulos.push({
+      icon: 'fa-hospital-alt',
+      label: 'Episodios URNI',
+      href: '/dashboard/urni',
+      permission: 'urni:read',
+    })
+  }
+
   // Control Neonatal
   if (permissions.includes('control_neonatal:create')) {
     modulos.push({
