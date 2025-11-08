@@ -102,6 +102,8 @@ export async function GET(request, { params }) {
         fechaIngreso: informe.episodio.fechaIngreso.toISOString(),
         estado: informe.episodio.estado,
         motivoIngreso: informe.episodio.motivoIngreso,
+        fechaAlta: informe.episodio.fechaAlta?.toISOString() || null,
+        condicionEgreso: informe.episodio.condicionEgreso || null,
       },
       madre: {
         id: informe.episodio.madre.id,
@@ -126,4 +128,10 @@ export async function GET(request, { params }) {
     )
   }
 }
+
+
+
+
+
+
 

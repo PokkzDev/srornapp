@@ -38,3 +38,9 @@ export default async function ModuloAltaDetailPage({ params }) {
   )
 }
 
+
+
+
+
+
+

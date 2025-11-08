@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import styles from './page.module.css'
 
@@ -8,11 +8,33 @@ export default function ModuloAltaListClient() {
   const [episodios, setEpisodios] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [filterEstado, setFilterEstado] = useState('all')
+  const debounceTimer = useRef(null)
 
   useEffect(() => {
     loadEpisodios()
   }, [])
+
+  // Debounce para el término de búsqueda
+  useEffect(() => {
+    // Limpiar el timer anterior si existe
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
+    }
+
+    // Crear un nuevo timer
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300) // 300ms de delay
+
+    // Limpiar el timer cuando el componente se desmonte o searchTerm cambie
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current)
+      }
+    }
+  }, [searchTerm])
 
   const loadEpisodios = async () => {
     setLoading(true)
@@ -46,9 +68,9 @@ export default function ModuloAltaListClient() {
 
   const filteredEpisodios = episodios.filter((episodio) => {
     const matchesSearch =
-      episodio.madre.rut.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      episodio.madre.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      episodio.madre.apellidos.toLowerCase().includes(searchTerm.toLowerCase())
+      episodio.madre.rut.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      episodio.madre.nombres.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      episodio.madre.apellidos.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
     
     const matchesFilter = filterEstado === 'all' || episodio.estado === filterEstado
 

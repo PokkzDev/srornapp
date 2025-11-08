@@ -231,3 +231,9 @@ export default async function RecienNacidoDetailPage({ params }) {
 
 
 
+
+
+
+
+
+

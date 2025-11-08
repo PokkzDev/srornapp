@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Modal from '@/components/Modal'
 import styles from './page.module.css'
 
 export default function ModuloAltaDetailClient({ episodioId }) {
@@ -13,6 +14,17 @@ export default function ModuloAltaDetailClient({ episodioId }) {
   const [aprovingAlta, setAprovingAlta] = useState(false)
   const [showApprovalForm, setShowApprovalForm] = useState(false)
   const [condicionEgreso, setCondicionEgreso] = useState('')
+  
+  // Modal states
+  const [modal, setModal] = useState({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+    onConfirm: null,
+    confirmText: 'Aceptar',
+    showCancel: false,
+  })
 
   useEffect(() => {
     loadEpisodio()
@@ -37,6 +49,8 @@ export default function ModuloAltaDetailClient({ episodioId }) {
         fechaIngreso: informeData.episodio.fechaIngreso,
         estado: informeData.episodio.estado,
         motivoIngreso: informeData.episodio.motivoIngreso,
+        fechaAlta: informeData.episodio.fechaAlta,
+        condicionEgreso: informeData.episodio.condicionEgreso,
         madre: informeData.madre,
         informe: {
           id: informeData.id,
@@ -55,9 +69,33 @@ export default function ModuloAltaDetailClient({ episodioId }) {
     }
   }
 
+  const showModal = (type, title, message, onConfirm = null, confirmText = 'Aceptar', showCancel = false) => {
+    setModal({
+      isOpen: true,
+      type,
+      title,
+      message,
+      onConfirm,
+      confirmText,
+      showCancel,
+    })
+  }
+
+  const closeModal = () => {
+    setModal({
+      isOpen: false,
+      type: 'info',
+      title: '',
+      message: '',
+      onConfirm: null,
+      confirmText: 'Aceptar',
+      showCancel: false,
+    })
+  }
+
   const handleExport = async (formato) => {
     if (!episodio?.informe?.id) {
-      alert('No hay informe disponible para exportar')
+      showModal('warning', 'Informe no disponible', 'No hay informe disponible para exportar')
       return
     }
 
@@ -76,19 +114,20 @@ export default function ModuloAltaDetailClient({ episodioId }) {
         throw new Error(result.error || 'Error al exportar el informe')
       }
 
-      // Show alert for mock export
-      alert(`Función de exportación en ${formato} aún no implementada. Se mostrará un alert por ahora.\n\nInforme: ${result.data.madreNombre}\nFormato: ${formato}`)
+      // Show modal for mock export
+      showModal(
+        'info',
+        'Exportación',
+        `Función de exportación en ${formato} aún no implementada.\n\nInforme: ${result.data.madreNombre}\nFormato: ${formato}`
+      )
     } catch (err) {
       console.error('Error exporting informe:', err)
-      alert(err.message || 'Error al exportar el informe')
+      showModal('error', 'Error al exportar', err.message || 'Error al exportar el informe')
     }
   }
 
-  const handleAprobarAlta = async () => {
-    if (!window.confirm('¿Está seguro que desea aprobar el alta médica de este paciente?')) {
-      return
-    }
-
+  const handleConfirmAprobarAlta = async () => {
+    closeModal()
     setAprovingAlta(true)
     try {
       const response = await fetch(`/api/modulo-alta/${episodioId}/aprobar`, {
@@ -104,19 +143,45 @@ export default function ModuloAltaDetailClient({ episodioId }) {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.error || 'Error al aprobar el alta')
+        showModal('error', 'Error al aprobar', data.error || 'Error al aprobar el alta')
         setAprovingAlta(false)
         return
       }
 
-      alert('Alta médica aprobada exitosamente')
-      router.push('/dashboard/modulo-alta')
+      // Recargar los datos del episodio para reflejar el cambio de estado
+      await loadEpisodio()
+      
+      // Cerrar el formulario de aprobación
+      setShowApprovalForm(false)
+      setCondicionEgreso('')
+
+      // Mostrar mensaje de éxito
+      showModal(
+        'success',
+        'Alta aprobada',
+        'Alta médica aprobada exitosamente',
+        () => {
+          closeModal()
+          router.push('/dashboard/modulo-alta')
+        }
+      )
     } catch (err) {
       console.error('Error aprobando alta:', err)
-      alert('Error al conectar con el servidor')
+      showModal('error', 'Error de conexión', 'Error al conectar con el servidor')
     } finally {
       setAprovingAlta(false)
     }
+  }
+
+  const handleAprobarAlta = () => {
+    showModal(
+      'warning',
+      'Confirmar aprobación',
+      '¿Está seguro que desea aprobar el alta médica de este paciente?',
+      handleConfirmAprobarAlta,
+      'Sí, aprobar',
+      true
+    )
   }
 
   const formatDate = (dateString) => {
@@ -349,10 +414,22 @@ export default function ModuloAltaDetailClient({ episodioId }) {
               <label>Fecha de Ingreso</label>
               <span>{formatDate(episodio.fechaIngreso)}</span>
             </div>
+            {episodio.estado === 'ALTA' && episodio.fechaAlta && (
+              <div className={styles.infoItem}>
+                <label>Fecha de Alta</label>
+                <span>{formatDate(episodio.fechaAlta)}</span>
+              </div>
+            )}
             {episodio.motivoIngreso && (
               <div className={styles.infoItem} style={{ gridColumn: '1 / -1' }}>
                 <label>Motivo de Ingreso</label>
                 <span>{episodio.motivoIngreso}</span>
+              </div>
+            )}
+            {episodio.estado === 'ALTA' && episodio.condicionEgreso && (
+              <div className={styles.infoItem} style={{ gridColumn: '1 / -1' }}>
+                <label>Condición de Egreso</label>
+                <span>{episodio.condicionEgreso}</span>
               </div>
             )}
           </div>
@@ -471,6 +548,18 @@ export default function ModuloAltaDetailClient({ episodioId }) {
           <span>Este episodio ya fue dado de alta médica.</span>
         </div>
       )}
+
+      {/* Modal */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={modal.onConfirm}
+        confirmText={modal.confirmText}
+        showCancel={modal.showCancel}
+      />
     </div>
   )
 }
