@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
+import { validarRUT, formatearRUT, esEmail } from '@/lib/rut'
 
 // Test users from seed.js
 const TEST_USERS = [
@@ -31,17 +32,23 @@ const TEST_USERS = [
     nombre: 'Dra. Patricia López',
     role: 'Jefatura',
   },
+  {
+    email: 'ti@srorn.cl',
+    nombre: 'Departamento TI',
+    role: 'Administrador TI',
+  },
 ]
 
 const DEFAULT_PASSWORD = 'Asdf1234' // Password from seed.js
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isDev, setIsDev] = useState(false)
+  const [rutError, setRutError] = useState('')
 
   useEffect(() => {
     // Check if we're in development mode
@@ -57,17 +64,59 @@ export default function LoginPage() {
     }
   }, [])
 
-  const handleLogin = async (userEmail, userPassword) => {
+  const handleIdentifierChange = (value) => {
+    setRutError('')
+    
+    // Si parece ser un RUT (contiene números y posiblemente guion), formatearlo
+    if (!esEmail(value) && /[\d-]/.test(value)) {
+      const formatted = formatearRUT(value)
+      setIdentifier(formatted)
+      
+      // Validar RUT si tiene formato completo
+      if (formatted.includes('-') && formatted.length >= 9) {
+        if (!validarRUT(formatted)) {
+          setRutError('RUT inválido')
+        }
+      }
+    } else {
+      setIdentifier(value)
+    }
+  }
+
+  const handleLogin = async (userIdentifier, userPassword) => {
     setError('')
+    setRutError('')
     setIsLoading(true)
 
+    // Validar RUT si parece ser uno
+    if (!esEmail(userIdentifier.trim())) {
+      let rutToValidate = userIdentifier.trim()
+      
+      // Formatear si no tiene guion
+      if (!rutToValidate.includes('-')) {
+        rutToValidate = formatearRUT(rutToValidate)
+      }
+      
+      if (rutToValidate.includes('-') && !validarRUT(rutToValidate)) {
+        setRutError('RUT inválido. Formato esperado: 12345678-9')
+        setIsLoading(false)
+        return
+      }
+    }
+
     try {
+      // Determinar si enviar como email o rut
+      const isEmailInput = esEmail(userIdentifier.trim())
+      const body = isEmailInput
+        ? { email: userIdentifier.trim(), password: userPassword }
+        : { rut: userIdentifier.trim(), password: userPassword }
+
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: userEmail, password: userPassword }),
+        body: JSON.stringify(body),
       })
 
       const data = await response.json()
@@ -89,7 +138,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    await handleLogin(email, password)
+    await handleLogin(identifier, password)
   }
 
   const handleDevLogin = async (userEmail) => {
@@ -112,17 +161,22 @@ export default function LoginPage() {
           )}
 
           <div className="form-group">
-            <label htmlFor="email">Correo electrónico</label>
+            <label htmlFor="identifier">Correo electrónico o RUT</label>
             <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="identifier"
+              type="text"
+              value={identifier}
+              onChange={(e) => handleIdentifierChange(e.target.value)}
               required
-              autoComplete="email"
+              autoComplete="username"
               disabled={isLoading}
-              placeholder="usuario@srorn.cl"
+              placeholder="usuario@srorn.cl o 12345678-9"
             />
+            {rutError && (
+              <div className={styles.error} style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                {rutError}
+              </div>
+            )}
           </div>
 
           <div className="form-group">

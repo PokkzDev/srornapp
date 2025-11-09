@@ -27,7 +27,7 @@ function validarComplejidadPassword(password) {
   return { valida: true, error: '' }
 }
 
-export async function GET(request) {
+export async function GET(request, { params }) {
   try {
     // Verificar autenticación
     const user = await getCurrentUser()
@@ -47,173 +47,11 @@ export async function GET(request) {
       )
     }
 
-    // Obtener parámetro de filtro por rol
-    const { searchParams } = new URL(request.url)
-    const role = searchParams.get('role') // 'matrona', 'medico', 'enfermera'
+    const { id } = await params
 
-    // Construir query base - incluir todos los usuarios (activos e inactivos) para administradores TI
-    let where = {}
-
-    // Si se especifica un rol, filtrar usuarios que tengan ese rol
-    if (role) {
-      where.roles = {
-        some: {
-          role: {
-            name: role,
-          },
-        },
-      }
-    }
-
-    // Obtener usuarios con sus roles
-    const users = await prisma.user.findMany({
-      where,
-      select: {
-        id: true,
-        nombre: true,
-        email: true,
-        rut: true,
-        activo: true,
-        roles: {
-          select: {
-            role: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        nombre: 'asc',
-      },
-    })
-
-    // Formatear datos para incluir nombres de roles
-    const formattedUsers = users.map((user) => ({
-      id: user.id,
-      nombre: user.nombre,
-      email: user.email,
-      rut: user.rut,
-      activo: user.activo,
-      roles: user.roles.map((ur) => ur.role.name),
-    }))
-
-    return Response.json({
-      success: true,
-      data: formattedUsers,
-    })
-  } catch (error) {
-    console.error('Error al listar usuarios:', error)
-    return Response.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function POST(request) {
-  try {
-    // Verificar autenticación
-    const user = await getCurrentUser()
-    if (!user) {
-      return Response.json(
-        { error: 'No autenticado' },
-        { status: 401 }
-      )
-    }
-
-    // Verificar permisos
-    const permissions = await getUserPermissions()
-    if (!permissions.includes('user:create')) {
-      return Response.json(
-        { error: 'No tiene permisos para crear usuarios' },
-        { status: 403 }
-      )
-    }
-
-    const { rut, nombre, email, password, roles } = await request.json()
-
-    // Validaciones básicas
-    if (!nombre || !email || !password) {
-      return Response.json(
-        { error: 'Nombre, email y contraseña son requeridos' },
-        { status: 400 }
-      )
-    }
-
-    // Validar complejidad de contraseña
-    const validacionPassword = validarComplejidadPassword(password)
-    if (!validacionPassword.valida) {
-      return Response.json(
-        { error: validacionPassword.error },
-        { status: 400 }
-      )
-    }
-
-    // Validar email único
-    const emailExistente = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
-    })
-
-    if (emailExistente) {
-      return Response.json(
-        { error: 'El email ya está en uso' },
-        { status: 400 }
-      )
-    }
-
-    // Validar RUT único si se proporciona
-    if (rut) {
-      const rutExistente = await prisma.user.findUnique({
-        where: { rut: rut.trim() },
-      })
-
-      if (rutExistente) {
-        return Response.json(
-          { error: 'El RUT ya está en uso' },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Hash de contraseña
-    const passwordHash = await bcrypt.hash(password, 10)
-
-    // Crear usuario
-    const nuevoUsuario = await prisma.user.create({
-      data: {
-        rut: rut ? rut.trim() : null,
-        nombre: nombre.trim(),
-        email: email.toLowerCase().trim(),
-        passwordHash,
-        activo: true,
-      },
-    })
-
-    // Asignar roles si se proporcionan
-    if (roles && Array.isArray(roles) && roles.length > 0) {
-      // Obtener IDs de roles
-      const rolesEncontrados = await prisma.role.findMany({
-        where: {
-          name: {
-            in: roles,
-          },
-        },
-      })
-
-      // Crear relaciones UserRole
-      await prisma.userRole.createMany({
-        data: rolesEncontrados.map((role) => ({
-          userId: nuevoUsuario.id,
-          roleId: role.id,
-        })),
-      })
-    }
-
-    // Obtener usuario con roles para respuesta
-    const usuarioCompleto = await prisma.user.findUnique({
-      where: { id: nuevoUsuario.id },
+    // Obtener usuario con roles
+    const usuario = await prisma.user.findUnique({
+      where: { id },
       include: {
         roles: {
           include: {
@@ -223,19 +61,26 @@ export async function POST(request) {
       },
     })
 
+    if (!usuario) {
+      return Response.json(
+        { error: 'Usuario no encontrado' },
+        { status: 404 }
+      )
+    }
+
     return Response.json({
       success: true,
       data: {
-        id: usuarioCompleto.id,
-        nombre: usuarioCompleto.nombre,
-        email: usuarioCompleto.email,
-        rut: usuarioCompleto.rut,
-        activo: usuarioCompleto.activo,
-        roles: usuarioCompleto.roles.map((ur) => ur.role.name),
+        id: usuario.id,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        rut: usuario.rut,
+        activo: usuario.activo,
+        roles: usuario.roles.map((ur) => ur.role.name),
       },
-    }, { status: 201 })
+    })
   } catch (error) {
-    console.error('Error al crear usuario:', error)
+    console.error('Error al obtener usuario:', error)
     return Response.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -243,7 +88,7 @@ export async function POST(request) {
   }
 }
 
-export async function PUT(request) {
+export async function PUT(request, { params }) {
   try {
     // Verificar autenticación
     const user = await getCurrentUser()
@@ -263,14 +108,8 @@ export async function PUT(request) {
       )
     }
 
-    const { id, rut, nombre, email, password, roles } = await request.json()
-
-    if (!id) {
-      return Response.json(
-        { error: 'ID de usuario es requerido' },
-        { status: 400 }
-      )
-    }
+    const { id } = await params
+    const { rut, nombre, email, password, roles } = await request.json()
 
     // Verificar que el usuario existe
     const usuarioExistente = await prisma.user.findUnique({
@@ -308,20 +147,24 @@ export async function PUT(request) {
       datosActualizacion.email = emailLower
     }
 
-    if (rut) {
-      // Validar RUT único (excepto para el mismo usuario)
-      const rutExistente = await prisma.user.findUnique({
-        where: { rut: rut.trim() },
-      })
+    if (rut !== undefined) {
+      if (rut === null || rut === '') {
+        datosActualizacion.rut = null
+      } else {
+        // Validar RUT único (excepto para el mismo usuario)
+        const rutExistente = await prisma.user.findUnique({
+          where: { rut: rut.trim() },
+        })
 
-      if (rutExistente && rutExistente.id !== id) {
-        return Response.json(
-          { error: 'El RUT ya está en uso' },
-          { status: 400 }
-        )
+        if (rutExistente && rutExistente.id !== id) {
+          return Response.json(
+            { error: 'El RUT ya está en uso' },
+            { status: 400 }
+          )
+        }
+
+        datosActualizacion.rut = rut.trim()
       }
-
-      datosActualizacion.rut = rut.trim()
     }
 
     if (password) {
@@ -338,7 +181,7 @@ export async function PUT(request) {
     }
 
     // Actualizar usuario
-    const usuarioActualizado = await prisma.user.update({
+    await prisma.user.update({
       where: { id },
       data: datosActualizacion,
     })
@@ -401,7 +244,7 @@ export async function PUT(request) {
   }
 }
 
-export async function DELETE(request) {
+export async function DELETE(request, { params }) {
   try {
     // Verificar autenticación
     const user = await getCurrentUser()
@@ -421,15 +264,7 @@ export async function DELETE(request) {
       )
     }
 
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-
-    if (!id) {
-      return Response.json(
-        { error: 'ID de usuario es requerido' },
-        { status: 400 }
-      )
-    }
+    const { id } = await params
 
     // No permitir auto-eliminación
     if (user.id === id) {
@@ -462,6 +297,74 @@ export async function DELETE(request) {
     })
   } catch (error) {
     console.error('Error al eliminar usuario:', error)
+    return Response.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(request, { params }) {
+  try {
+    // Verificar autenticación
+    const user = await getCurrentUser()
+    if (!user) {
+      return Response.json(
+        { error: 'No autenticado' },
+        { status: 401 }
+      )
+    }
+
+    // Verificar permisos
+    const permissions = await getUserPermissions()
+    if (!permissions.includes('user:manage')) {
+      return Response.json(
+        { error: 'No tiene permisos para gestionar usuarios' },
+        { status: 403 }
+      )
+    }
+
+    const { id } = await params
+    const { activo } = await request.json()
+
+    // No permitir auto-desactivación
+    if (user.id === id && activo === false) {
+      return Response.json(
+        { error: 'No puede desactivar su propia cuenta' },
+        { status: 400 }
+      )
+    }
+
+    // Verificar que el usuario existe
+    const usuarioExistente = await prisma.user.findUnique({
+      where: { id },
+    })
+
+    if (!usuarioExistente) {
+      return Response.json(
+        { error: 'Usuario no encontrado' },
+        { status: 404 }
+      )
+    }
+
+    // Actualizar estado activo
+    const usuarioActualizado = await prisma.user.update({
+      where: { id },
+      data: { activo: activo === true },
+    })
+
+    return Response.json({
+      success: true,
+      data: {
+        id: usuarioActualizado.id,
+        nombre: usuarioActualizado.nombre,
+        email: usuarioActualizado.email,
+        rut: usuarioActualizado.rut,
+        activo: usuarioActualizado.activo,
+      },
+    })
+  } catch (error) {
+    console.error('Error al actualizar estado de usuario:', error)
     return Response.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

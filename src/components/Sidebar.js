@@ -141,6 +141,16 @@ export default async function Sidebar() {
     })
   }
 
+  // Gestión de Usuarios
+  if (permissions.includes('user:view')) {
+    modulos.push({
+      icon: 'fa-users-cog',
+      label: 'Gestión de Usuarios',
+      href: '/dashboard/usuarios',
+      permission: 'user:view',
+    })
+  }
+
   // INFORMES
   // Generar Informe para Alta
   if (permissions.includes('informe_alta:generate')) {

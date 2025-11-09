@@ -60,6 +60,7 @@ async function main() {
     { name: 'enfermera', description: 'Enfermera - Profesional de enfermería' },
     { name: 'administrativo', description: 'Administrativo - Personal administrativo' },
     { name: 'jefatura', description: 'Jefatura - Personal de jefatura y dirección' },
+    { name: 'administrador_ti', description: 'Administrador TI - Departamento de Tecnologías de la Información' },
   ]
 
   // Create roles
@@ -122,6 +123,11 @@ async function main() {
     { code: 'urni:atencion:view', description: 'Ver atenciones URNI' },
     { code: 'urni:read', description: 'Lectura general URNI' },
     { code: 'alta:manage', description: 'Gestionar alta URNI' },
+    { code: 'user:create', description: 'Crear usuarios' },
+    { code: 'user:view', description: 'Ver usuarios' },
+    { code: 'user:update', description: 'Editar usuarios' },
+    { code: 'user:delete', description: 'Eliminar usuarios' },
+    { code: 'user:manage', description: 'Gestionar usuarios (activar/desactivar)' },
   ]
 
   // Create permissions
@@ -194,6 +200,13 @@ async function main() {
       'indicadores:consult',
       'urni:atencion:view',
     ],
+    administrador_ti: [
+      'user:create',
+      'user:view',
+      'user:update',
+      'user:delete',
+      'user:manage',
+    ],
   }
 
   // Assign permissions to roles
@@ -255,6 +268,12 @@ async function main() {
       nombre: 'Dra. Patricia López',
       email: 'jefatura@srorn.cl',
       role: 'jefatura',
+    },
+    {
+      rut: '99999999-9',
+      nombre: 'Departamento TI',
+      email: 'ti@srorn.cl',
+      role: 'administrador_ti',
     },
   ]
 

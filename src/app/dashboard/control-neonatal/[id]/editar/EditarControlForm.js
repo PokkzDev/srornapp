@@ -23,6 +23,27 @@ export default function EditarControlForm({ controlId }) {
     observaciones: '',
   })
 
+  // Estado para campos individuales según el tipo de control
+  const [datosFields, setDatosFields] = useState({
+    // SIGNOS_VITALES
+    temp: '',
+    fc: '',
+    fr: '',
+    spo2: '',
+    // GLUCEMIA
+    glucemia: '',
+    // ALIMENTACION
+    tipoAlimentacion: '',
+    cantidad: '',
+    unidad: 'ml',
+    // MEDICACION
+    medicamento: '',
+    dosis: '',
+    via: '',
+    // OTRO (JSON como texto)
+    datosOtro: '',
+  })
+
   const [control, setControl] = useState(null)
 
   // Load control data
@@ -55,6 +76,12 @@ export default function EditarControlForm({ controlId }) {
           observaciones: controlData.observaciones || '',
         })
 
+        // Parsear datos existentes a campos individuales
+        if (controlData.datos) {
+          const parsedFields = parseDatosToFields(controlData.tipo || 'SIGNOS_VITALES', controlData.datos)
+          setDatosFields(parsedFields)
+        }
+
         // Load episodios URNI for this RN
         if (controlData.rnId) {
           loadEpisodios(controlData.rnId)
@@ -69,6 +96,96 @@ export default function EditarControlForm({ controlId }) {
 
     loadControl()
   }, [controlId])
+
+  // Función auxiliar para construir objeto JSON desde campos individuales
+  const buildDatosFromFields = (tipo, fields) => {
+    const datos = {}
+    
+    switch (tipo) {
+      case 'SIGNOS_VITALES':
+        if (fields.temp !== '') datos.temp = parseFloat(fields.temp)
+        if (fields.fc !== '') datos.fc = parseFloat(fields.fc)
+        if (fields.fr !== '') datos.fr = parseFloat(fields.fr)
+        if (fields.spo2 !== '') datos.spo2 = parseFloat(fields.spo2)
+        break
+      case 'GLUCEMIA':
+        if (fields.glucemia !== '') datos.glucemia = parseFloat(fields.glucemia)
+        break
+      case 'ALIMENTACION':
+        if (fields.tipoAlimentacion !== '') datos.tipo = fields.tipoAlimentacion
+        if (fields.cantidad !== '') datos.cantidad = parseFloat(fields.cantidad)
+        if (fields.unidad !== '') datos.unidad = fields.unidad
+        break
+      case 'MEDICACION':
+        if (fields.medicamento !== '') datos.medicamento = fields.medicamento
+        if (fields.dosis !== '') datos.dosis = fields.dosis
+        if (fields.via !== '') datos.via = fields.via
+        break
+      case 'OTRO':
+        if (fields.datosOtro && fields.datosOtro.trim()) {
+          try {
+            return JSON.parse(fields.datosOtro)
+          } catch (e) {
+            return null
+          }
+        }
+        return null
+      default:
+        return null
+    }
+    
+    // Retornar null si el objeto está vacío
+    return Object.keys(datos).length > 0 ? datos : null
+  }
+
+  // Función auxiliar para parsear JSON y poblar campos individuales
+  const parseDatosToFields = (tipo, datos) => {
+    if (!datos) {
+      return {
+        temp: '', fc: '', fr: '', spo2: '',
+        glucemia: '',
+        tipoAlimentacion: '', cantidad: '', unidad: 'ml',
+        medicamento: '', dosis: '', via: '',
+        datosOtro: '',
+      }
+    }
+
+    const datosObj = typeof datos === 'string' ? JSON.parse(datos) : datos
+    const fields = {
+      temp: '', fc: '', fr: '', spo2: '',
+      glucemia: '',
+      tipoAlimentacion: '', cantidad: '', unidad: 'ml',
+      medicamento: '', dosis: '', via: '',
+      datosOtro: '',
+    }
+
+    switch (tipo) {
+      case 'SIGNOS_VITALES':
+        if (datosObj.temp !== undefined && datosObj.temp !== null) fields.temp = datosObj.temp.toString()
+        if (datosObj.fc !== undefined && datosObj.fc !== null) fields.fc = datosObj.fc.toString()
+        if (datosObj.fr !== undefined && datosObj.fr !== null) fields.fr = datosObj.fr.toString()
+        if (datosObj.spo2 !== undefined && datosObj.spo2 !== null) fields.spo2 = datosObj.spo2.toString()
+        break
+      case 'GLUCEMIA':
+        if (datosObj.glucemia !== undefined && datosObj.glucemia !== null) fields.glucemia = datosObj.glucemia.toString()
+        break
+      case 'ALIMENTACION':
+        if (datosObj.tipo !== undefined && datosObj.tipo !== null) fields.tipoAlimentacion = datosObj.tipo.toString()
+        if (datosObj.cantidad !== undefined && datosObj.cantidad !== null) fields.cantidad = datosObj.cantidad.toString()
+        if (datosObj.unidad !== undefined && datosObj.unidad !== null) fields.unidad = datosObj.unidad.toString()
+        break
+      case 'MEDICACION':
+        if (datosObj.medicamento !== undefined && datosObj.medicamento !== null) fields.medicamento = datosObj.medicamento.toString()
+        if (datosObj.dosis !== undefined && datosObj.dosis !== null) fields.dosis = datosObj.dosis.toString()
+        if (datosObj.via !== undefined && datosObj.via !== null) fields.via = datosObj.via.toString()
+        break
+      case 'OTRO':
+        fields.datosOtro = JSON.stringify(datosObj, null, 2)
+        break
+    }
+
+    return fields
+  }
 
   const loadEpisodios = async (rnId) => {
     setLoadingEpisodios(true)
@@ -85,10 +202,36 @@ export default function EditarControlForm({ controlId }) {
     }
   }
 
+  // Limpiar campos cuando cambia el tipo de control (solo si ya se cargaron los datos iniciales)
+  useEffect(() => {
+    // Solo limpiar si ya se cargaron los datos del control
+    if (control) {
+      if (control.datos && formData.tipo === control.tipo) {
+        // Si el tipo no cambió, mantener los datos parseados
+        return
+      } else {
+        // Si cambió el tipo, limpiar campos
+        setDatosFields({
+          temp: '', fc: '', fr: '', spo2: '',
+          glucemia: '',
+          tipoAlimentacion: '', cantidad: '', unidad: 'ml',
+          medicamento: '', dosis: '', via: '',
+          datosOtro: '',
+        })
+      }
+    }
+  }, [formData.tipo])
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData({ ...formData, [name]: value })
     
+    if (error) setError('')
+    if (success) setSuccess('')
+  }
+
+  const handleDatosFieldChange = (fieldName, value) => {
+    setDatosFields({ ...datosFields, [fieldName]: value })
     if (error) setError('')
     if (success) setSuccess('')
   }
@@ -99,11 +242,13 @@ export default function EditarControlForm({ controlId }) {
     setSuccess('')
     setLoading(true)
 
-    // Validar datos JSON si se proporciona
-    let datosParsed = null
-    if (formData.datos && formData.datos.trim()) {
+    // Construir datos JSON desde campos individuales
+    let datosParsed = buildDatosFromFields(formData.tipo, datosFields)
+    
+    // Validar JSON para tipo OTRO
+    if (formData.tipo === 'OTRO' && datosFields.datosOtro && datosFields.datosOtro.trim()) {
       try {
-        datosParsed = JSON.parse(formData.datos)
+        datosParsed = JSON.parse(datosFields.datosOtro)
       } catch (err) {
         setError('El campo datos debe ser un JSON válido')
         setLoading(false)
@@ -275,18 +420,190 @@ export default function EditarControlForm({ controlId }) {
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="datos">
-            Datos (JSON) <span className={styles.help}>Ej: {"{"}"temp": 36.7, "fc": 140, "fr": 40, "spo2": 98{"}"}</span>
+          <label>
+            Datos del Control
           </label>
-          <textarea
-            id="datos"
-            name="datos"
-            value={formData.datos}
-            onChange={handleChange}
-            placeholder='{"temp": 36.7, "fc": 140, "fr": 40, "spo2": 98}'
-            rows={6}
-            className={styles.textarea}
-          />
+          
+          {formData.tipo === 'SIGNOS_VITALES' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <div>
+                <label htmlFor="temp" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                  Temperatura (°C)
+                </label>
+                <input
+                  type="number"
+                  id="temp"
+                  step="0.1"
+                  value={datosFields.temp}
+                  onChange={(e) => handleDatosFieldChange('temp', e.target.value)}
+                  placeholder="36.7"
+                  className={styles.input}
+                />
+              </div>
+              <div>
+                <label htmlFor="fc" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                  Frecuencia Cardíaca (lpm)
+                </label>
+                <input
+                  type="number"
+                  id="fc"
+                  value={datosFields.fc}
+                  onChange={(e) => handleDatosFieldChange('fc', e.target.value)}
+                  placeholder="140"
+                  className={styles.input}
+                />
+              </div>
+              <div>
+                <label htmlFor="fr" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                  Frecuencia Respiratoria (rpm)
+                </label>
+                <input
+                  type="number"
+                  id="fr"
+                  value={datosFields.fr}
+                  onChange={(e) => handleDatosFieldChange('fr', e.target.value)}
+                  placeholder="40"
+                  className={styles.input}
+                />
+              </div>
+              <div>
+                <label htmlFor="spo2" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                  Saturación O2 (%)
+                </label>
+                <input
+                  type="number"
+                  id="spo2"
+                  value={datosFields.spo2}
+                  onChange={(e) => handleDatosFieldChange('spo2', e.target.value)}
+                  placeholder="98"
+                  className={styles.input}
+                />
+              </div>
+            </div>
+          )}
+
+          {formData.tipo === 'GLUCEMIA' && (
+            <div>
+              <label htmlFor="glucemia" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                Glucemia (mg/dL)
+              </label>
+              <input
+                type="number"
+                id="glucemia"
+                step="0.1"
+                value={datosFields.glucemia}
+                onChange={(e) => handleDatosFieldChange('glucemia', e.target.value)}
+                placeholder="90"
+                className={styles.input}
+                style={{ maxWidth: '300px' }}
+              />
+            </div>
+          )}
+
+          {formData.tipo === 'ALIMENTACION' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <div>
+                <label htmlFor="tipoAlimentacion" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                  Tipo de Alimentación
+                </label>
+                <input
+                  type="text"
+                  id="tipoAlimentacion"
+                  value={datosFields.tipoAlimentacion}
+                  onChange={(e) => handleDatosFieldChange('tipoAlimentacion', e.target.value)}
+                  placeholder="Ej: Leche materna"
+                  className={styles.input}
+                />
+              </div>
+              <div>
+                <label htmlFor="cantidad" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                  Cantidad
+                </label>
+                <input
+                  type="number"
+                  id="cantidad"
+                  step="0.1"
+                  value={datosFields.cantidad}
+                  onChange={(e) => handleDatosFieldChange('cantidad', e.target.value)}
+                  placeholder="50"
+                  className={styles.input}
+                />
+              </div>
+              <div>
+                <label htmlFor="unidad" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                  Unidad
+                </label>
+                <input
+                  type="text"
+                  id="unidad"
+                  value={datosFields.unidad}
+                  onChange={(e) => handleDatosFieldChange('unidad', e.target.value)}
+                  placeholder="ml"
+                  className={styles.input}
+                />
+              </div>
+            </div>
+          )}
+
+          {formData.tipo === 'MEDICACION' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <div>
+                <label htmlFor="medicamento" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                  Medicamento
+                </label>
+                <input
+                  type="text"
+                  id="medicamento"
+                  value={datosFields.medicamento}
+                  onChange={(e) => handleDatosFieldChange('medicamento', e.target.value)}
+                  placeholder="Nombre del medicamento"
+                  className={styles.input}
+                />
+              </div>
+              <div>
+                <label htmlFor="dosis" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                  Dosis
+                </label>
+                <input
+                  type="text"
+                  id="dosis"
+                  value={datosFields.dosis}
+                  onChange={(e) => handleDatosFieldChange('dosis', e.target.value)}
+                  placeholder="Ej: 5 mg"
+                  className={styles.input}
+                />
+              </div>
+              <div>
+                <label htmlFor="via" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                  Vía de Administración
+                </label>
+                <input
+                  type="text"
+                  id="via"
+                  value={datosFields.via}
+                  onChange={(e) => handleDatosFieldChange('via', e.target.value)}
+                  placeholder="Ej: Oral, IV"
+                  className={styles.input}
+                />
+              </div>
+            </div>
+          )}
+
+          {formData.tipo === 'OTRO' && (
+            <div>
+              <label htmlFor="datosOtro" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                Datos (JSON) <span className={styles.help}>Ej: {"{"}"campo1": "valor1", "campo2": "valor2{"}"}</span>
+              </label>
+              <textarea
+                id="datosOtro"
+                value={datosFields.datosOtro}
+                onChange={(e) => handleDatosFieldChange('datosOtro', e.target.value)}
+                placeholder='{"campo1": "valor1", "campo2": "valor2"}'
+                rows={4}
+                className={styles.textarea}
+              />
+            </div>
+          )}
         </div>
 
         <div className={styles.formGroup}>

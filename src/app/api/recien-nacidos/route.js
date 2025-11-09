@@ -13,8 +13,13 @@ export async function GET(request) {
     }
 
     // Verificar permisos
+    // Permitir acceso si tiene permiso para ver recién nacidos O si tiene permiso para crear controles neonatales
+    // (necesario para que las enfermeras puedan buscar recién nacidos al registrar controles)
     const permissions = await getUserPermissions()
-    if (!permissions.includes('recien-nacido:view')) {
+    const canView = permissions.includes('recien-nacido:view')
+    const canCreateControl = permissions.includes('control_neonatal:create')
+    
+    if (!canView && !canCreateControl) {
       // Registrar intento de acceso sin permisos
       try {
         await prisma.auditoria.create({
