@@ -151,20 +151,25 @@ export async function POST(request) {
     const data = await request.json()
 
     // Validaciones de campos requeridos
-    if (!data.partoId || !data.episodioId || !data.formato) {
+    if (!data.partoId || !data.episodioId) {
       return Response.json(
-        { error: 'Parto, episodio y formato son requeridos' },
+        { error: 'Parto y episodio son requeridos' },
         { status: 400 }
       )
     }
 
-    // Validar formato
-    const formatosValidos = ['PDF', 'DOCX', 'HTML']
-    if (!formatosValidos.includes(data.formato.toUpperCase())) {
-      return Response.json(
-        { error: `Formato inválido. Debe ser uno de: ${formatosValidos.join(', ')}` },
-        { status: 400 }
-      )
+    // Establecer formato por defecto si no se proporciona
+    const formato = data.formato ? data.formato.toUpperCase() : 'PDF'
+
+    // Validar formato si se proporciona
+    if (data.formato) {
+      const formatosValidos = ['PDF', 'DOCX', 'HTML']
+      if (!formatosValidos.includes(formato)) {
+        return Response.json(
+          { error: `Formato inválido. Debe ser uno de: ${formatosValidos.join(', ')}` },
+          { status: 400 }
+        )
+      }
     }
 
     // Verificar que el episodio existe y está en estado INGRESADO
@@ -281,7 +286,7 @@ export async function POST(request) {
         data: {
           partoId: data.partoId,
           episodioId: data.episodioId,
-          formato: data.formato.toUpperCase(),
+          formato: formato,
           generadoPorId: user.id,
           contenido: contenido,
         },

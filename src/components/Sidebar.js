@@ -152,11 +152,11 @@ export default async function Sidebar() {
   }
 
   // INFORMES
-  // Generar Informe para Alta
+  // Generar Informe y Solicitud de alta
   if (permissions.includes('informe_alta:generate')) {
     informes.push({
       icon: 'fa-file-pdf',
-      label: 'Generar Informe para Alta',
+      label: 'Generar Informe y Solicitud de alta',
       href: '/dashboard/informe-alta',
       permission: 'informe_alta:generate',
     })

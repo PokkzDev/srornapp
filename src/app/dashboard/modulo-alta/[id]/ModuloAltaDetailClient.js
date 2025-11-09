@@ -99,6 +99,12 @@ export default function ModuloAltaDetailClient({ episodioId }) {
       return
     }
 
+    // Validar que el alta esté aprobada
+    if (episodio.estado !== 'ALTA') {
+      showModal('warning', 'Alta no aprobada', 'Solo se puede exportar el informe cuando el alta esté aprobada.')
+      return
+    }
+
     try {
       const response = await fetch(`/api/informe-alta/${episodio.informe.id}/export`, {
         method: 'POST',
@@ -108,18 +114,31 @@ export default function ModuloAltaDetailClient({ episodioId }) {
         body: JSON.stringify({ formato }),
       })
 
-      const result = await response.json()
-
       if (!response.ok) {
+        const result = await response.json()
         throw new Error(result.error || 'Error al exportar el informe')
       }
 
-      // Show modal for mock export
-      showModal(
-        'info',
-        'Exportación',
-        `Función de exportación en ${formato} aún no implementada.\n\nInforme: ${result.data.madreNombre}\nFormato: ${formato}`
-      )
+      // Si es PDF, descargar el archivo
+      if (formato === 'PDF') {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `Informe_Alta_${episodio.madre.rut}_${new Date().toISOString().split('T')[0]}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        showModal('success', 'Exportación exitosa', 'El PDF se ha descargado correctamente.')
+      } else {
+        const result = await response.json()
+        showModal(
+          'info',
+          'Exportación',
+          `Función de exportación en ${formato} aún no implementada.\n\nInforme: ${result.data.madreNombre}\nFormato: ${formato}`
+        )
+      }
     } catch (err) {
       console.error('Error exporting informe:', err)
       showModal('error', 'Error al exportar', err.message || 'Error al exportar el informe')
@@ -289,36 +308,45 @@ export default function ModuloAltaDetailClient({ episodioId }) {
               </div>
             </div>
             
-            {/* Export Buttons */}
-            <div className={styles.exportActions} style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={() => handleExport('PDF')}
-                className={styles.btnSecondary}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-              >
-                <i className="fas fa-file-pdf"></i>
-                Exportar PDF
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExport('DOCX')}
-                className={styles.btnSecondary}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-              >
-                <i className="fas fa-file-word"></i>
-                Exportar DOCX
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExport('HTML')}
-                className={styles.btnSecondary}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-              >
-                <i className="fas fa-file-code"></i>
-                Exportar HTML
-              </button>
-            </div>
+            {/* Export Buttons - Solo visible cuando el alta está aprobada */}
+            {episodio.estado === 'ALTA' ? (
+              <div className={styles.exportActions} style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => handleExport('PDF')}
+                  className={styles.btnSecondary}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <i className="fas fa-file-pdf"></i>
+                  Exportar PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport('DOCX')}
+                  className={styles.btnSecondary}
+                  disabled
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', opacity: 0.5, cursor: 'not-allowed' }}
+                >
+                  <i className="fas fa-file-word"></i>
+                  Exportar DOCX
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport('HTML')}
+                  className={styles.btnSecondary}
+                  disabled
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', opacity: 0.5, cursor: 'not-allowed' }}
+                >
+                  <i className="fas fa-file-code"></i>
+                  Exportar HTML
+                </button>
+              </div>
+            ) : (
+              <div className={styles.infoMessage} style={{ marginTop: '1rem' }}>
+                <i className="fas fa-info-circle"></i>
+                <p>El informe solo puede ser exportado una vez que el alta médica haya sido aprobada.</p>
+              </div>
+            )}
           </div>
 
           {/* Informe Content */}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Modal from '@/components/Modal'
 import styles from './page.module.css'
 
 export default function InformeAltaClient() {
@@ -12,9 +13,14 @@ export default function InformeAltaClient() {
   const [loading, setLoading] = useState(true)
   const [selectedEpisodioId, setSelectedEpisodioId] = useState('')
   const [selectedPartoId, setSelectedPartoId] = useState('')
-  const [formato, setFormato] = useState('PDF')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
+  const [modal, setModal] = useState({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: '',
+  })
 
   useEffect(() => {
     loadEpisodios()
@@ -77,7 +83,6 @@ export default function InformeAltaClient() {
         body: JSON.stringify({
           episodioId: selectedEpisodioId,
           partoId: selectedPartoId,
-          formato: formato,
         }),
       })
 
@@ -87,7 +92,13 @@ export default function InformeAltaClient() {
         throw new Error(result.error || 'Error al generar el informe')
       }
 
-      alert(`Informe generado exitosamente\nMadre: ${selectedEpisodio?.madre.nombres} ${selectedEpisodio?.madre.apellidos}\nParto: ${formatTipoParto(selectedParto?.tipo)}\nFormato: ${formato}`)
+      // Mostrar modal de éxito
+      setModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Solicitud Generada Exitosamente',
+        message: 'El informe de alta ha sido generado y la solicitud ha sido enviada al módulo de médicos para su revisión y aprobación.',
+      })
       
       // Reload episodios to refresh the list (episodio will no longer appear as it now has informe)
       await loadEpisodios()
@@ -162,15 +173,15 @@ export default function InformeAltaClient() {
       <div className={styles.header}>
         <h1>
           <i className="fas fa-file-pdf" style={{ marginRight: '0.5rem', color: 'var(--color-primary)' }}></i>
-          Generar Informe para Alta
+          Generar Informe y Solicitud de alta
         </h1>
       </div>
 
       <div className={styles.infoMessage}>
         <i className="fas fa-info-circle"></i>
         <p>
-          Esta sección permite generar el informe de alta para pacientes del módulo de maternidad. 
-          Seleccione primero el episodio (madre) y luego el parto correspondiente.
+          Esta sección permite generar la solicitud de informe de alta para pacientes del módulo de maternidad. 
+          Seleccione primero el episodio (madre) y luego el parto correspondiente. El médico será el encargado de crear el informe físico mediante la exportación.
         </p>
       </div>
 
@@ -239,22 +250,6 @@ export default function InformeAltaClient() {
           </div>
         )}
 
-        <div className={styles.formGroup}>
-          <label htmlFor="formato">
-            <i className="fas fa-file-export" style={{ marginRight: '0.5rem' }}></i>
-            Formato del Informe
-          </label>
-          <select
-            id="formato"
-            value={formato}
-            onChange={(e) => setFormato(e.target.value)}
-          >
-            <option value="PDF">PDF</option>
-            <option value="DOCX">Word (DOCX)</option>
-            <option value="HTML">HTML</option>
-          </select>
-        </div>
-
         {selectedEpisodio && selectedParto && (
           <div className={styles.previewBox}>
             <h3>Vista Previa del Informe</h3>
@@ -283,9 +278,6 @@ export default function InformeAltaClient() {
                 <strong>Lugar:</strong> {formatLugarParto(selectedParto.lugar)}
               </p>
               <p>
-                <strong>Formato:</strong> {formato}
-              </p>
-              <p>
                 <strong>Recién Nacidos:</strong> {selectedParto.recienNacidos?.length || 0}
               </p>
             </div>
@@ -306,12 +298,21 @@ export default function InformeAltaClient() {
             ) : (
               <>
                 <i className="fas fa-file-download"></i>
-                Generar Informe
+                Generar Solicitud
               </>
             )}
           </button>
         </div>
       </form>
+
+      {/* Modal */}
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={() => setModal({ ...modal, isOpen: false })}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+      />
     </div>
   )
 }
