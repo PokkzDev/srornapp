@@ -53,3 +53,4 @@ export default async function ControlNeonatalDetailPage({ params }) {
 
 
 
+
