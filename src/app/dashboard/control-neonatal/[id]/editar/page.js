@@ -41,3 +41,8 @@ export default async function EditarControlNeonatalPage({ params }) {
 
 
 
+
+
+
+
+

@@ -76,6 +76,14 @@ export async function POST(request, { params }) {
                 direccion: true,
               },
             },
+            updatedBy: {
+              select: {
+                id: true,
+                nombre: true,
+                rut: true,
+                email: true,
+              },
+            },
           },
         },
       },
@@ -295,6 +303,80 @@ export async function POST(request, { params }) {
           yPos += Math.max(6, obsLines.length * 4)
         })
       }
+
+      // Sección de Aprobación Médica
+      // Verificar si hay espacio suficiente, si no, crear nueva página
+      if (yPos > 200) {
+        doc.addPage()
+        yPos = 20
+      } else {
+        yPos += 10
+      }
+
+      // Título de la sección
+      doc.setFontSize(14)
+      doc.setFont(undefined, 'bold')
+      doc.text('APROBACIÓN MÉDICA', margin, yPos)
+      yPos += 15
+
+      // Información del médico que aprobó el alta
+      doc.setFontSize(10)
+      doc.setFont(undefined, 'normal')
+      
+      const medicoAprobacion = informe.episodio.updatedBy
+      if (medicoAprobacion) {
+        if (medicoAprobacion.nombre) {
+          yPos = addText(`Médico: ${medicoAprobacion.nombre}`, margin, yPos, maxWidth)
+        }
+        if (medicoAprobacion.rut) {
+          yPos = addText(`RUT: ${medicoAprobacion.rut}`, margin, yPos, maxWidth)
+        }
+      }
+
+      // Fecha de aprobación
+      if (informe.episodio.fechaAlta) {
+        const fechaAprobacion = new Date(informe.episodio.fechaAlta).toLocaleDateString('es-CL', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        })
+        yPos = addText(`Fecha de Aprobación: ${fechaAprobacion}`, margin, yPos, maxWidth)
+      }
+      yPos += 15
+
+      // Espacio para firma y timbre
+      const signatureY = yPos
+      const signatureWidth = 80
+      const signatureHeight = 40
+      const signatureX = pageWidth - margin - signatureWidth
+
+      // Rectángulo para timbre/sello (lado derecho)
+      doc.setLineWidth(0.5)
+      doc.rect(signatureX, signatureY, signatureWidth, signatureHeight)
+      doc.setFontSize(8)
+      doc.setFont(undefined, 'normal')
+      doc.text('TIMBRE/SELLO', signatureX + signatureWidth / 2, signatureY + 5, { align: 'center' })
+
+      // Línea para firma (lado izquierdo)
+      const firmaX = margin
+      const firmaWidth = pageWidth - margin * 2 - signatureWidth - 10
+      const firmaY = signatureY + signatureHeight - 10
+      
+      doc.setLineWidth(0.5)
+      doc.line(firmaX, firmaY, firmaX + firmaWidth, firmaY)
+      doc.setFontSize(9)
+      doc.setFont(undefined, 'normal')
+      doc.text('Firma del Médico', firmaX, firmaY - 2)
+
+      // Nombre del médico debajo de la línea de firma
+      if (medicoAprobacion?.nombre) {
+        doc.setFontSize(9)
+        doc.setFont(undefined, 'normal')
+        const nombreMedico = medicoAprobacion.nombre
+        doc.text(nombreMedico, firmaX, firmaY + 5)
+      }
+
+      yPos = signatureY + signatureHeight + 10
 
       // Pie de página
       const totalPages = doc.internal.pages.length - 1

@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -H 0.0.0.0",
-    "dev:tunnel": "echo 'Start your dev server first, then run: ngrok http 3000'",
+    "dev": "next dev -H 0.0.0.0 -p 3005",
+    "dev:tunnel": "echo 'Start your dev server first, then run: ngrok http 3005'",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3005",
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
