@@ -51,17 +51,9 @@ export default function LoginPage() {
   const [rutError, setRutError] = useState('')
 
   useEffect(() => {
-    // Check if we're in development mode
-    // Show desarrollo accounts for localhost, 127.0.0.1, or ngrok tunnels
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname
-      const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1'
-      const isNgrok = hostname.endsWith('.ngrok.io') || hostname.endsWith('.ngrok-free.app')
-      const isCloudflare = hostname.endsWith('.trycloudflare.com')
-      const isLocaltunnel = hostname.endsWith('.loca.lt')
-      
-      setIsDev(isLocalhost || isNgrok || isCloudflare || isLocaltunnel)
-    }
+    // Check if we're in development mode based on ENVIRONMENT variable
+    const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || 'production'
+    setIsDev(environment === 'development')
   }, [])
 
   const handleIdentifierChange = (value) => {
