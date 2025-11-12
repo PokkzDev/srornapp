@@ -21,6 +21,15 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
     apgar1: '',
     apgar5: '',
     observaciones: '',
+    // Campos para REM
+    tieneAnomaliaCongenita: false,
+    profilaxisHepatitisB: false,
+    profilaxisOcular: false,
+    reanimacionBasica: false,
+    reanimacionAvanzada: false,
+    ehi23: false,
+    madreHepatitisB: false,
+    profilaxisCompletaHepB: false,
   })
 
   // Cargar parto preseleccionado si existe
@@ -93,6 +102,15 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
         apgar1: initialData.apgar1?.toString() || '',
         apgar5: initialData.apgar5?.toString() || '',
         observaciones: initialData.observaciones || '',
+        // Campos para REM
+        tieneAnomaliaCongenita: initialData.tieneAnomaliaCongenita || false,
+        profilaxisHepatitisB: initialData.profilaxisHepatitisB || false,
+        profilaxisOcular: initialData.profilaxisOcular || false,
+        reanimacionBasica: initialData.reanimacionBasica || false,
+        reanimacionAvanzada: initialData.reanimacionAvanzada || false,
+        ehi23: initialData.ehi23 || false,
+        madreHepatitisB: initialData.madreHepatitisB || false,
+        profilaxisCompletaHepB: initialData.profilaxisCompletaHepB || false,
       })
     }
   }, [isEdit, initialData])
@@ -358,6 +376,128 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
                 {formData.observaciones.length}/500 caracteres
               </small>
             </div>
+            
+            {/* Sección: Datos para Reportes REM */}
+            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+              <h3 style={{ margin: '1rem 0 0.5rem 0', color: 'var(--color-primary)' }}>Datos para Reportes REM</h3>
+              <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
+                Los siguientes datos son necesarios para la generación de reportes estadísticos (REM)
+              </p>
+            </div>
+            
+            {/* Anomalía Congénita */}
+            <div className={styles.formGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="tieneAnomaliaCongenita"
+                  checked={formData.tieneAnomaliaCongenita}
+                  onChange={(e) => setFormData({...formData, tieneAnomaliaCongenita: e.target.checked})}
+                  className={styles.checkbox}
+                />
+                <span>Tiene Anomalía Congénita</span>
+              </label>
+            </div>
+            
+            {/* Profilaxis Hepatitis B */}
+            <div className={styles.formGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="profilaxisHepatitisB"
+                  checked={formData.profilaxisHepatitisB}
+                  onChange={(e) => setFormData({...formData, profilaxisHepatitisB: e.target.checked})}
+                  className={styles.checkbox}
+                />
+                <span>Profilaxis Hepatitis B</span>
+              </label>
+            </div>
+            
+            {/* Profilaxis Ocular */}
+            <div className={styles.formGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="profilaxisOcular"
+                  checked={formData.profilaxisOcular}
+                  onChange={(e) => setFormData({...formData, profilaxisOcular: e.target.checked})}
+                  className={styles.checkbox}
+                />
+                <span>Profilaxis Ocular (Gonorrea)</span>
+              </label>
+            </div>
+            
+            {/* Reanimación Básica */}
+            <div className={styles.formGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="reanimacionBasica"
+                  checked={formData.reanimacionBasica}
+                  onChange={(e) => setFormData({...formData, reanimacionBasica: e.target.checked})}
+                  className={styles.checkbox}
+                />
+                <span>Reanimación Básica (Apgar 0-3 al 1 min)</span>
+              </label>
+            </div>
+            
+            {/* Reanimación Avanzada */}
+            <div className={styles.formGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="reanimacionAvanzada"
+                  checked={formData.reanimacionAvanzada}
+                  onChange={(e) => setFormData({...formData, reanimacionAvanzada: e.target.checked})}
+                  className={styles.checkbox}
+                />
+                <span>Reanimación Avanzada (Apgar 6-5 a los 5 min)</span>
+              </label>
+            </div>
+            
+            {/* EHI Grado II y III */}
+            <div className={styles.formGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="ehi23"
+                  checked={formData.ehi23}
+                  onChange={(e) => setFormData({...formData, ehi23: e.target.checked})}
+                  className={styles.checkbox}
+                />
+                <span>EHI Grado II y III</span>
+              </label>
+            </div>
+            
+            {/* Madre con Hepatitis B */}
+            <div className={styles.formGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="madreHepatitisB"
+                  checked={formData.madreHepatitisB}
+                  onChange={(e) => setFormData({...formData, madreHepatitisB: e.target.checked})}
+                  className={styles.checkbox}
+                />
+                <span>Madre con Hepatitis B Positiva</span>
+              </label>
+            </div>
+            
+            {/* Profilaxis Completa Hep B (si madre positiva) */}
+            {formData.madreHepatitisB && (
+              <div className={styles.formGroup}>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    name="profilaxisCompletaHepB"
+                    checked={formData.profilaxisCompletaHepB}
+                    onChange={(e) => setFormData({...formData, profilaxisCompletaHepB: e.target.checked})}
+                    className={styles.checkbox}
+                  />
+                  <span>Profilaxis Completa según Normativa</span>
+                </label>
+              </div>
+            )}
           </div>
 
           <div className={styles.formActions}>

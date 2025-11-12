@@ -222,6 +222,10 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
     direccion: '',
     telefono: '',
     fichaClinica: '',
+    // Campos para REM
+    esPrimigestas: false,
+    numeroGestaciones: '',
+    numeroPartos: '',
   })
 
   // Cargar datos iniciales si es modo edición
@@ -236,6 +240,10 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
         direccion: initialData.direccion || '',
         telefono: initialData.telefono || '',
         fichaClinica: initialData.fichaClinica || '',
+        // Campos para REM
+        esPrimigestas: initialData.esPrimigestas || false,
+        numeroGestaciones: initialData.numeroGestaciones?.toString() || '',
+        numeroPartos: initialData.numeroPartos?.toString() || '',
       })
     }
   }, [isEdit, initialData])
@@ -593,6 +601,59 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
             />
             <small className={styles.helpText}>
               Número de identificación clínica del hospital (opcional, debe ser único)
+            </small>
+          </div>
+          
+          {/* Es Primigesta (para REM) */}
+          <div className={styles.formGroup}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                name="esPrimigestas"
+                checked={formData.esPrimigestas}
+                onChange={(e) => setFormData({...formData, esPrimigestas: e.target.checked})}
+                className={styles.checkbox}
+              />
+              <span>Es Primigesta (primer parto)</span>
+            </label>
+            <small className={styles.helpText}>
+              Marcar si es la primera vez que dará a luz (para reportes REM)
+            </small>
+          </div>
+          
+          {/* Número de Gestaciones (G) */}
+          <div className={styles.formGroup}>
+            <label htmlFor="numeroGestaciones">Número de Gestaciones (G)</label>
+            <input
+              type="number"
+              id="numeroGestaciones"
+              name="numeroGestaciones"
+              value={formData.numeroGestaciones}
+              onChange={handleChange}
+              min="0"
+              max="20"
+              placeholder="Ej: 2"
+            />
+            <small className={styles.helpText}>
+              Número total de gestaciones incluyendo la actual
+            </small>
+          </div>
+          
+          {/* Número de Partos (P) */}
+          <div className={styles.formGroup}>
+            <label htmlFor="numeroPartos">Número de Partos Previos (P)</label>
+            <input
+              type="number"
+              id="numeroPartos"
+              name="numeroPartos"
+              value={formData.numeroPartos}
+              onChange={handleChange}
+              min="0"
+              max="20"
+              placeholder="Ej: 1"
+            />
+            <small className={styles.helpText}>
+              Número de partos previos (sin incluir el actual)
             </small>
           </div>
         </div>

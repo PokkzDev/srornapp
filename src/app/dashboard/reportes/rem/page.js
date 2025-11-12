@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getCurrentUser, getUserPermissions } from '@/lib/auth'
 import DashboardLayout from '@/components/DashboardLayout'
+import ReporteREMClient from './ReporteREMClient'
 import styles from './page.module.css'
 
 export default async function ReporteREMPage() {
@@ -33,26 +34,7 @@ export default async function ReporteREMPage() {
 
   return (
     <DashboardLayout>
-      <div className={styles.content}>
-        <div className={styles.header}>
-          <h1>
-            <i className="fas fa-file-alt"></i> Reporte REM
-          </h1>
-        </div>
-        <div className={styles.developmentBox}>
-          <div className={styles.developmentIcon}>
-            <i className="fas fa-tools"></i>
-          </div>
-          <h2>Módulo en Desarrollo</h2>
-          <p>
-            El módulo de Reporte REM se encuentra actualmente en desarrollo.
-            Estará disponible próximamente.
-          </p>
-          <a href="/dashboard" className={styles.btnSecondary}>
-            Volver al Dashboard
-          </a>
-        </div>
-      </div>
+      <ReporteREMClient />
     </DashboardLayout>
   )
 }

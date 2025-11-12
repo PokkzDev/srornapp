@@ -55,6 +55,10 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
     enfermerasIds: [],
     complicaciones: '',
     observaciones: '',
+    // Campos para REM
+    semanasGestacion: '',
+    presentacionFetal: '',
+    lactanciaMaterna60min: false,
   })
 
   // Cargar madre preseleccionada si existe
@@ -143,6 +147,10 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
         enfermerasIds: initialData.enfermeras?.map((e) => e.user.id) || [],
         complicaciones: initialData.complicaciones || '',
         observaciones: initialData.observaciones || '',
+        // Campos para REM
+        semanasGestacion: initialData.semanasGestacion?.toString() || '',
+        presentacionFetal: initialData.presentacionFetal || '',
+        lactanciaMaterna60min: initialData.lactanciaMaterna60min || false,
       })
     }
   }, [isEdit, initialData])
@@ -278,6 +286,10 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
         enfermerasIds: formData.enfermerasIds || [],
         complicaciones: formData.complicaciones || null,
         observaciones: formData.observaciones || null,
+        // Campos para REM
+        semanasGestacion: formData.semanasGestacion ? parseInt(formData.semanasGestacion) : null,
+        presentacionFetal: formData.presentacionFetal || null,
+        lactanciaMaterna60min: formData.lactanciaMaterna60min || false,
       }
 
       const response = await fetch(url, {
@@ -639,6 +651,64 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
                 />
                 <small className={styles.helpText}>
                   {formData.observaciones.length}/500 caracteres
+                </small>
+              </div>
+              
+              {/* Semanas de Gestación (para REM) */}
+              <div className={styles.formGroup}>
+                <label htmlFor="semanasGestacion">Semanas de Gestación</label>
+                <input
+                  type="number"
+                  id="semanasGestacion"
+                  name="semanasGestacion"
+                  value={formData.semanasGestacion}
+                  onChange={handleChange}
+                  min="0"
+                  max="45"
+                  className={styles.input}
+                  placeholder="Ej: 38"
+                />
+                <small className={styles.helpText}>
+                  Para reportes REM (clasificación &lt;20, 20-36, ≥37 semanas)
+                </small>
+              </div>
+              
+              {/* Presentación Fetal (para REM) */}
+              <div className={styles.formGroup}>
+                <label htmlFor="presentacionFetal">Presentación Fetal</label>
+                <select
+                  id="presentacionFetal"
+                  name="presentacionFetal"
+                  value={formData.presentacionFetal}
+                  onChange={handleChange}
+                  className={styles.select}
+                >
+                  <option value="">Seleccione...</option>
+                  <option value="Cefálica">Cefálica</option>
+                  <option value="Podálica/Nalgas">Podálica/Nalgas</option>
+                  <option value="Cara">Cara</option>
+                  <option value="Transversa">Transversa</option>
+                  <option value="Otra">Otra</option>
+                </select>
+                <small className={styles.helpText}>
+                  Para reportes REM
+                </small>
+              </div>
+              
+              {/* Lactancia Materna 60 min (para REM) */}
+              <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    name="lactanciaMaterna60min"
+                    checked={formData.lactanciaMaterna60min}
+                    onChange={(e) => setFormData({...formData, lactanciaMaterna60min: e.target.checked})}
+                    className={styles.checkbox}
+                  />
+                  <span>Lactancia materna en primeros 60 minutos (para RN ≥ 2,500g)</span>
+                </label>
+                <small className={styles.helpText}>
+                  Marcar si el recién nacido con peso ≥ 2,500g tuvo lactancia materna en los primeros 60 minutos de vida
                 </small>
               </div>
             </div>

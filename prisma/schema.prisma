@@ -205,6 +205,11 @@ model Madre {
   direccion       String?   @db.VarChar(200)
   telefono        String?   @db.VarChar(20)
   fichaClinica    String?   @unique @db.VarChar(30)
+  
+  // Datos clínicos para REM
+  esPrimigestas   Boolean @default(false) // Para reportes REM - Primera vez dando a luz
+  numeroGestaciones Int? // Número total de gestaciones (G)
+  numeroPartos     Int? // Número de partos previos (P)
 
   // Relación con partos
   partos Parto[]
@@ -244,6 +249,13 @@ model Parto {
   lugarDetalle   String?    @db.VarChar(120) // obligatorio si lugar=OTRO (validar en API)
   complicaciones String?    @db.VarChar(500)
   observaciones  String?    @db.VarChar(500)
+  
+  // Datos clínicos para REM
+  semanasGestacion Int? // Semanas de gestación al parto (para clasificación <20, 20-36, >=37)
+  presentacionFetal String? @db.VarChar(50) // Cefálica, Podálica, Transversa, etc.
+  
+  // Lactancia materna (para REM)
+  lactanciaMaterna60min Boolean @default(false) // Lactancia materna en primeros 60 min (RN >= 2500g)
 
   // Relaciones many-to-many con profesionales
   matronas    PartoMatrona[]
@@ -337,6 +349,22 @@ model RecienNacido {
   apgar1        Int? // 0..10
   apgar5        Int? // 0..10
   observaciones String? @db.VarChar(500)
+  
+  // Datos clínicos para REM
+  tieneAnomaliaCongenita Boolean @default(false) // Para reportes REM D.1
+  
+  // Profilaxis (para REM D.2)
+  profilaxisHepatitisB Boolean @default(false) // Vacuna Hepatitis B
+  profilaxisOcular     Boolean @default(false) // Profilaxis ocular para gonorrea
+  
+  // Reanimación (para REM D.2)
+  reanimacionBasica   Boolean @default(false) // Apgar 3-3 al minuto
+  reanimacionAvanzada Boolean @default(false) // Apgar 6-5 a los 5 minutos
+  ehi23               Boolean @default(false) // EHI Grado II y III
+  
+  // Madre con Hepatitis B positiva (para REM J)
+  madreHepatitisB     Boolean @default(false) // Si la madre tiene Hepatitis B positiva
+  profilaxisCompletaHepB Boolean @default(false) // Si recibió profilaxis completa según normativa
 
   // Relaciones asistenciales
   episodios  EpisodioURNI[]
