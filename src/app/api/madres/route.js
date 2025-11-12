@@ -67,10 +67,19 @@ export async function GET(request) {
       nombres: true,
       apellidos: true,
       edad: true,
+      edadAnos: true,
       fechaNacimiento: true,
       direccion: true,
       telefono: true,
       fichaClinica: true,
+      // Campos REM
+      pertenenciaPuebloOriginario: true,
+      condicionMigrante: true,
+      condicionDiscapacidad: true,
+      condicionPrivadaLibertad: true,
+      identidadTrans: true,
+      hepatitisBPositiva: true,
+      controlPrenatal: true,
       createdAt: true,
       updatedAt: true,
     } : {
@@ -79,10 +88,19 @@ export async function GET(request) {
       nombres: true,
       apellidos: true,
       edad: true,
+      edadAnos: true,
       fechaNacimiento: true,
       direccion: true,
       telefono: true,
       fichaClinica: true,
+      // Campos REM
+      pertenenciaPuebloOriginario: true,
+      condicionMigrante: true,
+      condicionDiscapacidad: true,
+      condicionPrivadaLibertad: true,
+      identidadTrans: true,
+      hepatitisBPositiva: true,
+      controlPrenatal: true,
       createdAt: true,
       updatedAt: true,
     }
@@ -224,7 +242,7 @@ export async function POST(request) {
 
     // Si tiene permisos limitados, validar que solo se envíen campos permitidos
     if (isLimited) {
-      const allowedFields = ['rut', 'nombres', 'apellidos', 'edad', 'fechaNacimiento', 'direccion', 'telefono', 'fichaClinica']
+      const allowedFields = ['rut', 'nombres', 'apellidos', 'edad', 'edadAnos', 'fechaNacimiento', 'direccion', 'telefono', 'fichaClinica', 'pertenenciaPuebloOriginario', 'condicionMigrante', 'condicionDiscapacidad', 'condicionPrivadaLibertad', 'identidadTrans', 'hepatitisBPositiva', 'controlPrenatal']
       const providedFields = Object.keys(data)
       const invalidFields = providedFields.filter(field => !allowedFields.includes(field))
       
@@ -292,6 +310,16 @@ export async function POST(request) {
       }
     }
 
+    if (data.edadAnos !== undefined && data.edadAnos !== null && data.edadAnos !== '') {
+      madreData.edadAnos = parseInt(data.edadAnos)
+      if (isNaN(madreData.edadAnos) || madreData.edadAnos < 0) {
+        return Response.json(
+          { error: 'La edad en años debe ser un número válido' },
+          { status: 400 }
+        )
+      }
+    }
+
     if (data.fechaNacimiento) {
       madreData.fechaNacimiento = new Date(data.fechaNacimiento)
       if (isNaN(madreData.fechaNacimiento.getTime())) {
@@ -312,6 +340,29 @@ export async function POST(request) {
 
     if (data.fichaClinica) {
       madreData.fichaClinica = data.fichaClinica.trim()
+    }
+
+    // Campos REM - booleanos opcionales
+    if (data.pertenenciaPuebloOriginario !== undefined) {
+      madreData.pertenenciaPuebloOriginario = data.pertenenciaPuebloOriginario === null ? null : Boolean(data.pertenenciaPuebloOriginario)
+    }
+    if (data.condicionMigrante !== undefined) {
+      madreData.condicionMigrante = data.condicionMigrante === null ? null : Boolean(data.condicionMigrante)
+    }
+    if (data.condicionDiscapacidad !== undefined) {
+      madreData.condicionDiscapacidad = data.condicionDiscapacidad === null ? null : Boolean(data.condicionDiscapacidad)
+    }
+    if (data.condicionPrivadaLibertad !== undefined) {
+      madreData.condicionPrivadaLibertad = data.condicionPrivadaLibertad === null ? null : Boolean(data.condicionPrivadaLibertad)
+    }
+    if (data.identidadTrans !== undefined) {
+      madreData.identidadTrans = data.identidadTrans === null ? null : Boolean(data.identidadTrans)
+    }
+    if (data.hepatitisBPositiva !== undefined) {
+      madreData.hepatitisBPositiva = data.hepatitisBPositiva === null ? null : Boolean(data.hepatitisBPositiva)
+    }
+    if (data.controlPrenatal !== undefined) {
+      madreData.controlPrenatal = data.controlPrenatal === null ? null : Boolean(data.controlPrenatal)
     }
 
     // Obtener IP y User-Agent para auditoría

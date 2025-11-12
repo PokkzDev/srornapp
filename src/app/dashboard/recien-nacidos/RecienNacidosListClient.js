@@ -291,10 +291,10 @@ export default function RecienNacidosListClient({ permissions }) {
                   <td>
                     <span className={styles.badge}>{formatSexo(rn.sexo)}</span>
                   </td>
-                  <td>{rn.pesoGr ? `${rn.pesoGr} g` : '-'}</td>
+                  <td>{rn.pesoNacimientoGramos ? `${rn.pesoNacimientoGramos} g` : '-'}</td>
                   <td>{rn.tallaCm ? `${rn.tallaCm} cm` : '-'}</td>
-                  <td>{rn.apgar1 !== null && rn.apgar1 !== undefined ? rn.apgar1 : '-'}</td>
-                  <td>{rn.apgar5 !== null && rn.apgar5 !== undefined ? rn.apgar5 : '-'}</td>
+                  <td>{rn.apgar1Min !== null && rn.apgar1Min !== undefined ? rn.apgar1Min : '-'}</td>
+                  <td>{rn.apgar5Min !== null && rn.apgar5Min !== undefined ? rn.apgar5Min : '-'}</td>
                   <td className={styles.actionsCol}>
                     <div className={styles.actions}>
                       <Link

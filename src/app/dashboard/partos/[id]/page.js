@@ -81,10 +81,10 @@ export default async function PartoDetailPage({ params }) {
         select: {
           id: true,
           sexo: true,
-          pesoGr: true,
+          pesoNacimientoGramos: true,
           tallaCm: true,
-          apgar1: true,
-          apgar5: true,
+          apgar1Min: true,
+          apgar5Min: true,
         },
       },
     },
@@ -120,15 +120,55 @@ export default async function PartoDetailPage({ params }) {
     })
   }
 
+  // Función para obtener el tipo de parto puro (sin lugar)
+  const obtenerTipoPartoPuro = (tipo) => {
+    if (!tipo) return null
+    
+    switch (tipo) {
+      case 'DOMICILIO_PROFESIONAL':
+      case 'DOMICILIO_SIN_PROFESIONAL':
+        return 'VAGINAL'
+      case 'PREHOSPITALARIO':
+      case 'FUERA_RED':
+        return 'VAGINAL'
+      case 'VAGINAL':
+      case 'INSTRUMENTAL':
+      case 'CESAREA_ELECTIVA':
+      case 'CESAREA_URGENCIA':
+        return tipo
+      default:
+        return tipo
+    }
+  }
+
+  // Función para obtener el contexto especial del tipo
+  const obtenerContextoEspecial = (tipo) => {
+    if (!tipo) return null
+    
+    switch (tipo) {
+      case 'DOMICILIO_PROFESIONAL':
+        return 'Domicilio con Profesional'
+      case 'DOMICILIO_SIN_PROFESIONAL':
+        return 'Domicilio sin Profesional'
+      case 'PREHOSPITALARIO':
+        return 'Prehospitalario'
+      case 'FUERA_RED':
+        return 'Fuera de Red'
+      default:
+        return null
+    }
+  }
+
   // Función para formatear tipo de parto
   const formatTipo = (tipo) => {
+    const tipoPuro = obtenerTipoPartoPuro(tipo)
     const tipos = {
-      EUTOCICO: 'Eutócico',
-      DISTOCICO: 'Distócico',
+      VAGINAL: 'Vaginal',
+      INSTRUMENTAL: 'Instrumental',
       CESAREA_ELECTIVA: 'Cesárea Electiva',
-      CESAREA_EMERGENCIA: 'Cesárea Emergencia',
+      CESAREA_URGENCIA: 'Cesárea Urgencia',
     }
-    return tipos[tipo] || tipo
+    return tipos[tipoPuro] || tipoPuro
   }
 
   // Función para formatear lugar
@@ -191,6 +231,12 @@ export default async function PartoDetailPage({ params }) {
                 <label>Tipo de Parto</label>
                 <span className={styles.badge}>{formatTipo(parto.tipo)}</span>
               </div>
+              {obtenerContextoEspecial(parto.tipo) && (
+                <div className={styles.infoItem}>
+                  <label>Contexto Especial</label>
+                  <span className={styles.badge}>{obtenerContextoEspecial(parto.tipo)}</span>
+                </div>
+              )}
               <div className={styles.infoItem}>
                 <label>Lugar</label>
                 <span>
@@ -202,6 +248,125 @@ export default async function PartoDetailPage({ params }) {
               </div>
             </div>
           </div>
+
+          {/* Características del Parto */}
+          {(parto.establecimientoId || parto.edadGestacionalSemanas !== null) && (
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>
+                <i className="fas fa-info-circle"></i>
+                Características del Parto
+              </h2>
+              <div className={styles.infoGrid}>
+                {parto.establecimientoId && (
+                  <div className={styles.infoItem}>
+                    <label>Establecimiento ID</label>
+                    <span>{parto.establecimientoId}</span>
+                  </div>
+                )}
+                {parto.edadGestacionalSemanas !== null && (
+                  <div className={styles.infoItem}>
+                    <label>Edad Gestacional</label>
+                    <span>{parto.edadGestacionalSemanas} semanas</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Modelo de Atención */}
+          {(parto.inicioTrabajoParto || parto.posicionExpulsivo || 
+            parto.conduccionOxitocica !== null || parto.libertadMovimiento !== null ||
+            parto.regimenHidricoAmplio !== null || parto.manejoDolorNoFarmacologico !== null ||
+            parto.manejoDolorFarmacologico !== null || parto.episiotomia !== null) && (
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>
+                <i className="fas fa-hospital"></i>
+                Modelo de Atención
+              </h2>
+              <div className={styles.infoGrid}>
+                {parto.inicioTrabajoParto && (
+                  <div className={styles.infoItem}>
+                    <label>Inicio Trabajo Parto</label>
+                    <span>
+                      {parto.inicioTrabajoParto === 'ESPONTANEO' ? 'Espontáneo' :
+                       parto.inicioTrabajoParto === 'INDUCIDO_MECANICO' ? 'Inducido Mecánico' :
+                       parto.inicioTrabajoParto === 'INDUCIDO_FARMACOLOGICO' ? 'Inducido Farmacológico' :
+                       parto.inicioTrabajoParto}
+                    </span>
+                  </div>
+                )}
+                {parto.posicionExpulsivo && (
+                  <div className={styles.infoItem}>
+                    <label>Posición Expulsivo</label>
+                    <span>
+                      {parto.posicionExpulsivo === 'LITOTOMIA' ? 'Litotomía' :
+                       parto.posicionExpulsivo === 'OTRAS' ? 'Otras' :
+                       parto.posicionExpulsivo}
+                    </span>
+                  </div>
+                )}
+                {(parto.conduccionOxitocica !== null || parto.libertadMovimiento !== null ||
+                  parto.regimenHidricoAmplio !== null || parto.manejoDolorNoFarmacologico !== null ||
+                  parto.manejoDolorFarmacologico !== null || parto.episiotomia !== null) && (
+                  <div className={styles.infoItem} style={{ gridColumn: '1 / -1' }}>
+                    <label>Prácticas Aplicadas</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      {parto.conduccionOxitocica && <span className={styles.badge}>Conducción Oxitócica</span>}
+                      {parto.libertadMovimiento && <span className={styles.badge}>Libertad de Movimiento</span>}
+                      {parto.regimenHidricoAmplio && <span className={styles.badge}>Régimen Hídrico Amplio</span>}
+                      {parto.manejoDolorNoFarmacologico && <span className={styles.badge}>Manejo Dolor No Farmacológico</span>}
+                      {parto.manejoDolorFarmacologico && <span className={styles.badge}>Manejo Dolor Farmacológico</span>}
+                      {parto.episiotomia && <span className={styles.badge}>Episiotomía</span>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Acompañamiento */}
+          {(parto.acompananteDuranteTrabajo !== null || parto.acompananteSoloExpulsivo !== null) && (
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>
+                <i className="fas fa-users"></i>
+                Acompañamiento
+              </h2>
+              <div className={styles.infoGrid}>
+                <div className={styles.infoItem} style={{ gridColumn: '1 / -1' }}>
+                  <label>Acompañamiento</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {parto.acompananteDuranteTrabajo && <span className={styles.badge}>Acompañante Durante Trabajo</span>}
+                    {parto.acompananteSoloExpulsivo && <span className={styles.badge}>Acompañante Solo en Expulsivo</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Buenas Prácticas */}
+          {(parto.oxitocinaProfilactica !== null || parto.ligaduraTardiaCordon !== null ||
+            parto.atencionPertinenciaCultural !== null || parto.contactoPielPielMadre30min !== null ||
+            parto.contactoPielPielAcomp30min !== null || parto.lactancia60minAlMenosUnRn !== null) && (
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>
+                <i className="fas fa-check-circle"></i>
+                Buenas Prácticas
+              </h2>
+              <div className={styles.infoGrid}>
+                <div className={styles.infoItem} style={{ gridColumn: '1 / -1' }}>
+                  <label>Buenas Prácticas Aplicadas</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {parto.oxitocinaProfilactica && <span className={styles.badge}>Oxitocina Profiláctica</span>}
+                    {parto.ligaduraTardiaCordon && <span className={styles.badge}>Ligadura Tardía Cordón</span>}
+                    {parto.atencionPertinenciaCultural && <span className={styles.badge}>Atención Pertinencia Cultural</span>}
+                    {parto.contactoPielPielMadre30min && <span className={styles.badge}>Contacto Piel-Piel Madre (30 min)</span>}
+                    {parto.contactoPielPielAcomp30min && <span className={styles.badge}>Contacto Piel-Piel Acompañante (30 min)</span>}
+                    {parto.lactancia60minAlMenosUnRn && <span className={styles.badge}>Lactancia 60 min</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>
@@ -289,17 +454,17 @@ export default async function PartoDetailPage({ params }) {
             </div>
           </div>
 
-          {(parto.complicaciones || parto.observaciones) && (
+          {(parto.complicacionesTexto || parto.observaciones) && (
             <div className={styles.section}>
               <h2 className={styles.sectionTitle}>
                 <i className="fas fa-notes-medical"></i>
                 Observaciones Clínicas
               </h2>
               <div className={styles.infoGrid}>
-                {parto.complicaciones && (
+                {parto.complicacionesTexto && (
                   <div className={styles.infoItem}>
                     <label>Complicaciones</label>
-                    <span>{parto.complicaciones}</span>
+                    <span>{parto.complicacionesTexto}</span>
                   </div>
                 )}
                 {parto.observaciones && (
@@ -329,9 +494,9 @@ export default async function PartoDetailPage({ params }) {
                       <span className={styles.rnSexo}>{formatSexo(rn.sexo)}</span>
                     </div>
                     <div className={styles.rnDetails}>
-                      {rn.pesoGr && (
+                      {rn.pesoNacimientoGramos && (
                         <span>
-                          <strong>Peso:</strong> {rn.pesoGr} g
+                          <strong>Peso:</strong> {rn.pesoNacimientoGramos} g
                         </span>
                       )}
                       {rn.tallaCm && (
@@ -339,14 +504,14 @@ export default async function PartoDetailPage({ params }) {
                           <strong>Talla:</strong> {rn.tallaCm} cm
                         </span>
                       )}
-                      {rn.apgar1 !== null && (
+                      {rn.apgar1Min !== null && (
                         <span>
-                          <strong>Apgar 1':</strong> {rn.apgar1}
+                          <strong>Apgar 1':</strong> {rn.apgar1Min}
                         </span>
                       )}
-                      {rn.apgar5 !== null && (
+                      {rn.apgar5Min !== null && (
                         <span>
-                          <strong>Apgar 5':</strong> {rn.apgar5}
+                          <strong>Apgar 5':</strong> {rn.apgar5Min}
                         </span>
                       )}
                     </div>

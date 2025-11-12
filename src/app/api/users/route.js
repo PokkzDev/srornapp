@@ -40,19 +40,36 @@ export async function GET(request) {
 
     // Verificar permisos
     const permissions = await getUserPermissions()
-    if (!permissions.includes('user:view')) {
+    
+    // Obtener parámetro de filtro por rol
+    const { searchParams } = new URL(request.url)
+    const role = searchParams.get('role') // 'matrona', 'medico', 'enfermera'
+    
+    // Si se solicita con role=medico y el usuario tiene permisos de URNI, permitir acceso
+    const tienePermisoUrni = 
+      role === 'medico' && (
+        permissions.includes('urni:episodio:create') || 
+        permissions.includes('urni:episodio:update') ||
+        permissions.includes('urni:read') ||
+        permissions.includes('urni:episodio:view')
+      )
+    
+    // Si no tiene permiso user:view ni permisos de URNI (cuando role=medico), denegar acceso
+    if (!permissions.includes('user:view') && !tienePermisoUrni) {
       return Response.json(
         { error: 'No tiene permisos para ver usuarios' },
         { status: 403 }
       )
     }
 
-    // Obtener parámetro de filtro por rol
-    const { searchParams } = new URL(request.url)
-    const role = searchParams.get('role') // 'matrona', 'medico', 'enfermera'
-
-    // Construir query base - incluir todos los usuarios (activos e inactivos) para administradores TI
+    // Construir query base
     let where = {}
+    
+    // Si se solicita con role=medico desde URNI sin permiso user:view, solo mostrar usuarios activos
+    // Si tiene permiso user:view, mostrar todos (activos e inactivos)
+    if (tienePermisoUrni && !permissions.includes('user:view')) {
+      where.activo = true
+    }
 
     // Si se especifica un rol, filtrar usuarios que tengan ese rol
     if (role) {

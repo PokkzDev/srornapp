@@ -54,10 +54,10 @@ export async function POST(request, { params }) {
               select: {
                 id: true,
                 sexo: true,
-                pesoGr: true,
+                pesoNacimientoGramos: true,
                 tallaCm: true,
-                apgar1: true,
-                apgar5: true,
+                apgar1Min: true,
+                apgar5Min: true,
                 observaciones: true,
               },
             },
@@ -230,8 +230,8 @@ export async function POST(request, { params }) {
         : lugarPartoMap[informe.parto.lugar] || informe.parto.lugar
       yPos = addText(`Lugar: ${lugarTexto}`, margin, yPos, maxWidth)
 
-      if (informe.parto.observaciones || informe.parto.complicaciones) {
-        yPos = addText(`Observaciones: ${informe.parto.observaciones || informe.parto.complicaciones}`, margin, yPos, maxWidth)
+      if (informe.parto.observaciones || informe.parto.complicacionesTexto) {
+        yPos = addText(`Observaciones: ${informe.parto.observaciones || informe.parto.complicacionesTexto}`, margin, yPos, maxWidth)
       }
       yPos += 5
 
@@ -289,13 +289,13 @@ export async function POST(request, { params }) {
           xPos = margin
           doc.text(sexoMap[rn.sexo] || rn.sexo, xPos, yPos)
           xPos += colWidths[0]
-          doc.text(rn.pesoGr?.toString() || '-', xPos, yPos)
+          doc.text(rn.pesoNacimientoGramos?.toString() || '-', xPos, yPos)
           xPos += colWidths[1]
           doc.text(rn.tallaCm?.toString() || '-', xPos, yPos)
           xPos += colWidths[2]
-          doc.text(rn.apgar1?.toString() || '-', xPos, yPos)
+          doc.text(rn.apgar1Min?.toString() || '-', xPos, yPos)
           xPos += colWidths[3]
-          doc.text(rn.apgar5?.toString() || '-', xPos, yPos)
+          doc.text(rn.apgar5Min?.toString() || '-', xPos, yPos)
           xPos += colWidths[4]
           const observaciones = rn.observaciones || '-'
           const obsLines = doc.splitTextToSize(observaciones, colWidths[5])

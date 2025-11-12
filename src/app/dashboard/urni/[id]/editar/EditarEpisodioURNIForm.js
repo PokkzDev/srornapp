@@ -4,44 +4,70 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
 
-export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
+export default function EditarEpisodioURNIForm({ episodioId }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [loadingData, setLoadingData] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [searchingRN, setSearchingRN] = useState(false)
-  const [recienNacidos, setRecienNacidos] = useState([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedRN, setSelectedRN] = useState(null)
   const [medicos, setMedicos] = useState([])
   const [loadingMedicos, setLoadingMedicos] = useState(false)
+  const [episodio, setEpisodio] = useState(null)
 
   const [formData, setFormData] = useState({
-    rnId: rnIdPreseleccionado || '',
-    fechaHoraIngreso: new Date().toISOString().slice(0, 16),
+    fechaHoraIngreso: '',
     motivoIngreso: '',
     servicioUnidad: '',
     responsableClinicoId: '',
   })
 
-  // Cargar RN preseleccionado si existe
+  // Cargar datos del episodio
   useEffect(() => {
-    if (rnIdPreseleccionado) {
-      const loadRN = async () => {
-        try {
-          const response = await fetch(`/api/recien-nacidos/${rnIdPreseleccionado}`)
-          if (response.ok) {
-            const data = await response.json()
-            setSelectedRN(data.data)
-            setFormData((prev) => ({ ...prev, rnId: rnIdPreseleccionado }))
-          }
-        } catch (err) {
-          console.error('Error loading RN:', err)
+    const loadEpisodio = async () => {
+      setLoadingData(true)
+      setError('')
+      try {
+        const response = await fetch(`/api/urni/episodio/${episodioId}`)
+        if (!response.ok) {
+          const data = await response.json()
+          throw new Error(data.error || 'Error al cargar el episodio')
         }
+
+        const data = await response.json()
+        const episodioData = data.data
+
+        // Verificar que el episodio no esté dado de alta
+        if (episodioData.estado === 'ALTA') {
+          setError('No se puede editar un episodio que ya fue dado de alta')
+          setLoadingData(false)
+          return
+        }
+
+        setEpisodio(episodioData)
+
+        // Formatear fechaHoraIngreso para el input datetime-local
+        const fechaHoraIngreso = episodioData.fechaHoraIngreso
+          ? new Date(episodioData.fechaHoraIngreso).toISOString().slice(0, 16)
+          : ''
+
+        setFormData({
+          fechaHoraIngreso: fechaHoraIngreso,
+          motivoIngreso: episodioData.motivoIngreso || '',
+          servicioUnidad: episodioData.servicioUnidad || '',
+          responsableClinicoId: episodioData.responsableClinicoId || '',
+        })
+      } catch (err) {
+        console.error('Error loading episodio:', err)
+        setError(err.message || 'Error al cargar el episodio')
+      } finally {
+        setLoadingData(false)
       }
-      loadRN()
     }
-  }, [rnIdPreseleccionado])
+
+    if (episodioId) {
+      loadEpisodio()
+    }
+  }, [episodioId])
 
   // Cargar médicos para selector de responsable clínico
   useEffect(() => {
@@ -65,40 +91,6 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
     loadMedicos()
   }, [])
 
-  // Buscar recién nacidos
-  useEffect(() => {
-    if (searchTerm.length >= 2) {
-      const timer = setTimeout(() => {
-        searchRecienNacidos()
-      }, 500)
-      return () => clearTimeout(timer)
-    } else {
-      setRecienNacidos([])
-    }
-  }, [searchTerm])
-
-  const searchRecienNacidos = async () => {
-    setSearchingRN(true)
-    try {
-      const response = await fetch(`/api/recien-nacidos?search=${encodeURIComponent(searchTerm)}&limit=10`)
-      if (response.ok) {
-        const data = await response.json()
-        setRecienNacidos(data.data || [])
-      }
-    } catch (err) {
-      console.error('Error searching recien nacidos:', err)
-    } finally {
-      setSearchingRN(false)
-    }
-  }
-
-  const handleSelectRN = (rn) => {
-    setSelectedRN(rn)
-    setFormData({ ...formData, rnId: rn.id })
-    setSearchTerm('')
-    setRecienNacidos([])
-  }
-
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData({ ...formData, [name]: value })
@@ -108,11 +100,6 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
     e.preventDefault()
     setError('')
     setSuccess('')
-
-    if (!formData.rnId) {
-      setError('Debe seleccionar un recién nacido')
-      return
-    }
 
     if (!formData.fechaHoraIngreso) {
       setError('La fecha/hora de ingreso es requerida')
@@ -130,17 +117,15 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
       // Asegurar que la fecha esté en formato ISO
       let fechaHoraIngreso = formData.fechaHoraIngreso
       if (fechaHoraIngreso && !fechaHoraIngreso.includes('T')) {
-        // Si viene sin T, agregarlo
         fechaHoraIngreso = fechaHoraIngreso.replace(' ', 'T')
       }
-      
-      const response = await fetch('/api/urni/episodio', {
-        method: 'POST',
+
+      const response = await fetch(`/api/urni/episodio/${episodioId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          rnId: formData.rnId,
           fechaHoraIngreso: fechaHoraIngreso,
           motivoIngreso: formData.motivoIngreso || null,
           servicioUnidad: formData.servicioUnidad || null,
@@ -152,29 +137,17 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
 
       if (!response.ok) {
         console.error('Error response:', data)
-        setError(data.error || 'Error al registrar el episodio URNI')
+        setError(data.error || 'Error al actualizar el episodio URNI')
         setLoading(false)
         return
       }
 
-      // Resetear loading antes de navegar
-      setLoading(false)
-      
-      // Verificar que tenemos el ID del episodio
-      if (data.data && data.data.id) {
-        try {
-          router.push(`/dashboard/urni/${data.data.id}`)
-        } catch (navError) {
-          console.error('Error al navegar:', navError)
-          // Si falla la navegación, al menos mostrar éxito
-          setSuccess('Episodio URNI registrado exitosamente. ID: ' + data.data.id)
-        }
-      } else {
-        console.error('Respuesta inválida: no se recibió el ID del episodio', data)
-        setError('Error: No se recibió el ID del episodio creado')
-      }
+      setSuccess('Episodio URNI actualizado exitosamente')
+      setTimeout(() => {
+        router.push(`/dashboard/urni/${episodioId}`)
+      }, 1500)
     } catch (err) {
-      console.error('Error creating episodio:', err)
+      console.error('Error updating episodio:', err)
       setError('Error al conectar con el servidor')
       setLoading(false)
     }
@@ -189,6 +162,40 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
       hour: '2-digit',
       minute: '2-digit',
     })
+  }
+
+  if (loadingData) {
+    return <div className={styles.loading}>Cargando datos del episodio...</div>
+  }
+
+  if (error && !episodio) {
+    return (
+      <div className={styles.errorBox}>
+        <h2>Error</h2>
+        <p>{error}</p>
+        <button
+          onClick={() => router.back()}
+          className={styles.btnSecondary}
+        >
+          Volver
+        </button>
+      </div>
+    )
+  }
+
+  if (!episodio) {
+    return (
+      <div className={styles.errorBox}>
+        <h2>Episodio no encontrado</h2>
+        <p>El episodio URNI solicitado no existe.</p>
+        <button
+          onClick={() => router.back()}
+          className={styles.btnSecondary}
+        >
+          Volver
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -207,80 +214,40 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className={styles.form}>
-        {/* Selección de Recién Nacido */}
-        <div className={styles.formGroup}>
-          <label htmlFor="rnId">
-            Recién Nacido <span className={styles.required}>*</span>
-          </label>
-          {selectedRN ? (
-            <div className={styles.selectedItem}>
-              <div className={styles.selectedItemContent}>
-                <div>
-                  <strong>
-                    RN de {selectedRN.parto?.madre?.nombres} {selectedRN.parto?.madre?.apellidos}
-                  </strong>
-                  <br />
-                  <small>
-                    Parto: {formatFecha(selectedRN.parto?.fechaHora)} | 
-                    Sexo: {selectedRN.sexo === 'M' ? 'Masculino' : selectedRN.sexo === 'F' ? 'Femenino' : 'Indeterminado'}
-                    {selectedRN.pesoNacimientoGramos && ` | Peso: ${selectedRN.pesoNacimientoGramos}g`}
-                  </small>
+      {/* Información del Recién Nacido (solo lectura) */}
+      {episodio.rn && (
+        <div className={styles.infoSection}>
+          <h3>Información del Recién Nacido</h3>
+          <div className={styles.infoGrid}>
+            {episodio.rn.parto?.madre && (
+              <>
+                <div className={styles.infoItem}>
+                  <label>Madre</label>
+                  <span>
+                    {episodio.rn.parto.madre.nombres} {episodio.rn.parto.madre.apellidos}
+                  </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedRN(null)
-                    setFormData({ ...formData, rnId: '' })
-                  }}
-                  className={styles.btnRemove}
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
+                <div className={styles.infoItem}>
+                  <label>RUT</label>
+                  <span>{episodio.rn.parto.madre.rut}</span>
+                </div>
+              </>
+            )}
+            <div className={styles.infoItem}>
+              <label>Fecha Parto</label>
+              <span>{formatFecha(episodio.rn.parto?.fechaHora)}</span>
             </div>
-          ) : (
-            <>
-              <div className={styles.searchBox}>
-                <i className="fas fa-search"></i>
-                <input
-                  type="text"
-                  placeholder="Buscar por madre, RUT..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className={styles.searchInput}
-                />
-                {searchingRN && (
-                  <i className="fas fa-spinner fa-spin"></i>
-                )}
-              </div>
-              {recienNacidos.length > 0 && (
-                <div className={styles.dropdown}>
-                  {recienNacidos.map((rn) => (
-                    <div
-                      key={rn.id}
-                      onClick={() => handleSelectRN(rn)}
-                      className={styles.dropdownItem}
-                    >
-                      <div>
-                        <strong>
-                          RN de {rn.parto?.madre?.nombres} {rn.parto?.madre?.apellidos}
-                        </strong>
-                        <br />
-                        <small>
-                          RUT: {rn.parto?.madre?.rut} | 
-                          Parto: {formatFecha(rn.parto?.fechaHora)} | 
-                          Sexo: {rn.sexo === 'M' ? 'Masculino' : rn.sexo === 'F' ? 'Femenino' : 'Indeterminado'}
-                        </small>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+            <div className={styles.infoItem}>
+              <label>Sexo</label>
+              <span>
+                {episodio.rn.sexo === 'M' ? 'Masculino' : episodio.rn.sexo === 'F' ? 'Femenino' : 'Indeterminado'}
+              </span>
+            </div>
+          </div>
         </div>
+      )}
 
+      <form onSubmit={handleSubmit} className={styles.form}>
         {/* Fecha/Hora Ingreso */}
         <div className={styles.formGroup}>
           <label htmlFor="fechaHoraIngreso">
@@ -351,7 +318,7 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
             ))}
           </select>
           <small className={styles.helpText}>
-            Puede asignarse después si no está disponible ahora
+            Puede dejarse sin asignar si no está disponible
           </small>
         </div>
 
@@ -368,17 +335,17 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
           <button
             type="submit"
             className={styles.btnPrimary}
-            disabled={loading || !formData.rnId}
+            disabled={loading || !formData.fechaHoraIngreso}
           >
             {loading ? (
               <>
                 <i className="fas fa-spinner fa-spin"></i>
-                Registrando...
+                Actualizando...
               </>
             ) : (
               <>
                 <i className="fas fa-save"></i>
-                Registrar Episodio URNI
+                Guardar Cambios
               </>
             )}
           </button>

@@ -220,15 +220,26 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
             <h1>Detalle del Episodio URNI</h1>
             <p>Información completa del episodio de ingreso a URNI</p>
           </div>
-          {episodio.estado === 'INGRESADO' && permissions.alta && (
-            <button
-              onClick={() => setShowAltaForm(true)}
-              className={styles.btnAlta}
-            >
-              <i className="fas fa-door-open"></i>
-              Procesar Alta
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            {episodio.estado === 'INGRESADO' && permissions.update && (
+              <Link
+                href={`/dashboard/urni/${episodioId}/editar`}
+                className={styles.btnEdit}
+              >
+                <i className="fas fa-edit"></i>
+                Editar
+              </Link>
+            )}
+            {episodio.estado === 'INGRESADO' && permissions.alta && (
+              <button
+                onClick={() => setShowAltaForm(true)}
+                className={styles.btnAlta}
+              >
+                <i className="fas fa-door-open"></i>
+                Procesar Alta
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -296,10 +307,10 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
                   <label>Sexo</label>
                   <span className={styles.badge}>{formatSexo(episodio.rn.sexo)}</span>
                 </div>
-                {episodio.rn.pesoGr && (
+                {episodio.rn.pesoNacimientoGramos && (
                   <div className={styles.infoItem}>
                     <label>Peso</label>
-                    <span>{episodio.rn.pesoGr} g</span>
+                    <span>{episodio.rn.pesoNacimientoGramos} g</span>
                   </div>
                 )}
                 {episodio.rn.tallaCm && (
@@ -308,16 +319,16 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
                     <span>{episodio.rn.tallaCm} cm</span>
                   </div>
                 )}
-                {episodio.rn.apgar1 !== null && episodio.rn.apgar1 !== undefined && (
+                {episodio.rn.apgar1Min !== null && episodio.rn.apgar1Min !== undefined && (
                   <div className={styles.infoItem}>
                     <label>Apgar 1'</label>
-                    <span>{episodio.rn.apgar1}</span>
+                    <span>{episodio.rn.apgar1Min}</span>
                   </div>
                 )}
-                {episodio.rn.apgar5 !== null && episodio.rn.apgar5 !== undefined && (
+                {episodio.rn.apgar5Min !== null && episodio.rn.apgar5Min !== undefined && (
                   <div className={styles.infoItem}>
                     <label>Apgar 5'</label>
-                    <span>{episodio.rn.apgar5}</span>
+                    <span>{episodio.rn.apgar5Min}</span>
                   </div>
                 )}
                 {episodio.rn.parto?.madre && (
@@ -523,6 +534,12 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
               <div className={styles.infoItem}>
                 <label>Registrado por</label>
                 <span>{episodio.createdBy.nombre}</span>
+              </div>
+            )}
+            {episodio.updatedBy && (
+              <div className={styles.infoItem}>
+                <label>Última modificación por</label>
+                <span>{episodio.updatedBy.nombre}</span>
               </div>
             )}
           </div>
