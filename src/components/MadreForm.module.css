@@ -89,7 +89,8 @@
 }
 
 /* Inputs */
-.formGroup input {
+.formGroup input,
+.formGroup select {
   width: 100%;
   padding: 0.625rem 0.875rem;
   border: 1px solid var(--color-border);
@@ -107,29 +108,44 @@
   opacity: 0.6;
 }
 
-.formGroup input:hover:not(:disabled):not(:focus) {
+.formGroup input:hover:not(:disabled):not(:focus),
+.formGroup select:hover:not(:disabled):not(:focus) {
   border-color: #B8C5D6;
 }
 
-.formGroup input:focus {
+.formGroup input:focus,
+.formGroup select:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(0, 102, 164, 0.1);
 }
 
-.formGroup input:disabled {
+.formGroup input:disabled,
+.formGroup select:disabled {
   background: #F8F9FA;
   color: var(--color-text-muted);
   cursor: not-allowed;
 }
 
-.formGroup input.inputError {
+.formGroup input.inputError,
+.formGroup select.inputError {
   border-color: var(--color-danger);
 }
 
-.formGroup input.inputError:focus {
+.formGroup input.inputError:focus,
+.formGroup select.inputError:focus {
   border-color: var(--color-danger);
   box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.1);
+}
+
+/* Select específico */
+.formGroup select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  padding-right: 2.5rem;
 }
 
 /* Textos de Ayuda y Error */

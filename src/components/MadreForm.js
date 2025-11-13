@@ -202,6 +202,13 @@ function calcularEdad(fechaNacimiento) {
   }
 }
 
+// Función helper para convertir valor booleano/null a string para select
+function booleanToString(valor) {
+  if (valor === true) return 'true'
+  if (valor === false) return 'false'
+  return ''
+}
+
 export default function MadreForm({ initialData = null, isEdit = false, madreId = null, isLimited = false }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -315,7 +322,7 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
         setTelefonoError('')
       }
     } else {
-      // Manejar campos booleanos con radio buttons
+      // Manejar campos booleanos con dropdowns (select)
       const camposBooleanos = [
         'pertenenciaPuebloOriginario',
         'condicionMigrante',
@@ -694,224 +701,92 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
           <div className={styles.formGrid}>
           {/* Pertenencia a Pueblo Originario */}
           <div className={styles.formGroup}>
-            <label>Pertenencia a Pueblo Originario</label>
-            <div className={styles.radioGroup}>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="pertenenciaPuebloOriginario"
-                  value=""
-                  checked={formData.pertenenciaPuebloOriginario === null}
-                  onChange={handleChange}
-                />
-                <span>No especificado</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="pertenenciaPuebloOriginario"
-                  value="true"
-                  checked={formData.pertenenciaPuebloOriginario === true}
-                  onChange={handleChange}
-                />
-                <span>Sí</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="pertenenciaPuebloOriginario"
-                  value="false"
-                  checked={formData.pertenenciaPuebloOriginario === false}
-                  onChange={handleChange}
-                />
-                <span>No</span>
-              </label>
-            </div>
+            <label htmlFor="pertenenciaPuebloOriginario">Pertenencia a Pueblo Originario</label>
+            <select
+              id="pertenenciaPuebloOriginario"
+              name="pertenenciaPuebloOriginario"
+              value={booleanToString(formData.pertenenciaPuebloOriginario)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
           </div>
 
           {/* Condición Migrante */}
           <div className={styles.formGroup}>
-            <label>Condición Migrante</label>
-            <div className={styles.radioGroup}>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="condicionMigrante"
-                  value=""
-                  checked={formData.condicionMigrante === null}
-                  onChange={handleChange}
-                />
-                <span>No especificado</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="condicionMigrante"
-                  value="true"
-                  checked={formData.condicionMigrante === true}
-                  onChange={handleChange}
-                />
-                <span>Sí</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="condicionMigrante"
-                  value="false"
-                  checked={formData.condicionMigrante === false}
-                  onChange={handleChange}
-                />
-                <span>No</span>
-              </label>
-            </div>
+            <label htmlFor="condicionMigrante">Condición Migrante</label>
+            <select
+              id="condicionMigrante"
+              name="condicionMigrante"
+              value={booleanToString(formData.condicionMigrante)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
           </div>
 
           {/* Condición Discapacidad */}
           <div className={styles.formGroup}>
-            <label>Condición Discapacidad</label>
-            <div className={styles.radioGroup}>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="condicionDiscapacidad"
-                  value=""
-                  checked={formData.condicionDiscapacidad === null}
-                  onChange={handleChange}
-                />
-                <span>No especificado</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="condicionDiscapacidad"
-                  value="true"
-                  checked={formData.condicionDiscapacidad === true}
-                  onChange={handleChange}
-                />
-                <span>Sí</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="condicionDiscapacidad"
-                  value="false"
-                  checked={formData.condicionDiscapacidad === false}
-                  onChange={handleChange}
-                />
-                <span>No</span>
-              </label>
-            </div>
+            <label htmlFor="condicionDiscapacidad">Condición Discapacidad</label>
+            <select
+              id="condicionDiscapacidad"
+              name="condicionDiscapacidad"
+              value={booleanToString(formData.condicionDiscapacidad)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
           </div>
 
           {/* Condición Privada de Libertad */}
           <div className={styles.formGroup}>
-            <label>Condición Privada de Libertad</label>
-            <div className={styles.radioGroup}>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="condicionPrivadaLibertad"
-                  value=""
-                  checked={formData.condicionPrivadaLibertad === null}
-                  onChange={handleChange}
-                />
-                <span>No especificado</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="condicionPrivadaLibertad"
-                  value="true"
-                  checked={formData.condicionPrivadaLibertad === true}
-                  onChange={handleChange}
-                />
-                <span>Sí</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="condicionPrivadaLibertad"
-                  value="false"
-                  checked={formData.condicionPrivadaLibertad === false}
-                  onChange={handleChange}
-                />
-                <span>No</span>
-              </label>
-            </div>
+            <label htmlFor="condicionPrivadaLibertad">Condición Privada de Libertad</label>
+            <select
+              id="condicionPrivadaLibertad"
+              name="condicionPrivadaLibertad"
+              value={booleanToString(formData.condicionPrivadaLibertad)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
           </div>
 
           {/* Identidad Trans */}
           <div className={styles.formGroup}>
-            <label>Identidad Trans</label>
-            <div className={styles.radioGroup}>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="identidadTrans"
-                  value=""
-                  checked={formData.identidadTrans === null}
-                  onChange={handleChange}
-                />
-                <span>No especificado</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="identidadTrans"
-                  value="true"
-                  checked={formData.identidadTrans === true}
-                  onChange={handleChange}
-                />
-                <span>Sí</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="identidadTrans"
-                  value="false"
-                  checked={formData.identidadTrans === false}
-                  onChange={handleChange}
-                />
-                <span>No</span>
-              </label>
-            </div>
+            <label htmlFor="identidadTrans">Identidad Trans</label>
+            <select
+              id="identidadTrans"
+              name="identidadTrans"
+              value={booleanToString(formData.identidadTrans)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
           </div>
 
           {/* Hepatitis B Positiva */}
           <div className={styles.formGroup}>
-            <label>Hepatitis B Positiva</label>
-            <div className={styles.radioGroup}>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="hepatitisBPositiva"
-                  value=""
-                  checked={formData.hepatitisBPositiva === null}
-                  onChange={handleChange}
-                />
-                <span>No especificado</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="hepatitisBPositiva"
-                  value="true"
-                  checked={formData.hepatitisBPositiva === true}
-                  onChange={handleChange}
-                />
-                <span>Sí</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="hepatitisBPositiva"
-                  value="false"
-                  checked={formData.hepatitisBPositiva === false}
-                  onChange={handleChange}
-                />
-                <span>No</span>
-              </label>
-            </div>
+            <label htmlFor="hepatitisBPositiva">Hepatitis B Positiva</label>
+            <select
+              id="hepatitisBPositiva"
+              name="hepatitisBPositiva"
+              value={booleanToString(formData.hepatitisBPositiva)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
             <small className={styles.helpText}>
               Para sección J transmisión vertical
             </small>
@@ -919,39 +794,17 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
 
           {/* Control Prenatal */}
           <div className={styles.formGroup}>
-            <label>Control Prenatal</label>
-            <div className={styles.radioGroup}>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="controlPrenatal"
-                  value=""
-                  checked={formData.controlPrenatal === null}
-                  onChange={handleChange}
-                />
-                <span>No especificado</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="controlPrenatal"
-                  value="true"
-                  checked={formData.controlPrenatal === true}
-                  onChange={handleChange}
-                />
-                <span>Sí</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="controlPrenatal"
-                  value="false"
-                  checked={formData.controlPrenatal === false}
-                  onChange={handleChange}
-                />
-                <span>No</span>
-              </label>
-            </div>
+            <label htmlFor="controlPrenatal">Control Prenatal</label>
+            <select
+              id="controlPrenatal"
+              name="controlPrenatal"
+              value={booleanToString(formData.controlPrenatal)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
             <small className={styles.helpText}>
               Embarazo controlado / no controlado
             </small>

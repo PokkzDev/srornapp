@@ -155,6 +155,23 @@ export default async function MadreDetailPage({ params }) {
                 />
               </div>
 
+              {/* Edad en Años (para REM) */}
+              {madre.edadAnos !== null && madre.edadAnos !== undefined && (
+                <div className={formStyles.formGroup}>
+                  <label htmlFor="edadAnos">Edad en Años (REM)</label>
+                  <input
+                    type="number"
+                    id="edadAnos"
+                    name="edadAnos"
+                    value={madre.edadAnos}
+                    disabled
+                  />
+                  <small className={formStyles.helpText}>
+                    Edad en años para tramos REM
+                  </small>
+                </div>
+              )}
+
               {/* Fecha de Nacimiento */}
               <div className={formStyles.formGroup}>
                 <label htmlFor="fechaNacimiento">Fecha de Nacimiento</label>

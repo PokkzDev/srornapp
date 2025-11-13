@@ -112,26 +112,26 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
       setFormData({
         partoId: initialData.partoId || '',
         sexo: initialData.sexo || '',
-        pesoNacimientoGramos: initialData.pesoNacimientoGramos?.toString() || '',
-        tallaCm: initialData.tallaCm?.toString() || '',
-        apgar1Min: initialData.apgar1Min?.toString() || '',
-        apgar5Min: initialData.apgar5Min?.toString() || '',
+        pesoNacimientoGramos: initialData.pesoNacimientoGramos != null ? initialData.pesoNacimientoGramos.toString() : '',
+        tallaCm: initialData.tallaCm != null ? initialData.tallaCm.toString() : '',
+        apgar1Min: initialData.apgar1Min != null ? initialData.apgar1Min.toString() : '',
+        apgar5Min: initialData.apgar5Min != null ? initialData.apgar5Min.toString() : '',
         esNacidoVivo: initialData.esNacidoVivo !== undefined ? initialData.esNacidoVivo : true,
         categoriaPeso: initialData.categoriaPeso || '',
-        anomaliaCongenita: initialData.anomaliaCongenita || false,
+        anomaliaCongenita: initialData.anomaliaCongenita === true,
         anomaliaCongenitaDescripcion: initialData.anomaliaCongenitaDescripcion || '',
-        reanimacionBasica: initialData.reanimacionBasica || false,
-        reanimacionAvanzada: initialData.reanimacionAvanzada || false,
-        ehiGradoII_III: initialData.ehiGradoII_III || false,
-        profilaxisOcularGonorrea: initialData.profilaxisOcularGonorrea || false,
-        profilaxisHepatitisB: initialData.profilaxisHepatitisB || false,
-        profilaxisCompletaHepatitisB: initialData.profilaxisCompletaHepatitisB || false,
-        hijoMadreHepatitisBPositiva: initialData.hijoMadreHepatitisBPositiva || false,
-        lactancia60Min: initialData.lactancia60Min || false,
-        alojamientoConjuntoInmediato: initialData.alojamientoConjuntoInmediato || false,
-        contactoPielPielInmediato: initialData.contactoPielPielInmediato || false,
-        esPuebloOriginario: initialData.esPuebloOriginario || false,
-        esMigrante: initialData.esMigrante || false,
+        reanimacionBasica: initialData.reanimacionBasica === true,
+        reanimacionAvanzada: initialData.reanimacionAvanzada === true,
+        ehiGradoII_III: initialData.ehiGradoII_III === true,
+        profilaxisOcularGonorrea: initialData.profilaxisOcularGonorrea === true,
+        profilaxisHepatitisB: initialData.profilaxisHepatitisB === true,
+        profilaxisCompletaHepatitisB: initialData.profilaxisCompletaHepatitisB === true,
+        hijoMadreHepatitisBPositiva: initialData.hijoMadreHepatitisBPositiva === true,
+        lactancia60Min: initialData.lactancia60Min === true,
+        alojamientoConjuntoInmediato: initialData.alojamientoConjuntoInmediato === true,
+        contactoPielPielInmediato: initialData.contactoPielPielInmediato === true,
+        esPuebloOriginario: initialData.esPuebloOriginario === true,
+        esMigrante: initialData.esMigrante === true,
         observaciones: initialData.observaciones || '',
       })
     }
@@ -162,15 +162,48 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
       return
     }
 
-    // Validar Apgar si están presentes
-    if (formData.apgar1Min && (parseInt(formData.apgar1Min) < 0 || parseInt(formData.apgar1Min) > 10)) {
-      setError('El Apgar 1\' debe ser un número entre 0 y 10')
-      setLoading(false)
-      return
+    // Validar peso si está presente
+    if (formData.pesoNacimientoGramos && formData.pesoNacimientoGramos !== '') {
+      const peso = parseInt(formData.pesoNacimientoGramos)
+      if (isNaN(peso) || peso <= 0) {
+        setError('El peso debe ser un número mayor a 0')
+        setLoading(false)
+        return
+      }
     }
 
-    if (formData.apgar5Min && (parseInt(formData.apgar5Min) < 0 || parseInt(formData.apgar5Min) > 10)) {
-      setError('El Apgar 5\' debe ser un número entre 0 y 10')
+    // Validar talla si está presente
+    if (formData.tallaCm && formData.tallaCm !== '') {
+      const talla = parseInt(formData.tallaCm)
+      if (isNaN(talla) || talla <= 0) {
+        setError('La talla debe ser un número mayor a 0')
+        setLoading(false)
+        return
+      }
+    }
+
+    // Validar Apgar si están presentes
+    if (formData.apgar1Min && formData.apgar1Min !== '') {
+      const apgar1 = parseInt(formData.apgar1Min)
+      if (isNaN(apgar1) || apgar1 < 0 || apgar1 > 10) {
+        setError('El Apgar 1\' debe ser un número entre 0 y 10')
+        setLoading(false)
+        return
+      }
+    }
+
+    if (formData.apgar5Min && formData.apgar5Min !== '') {
+      const apgar5 = parseInt(formData.apgar5Min)
+      if (isNaN(apgar5) || apgar5 < 0 || apgar5 > 10) {
+        setError('El Apgar 5\' debe ser un número entre 0 y 10')
+        setLoading(false)
+        return
+      }
+    }
+
+    // Validar que si hay anomalía congénita, debe haber descripción
+    if (formData.anomaliaCongenita && !formData.anomaliaCongenitaDescripcion?.trim()) {
+      setError('Si presenta anomalía congénita, debe proporcionar una descripción')
       setLoading(false)
       return
     }
@@ -179,18 +212,27 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
       const url = isEdit ? `/api/recien-nacidos/${recienNacidoId}` : '/api/recien-nacidos'
       const method = isEdit ? 'PUT' : 'POST'
 
-      // Preparar datos para enviar (usar nombres nuevos del schema)
+      // Función helper para convertir strings vacíos a null y números
+      const toIntOrNull = (value) => {
+        if (!value || value === '') return null
+        const num = parseInt(value)
+        return isNaN(num) ? null : num
+      }
+
+      // Preparar datos para enviar (usar nombres exactos del schema)
       const submitData = {
         partoId: formData.partoId,
         sexo: formData.sexo,
-        pesoNacimientoGramos: formData.pesoNacimientoGramos || null,
-        tallaCm: formData.tallaCm || null,
-        apgar1Min: formData.apgar1Min || null,
-        apgar5Min: formData.apgar5Min || null,
-        esNacidoVivo: formData.esNacidoVivo,
-        categoriaPeso: formData.categoriaPeso || null,
+        pesoNacimientoGramos: toIntOrNull(formData.pesoNacimientoGramos),
+        tallaCm: toIntOrNull(formData.tallaCm),
+        apgar1Min: toIntOrNull(formData.apgar1Min),
+        apgar5Min: toIntOrNull(formData.apgar5Min),
+        esNacidoVivo: formData.esNacidoVivo !== undefined ? formData.esNacidoVivo : true,
+        categoriaPeso: formData.categoriaPeso && formData.categoriaPeso !== '' ? formData.categoriaPeso : null,
         anomaliaCongenita: formData.anomaliaCongenita || null,
-        anomaliaCongenitaDescripcion: formData.anomaliaCongenita ? (formData.anomaliaCongenitaDescripcion || null) : null,
+        anomaliaCongenitaDescripcion: formData.anomaliaCongenita && formData.anomaliaCongenitaDescripcion?.trim() 
+          ? formData.anomaliaCongenitaDescripcion.trim().substring(0, 500) 
+          : null,
         reanimacionBasica: formData.reanimacionBasica || null,
         reanimacionAvanzada: formData.reanimacionAvanzada || null,
         ehiGradoII_III: formData.ehiGradoII_III || null,
@@ -203,7 +245,7 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
         contactoPielPielInmediato: formData.contactoPielPielInmediato || null,
         esPuebloOriginario: formData.esPuebloOriginario || null,
         esMigrante: formData.esMigrante || null,
-        observaciones: formData.observaciones || null,
+        observaciones: formData.observaciones?.trim() ? formData.observaciones.trim().substring(0, 500) : null,
       }
 
       const response = await fetch(url, {
@@ -351,9 +393,13 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
                   name="pesoNacimientoGramos"
                   value={formData.pesoNacimientoGramos}
                   onChange={handleChange}
-                  min="0"
+                  min="1"
+                  step="1"
                   placeholder="Ej: 3250"
                 />
+                <small className={styles.helpText}>
+                  Peso en gramos al momento del nacimiento
+                </small>
               </div>
 
               {/* Talla */}
@@ -365,9 +411,13 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
                   name="tallaCm"
                   value={formData.tallaCm}
                   onChange={handleChange}
-                  min="0"
+                  min="1"
+                  step="1"
                   placeholder="Ej: 50"
                 />
+                <small className={styles.helpText}>
+                  Talla en centímetros al momento del nacimiento
+                </small>
               </div>
 
               {/* Apgar 1' */}
@@ -431,7 +481,7 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
 
               {/* Categoría de Peso */}
               <div className={styles.formGroup}>
-                <label htmlFor="categoriaPeso">Categoría de Peso</label>
+                <label htmlFor="categoriaPeso">Categoría de Peso (REM)</label>
                 <select
                   id="categoriaPeso"
                   name="categoriaPeso"
@@ -449,6 +499,9 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
                   <option value="RANGO_3000_3999">3000 - 3999g</option>
                   <option value="RANGO_4000_MAS">4000g o más</option>
                 </select>
+                <small className={styles.helpText}>
+                  Clasificación según peso al nacer para reportes REM
+                </small>
               </div>
             </div>
           </div>

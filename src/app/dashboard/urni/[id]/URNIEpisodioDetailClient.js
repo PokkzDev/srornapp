@@ -31,6 +31,16 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
 
       const data = await response.json()
       setEpisodio(data.data)
+      
+      // Debug: verificar estado y permisos
+      if (data.data) {
+        console.log('Episodio cargado:', {
+          id: data.data.id,
+          estado: data.data.estado,
+          tienePermisoAlta: permissions?.alta,
+          permisos: permissions
+        })
+      }
     } catch (err) {
       console.error('Error loading episodio:', err)
       setError(err.message || 'Error al cargar el episodio')
@@ -40,6 +50,12 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
   }
 
   const handleProcesarAlta = async () => {
+    // Validar estado antes de proceder
+    if (!episodio || episodio.estado !== 'INGRESADO') {
+      alert(`No se puede procesar el alta. El episodio está en estado: ${episodio?.estado || 'desconocido'}`)
+      return
+    }
+
     if (!window.confirm('¿Está seguro que desea procesar el alta de este episodio URNI?')) {
       return
     }
@@ -59,6 +75,11 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
       const data = await response.json()
 
       if (!response.ok) {
+        console.error('Error al procesar alta:', {
+          status: response.status,
+          error: data.error,
+          episodioEstado: episodio?.estado
+        })
         alert(data.error || 'Error al procesar el alta')
         setProcesandoAlta(false)
         return
@@ -220,7 +241,7 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
             <h1>Detalle del Episodio URNI</h1>
             <p>Información completa del episodio de ingreso a URNI</p>
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
             {episodio.estado === 'INGRESADO' && permissions.update && (
               <Link
                 href={`/dashboard/urni/${episodioId}/editar`}
@@ -238,6 +259,18 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
                 <i className="fas fa-door-open"></i>
                 Procesar Alta
               </button>
+            )}
+            {episodio.estado === 'INGRESADO' && !permissions.alta && (
+              <span style={{ 
+                color: '#856404', 
+                backgroundColor: '#fff3cd', 
+                padding: '0.5rem 1rem', 
+                borderRadius: '4px',
+                fontSize: '0.875rem',
+                border: '1px solid #ffc107'
+              }}>
+                <i className="fas fa-info-circle"></i> No tiene permisos para procesar altas
+              </span>
             )}
           </div>
         </div>

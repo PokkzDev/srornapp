@@ -336,6 +336,14 @@ model Parto {
   posicionExpulsivo          PosicionExpulsivo?
   episiotomia                Boolean?
 
+  // Anestesia y/o Analgesia del parto
+  anestesiaNeuroaxial              Boolean?
+  oxidoNitroso                     Boolean?
+  analgesiaEndovenosa              Boolean?
+  anestesiaGeneral                 Boolean?
+  anestesiaLocal                   Boolean?
+  medidasNoFarmacologicasAnestesia Boolean?
+
   // Acompañamiento
   acompananteDuranteTrabajo Boolean?
   acompananteSoloExpulsivo  Boolean?
@@ -349,6 +357,11 @@ model Parto {
 
   // Lactancia temprana (si ≥1 RN elegible la recibe)
   lactancia60minAlMenosUnRn Boolean?
+
+  // Campos adicionales REM
+  planDeParto                Boolean?
+  entregaPlacentaSolicitud    Boolean?
+  embarazoNoControlado        Boolean?
 
   // Profesionales
   matronas   PartoMatrona[]
