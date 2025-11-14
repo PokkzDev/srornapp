@@ -9,10 +9,13 @@ const nextConfig = {
   },
   
   // Allow cross-origin requests from the staging domain for HMR
+  // Include both HTTP and HTTPS since the app may be accessed via reverse proxy
   allowedDevOrigins: [
-    'srorn.pokkzpreview.online',
-    'localhost:3005',
-    '0.0.0.0:3005',
+    'http://srorn.pokkzpreview.online',
+    'https://srorn.pokkzpreview.online',
+    'http://localhost:3005',
+    'http://0.0.0.0:3005',
+    'http://127.0.0.1:3005',
   ],
 };
 

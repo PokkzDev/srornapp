@@ -35,10 +35,11 @@ export async function GET(request) {
       )
     }
 
-    // Obtener datos del reporte - construir URL base
-    const url = new URL(request.url)
-    const baseUrl = `${url.protocol}//${url.host}`
-    const reporteUrl = `${baseUrl}/api/reportes/rem?mes=${mes}&anio=${anio}`
+    // Obtener datos del reporte - usar URL interna para evitar problemas SSL
+    // En servidor, usar localhost con HTTP para llamadas internas
+    // Permite usar variable de entorno para casos especiales (ej: contenedores)
+    const internalBaseUrl = process.env.INTERNAL_API_URL || `http://localhost:${process.env.PORT || 3005}`
+    const reporteUrl = `${internalBaseUrl}/api/reportes/rem?mes=${mes}&anio=${anio}`
     
     const reporteResponse = await fetch(reporteUrl, {
       headers: {
