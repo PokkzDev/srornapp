@@ -29,7 +29,7 @@
     "recharts": "^2.12.7"
   },
   "engines": {
-    "node": "24.11.1"
+    "node": ">=20.9.0"
   },
   "devDependencies": {
     "babel-plugin-react-compiler": "1.0.0",
