@@ -3,17 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -H 0.0.0.0 -p 3005",
-    "dev:tunnel": "echo 'Start your dev server first, then run: ngrok http 3005'",
-    "build": "next build",
-    "start": "next start -p 3005",
+    "dev": "next dev -p 3005",
+    "prebuild": "prisma generate",
+    "build": "next build --turbopack ",
+    "prestart": "prisma db push && node prisma/seed.js",
+    "start": " next start -p 3005",
     "lint": "eslint",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio",
-    "db:seed": "node prisma/seed.js"
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "node prisma/seed.js"
   },
+
   "prisma": {
     "seed": "node prisma/seed.js"
   },
