@@ -19,6 +19,7 @@ export default async function URNIEpisodioDetailPage({ params }) {
   
   const canCreateAtencion = permissions.includes('urni:atencion:create')
   const canAlta = permissions.includes('alta:manage')
+  const canUpdate = permissions.includes('urni:episodio:update')
 
   if (!canView) {
     return (
@@ -47,6 +48,7 @@ export default async function URNIEpisodioDetailPage({ params }) {
             view: canView,
             createAtencion: canCreateAtencion,
             alta: canAlta,
+            update: canUpdate,
           }}
         />
       </div>

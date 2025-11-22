@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import DashboardLayout from '@/components/DashboardLayout'
 import Link from 'next/link'
 import styles from './page.module.css'
+import formStyles from '@/components/MadreForm.module.css'
 
 export default async function MadreDetailPage({ params }) {
   const user = await getCurrentUser()
@@ -63,6 +64,14 @@ export default async function MadreDetailPage({ params }) {
 
   const canUpdate = permissions.includes('madre:update') || permissions.includes('madre:update_limited')
 
+  // Función para formatear fecha para input date (YYYY-MM-DD)
+  function formatearFechaParaInput(fecha) {
+    if (!fecha) return ''
+    const date = new Date(fecha)
+    if (isNaN(date.getTime())) return ''
+    return date.toISOString().split('T')[0]
+  }
+
   return (
     <DashboardLayout>
       <div className={styles.content}>
@@ -87,120 +96,271 @@ export default async function MadreDetailPage({ params }) {
           </div>
         </div>
 
-        <div className={styles.detailCard}>
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>
-              <i className="fas fa-id-card"></i>
-              Información de Identificación
-            </h2>
-            <div className={styles.infoGrid}>
-              <div className={styles.infoItem}>
-                <label>RUT</label>
-                <span>{madre.rut}</span>
+        <div className={formStyles.form}>
+          {/* Sección: Datos Personales */}
+          <div className={formStyles.formSection}>
+            <h2 className={formStyles.sectionTitle}>Datos Personales</h2>
+            <div className={formStyles.formGrid}>
+              {/* RUT */}
+              <div className={formStyles.formGroup}>
+                <label htmlFor="rut">
+                  RUT <span className={formStyles.required}>*</span>
+                </label>
+                <input
+                  type="text"
+                  id="rut"
+                  name="rut"
+                  value={madre.rut}
+                  disabled
+                />
               </div>
-              <div className={styles.infoItem}>
-                <label>Nombres</label>
-                <span>{madre.nombres}</span>
+
+              {/* Nombres */}
+              <div className={formStyles.formGroup}>
+                <label htmlFor="nombres">
+                  Nombres <span className={formStyles.required}>*</span>
+                </label>
+                <input
+                  type="text"
+                  id="nombres"
+                  name="nombres"
+                  value={madre.nombres}
+                  disabled
+                />
               </div>
-              <div className={styles.infoItem}>
-                <label>Apellidos</label>
-                <span>{madre.apellidos}</span>
+
+              {/* Apellidos */}
+              <div className={formStyles.formGroup}>
+                <label htmlFor="apellidos">
+                  Apellidos <span className={formStyles.required}>*</span>
+                </label>
+                <input
+                  type="text"
+                  id="apellidos"
+                  name="apellidos"
+                  value={madre.apellidos}
+                  disabled
+                />
               </div>
-              {madre.fichaClinica && (
-                <div className={styles.infoItem}>
-                  <label>Ficha Clínica</label>
-                  <span>{madre.fichaClinica}</span>
+
+              {/* Edad */}
+              <div className={formStyles.formGroup}>
+                <label htmlFor="edad">Edad</label>
+                <input
+                  type="number"
+                  id="edad"
+                  name="edad"
+                  value={madre.edad || ''}
+                  disabled
+                />
+              </div>
+
+              {/* Edad en Años (para REM) */}
+              {madre.edadAnos !== null && madre.edadAnos !== undefined && (
+                <div className={formStyles.formGroup}>
+                  <label htmlFor="edadAnos">Edad en Años (REM)</label>
+                  <input
+                    type="number"
+                    id="edadAnos"
+                    name="edadAnos"
+                    value={madre.edadAnos}
+                    disabled
+                  />
+                  <small className={formStyles.helpText}>
+                    Edad en años para tramos REM
+                  </small>
                 </div>
               )}
+
+              {/* Fecha de Nacimiento */}
+              <div className={formStyles.formGroup}>
+                <label htmlFor="fechaNacimiento">Fecha de Nacimiento</label>
+                <input
+                  type="date"
+                  id="fechaNacimiento"
+                  name="fechaNacimiento"
+                  value={formatearFechaParaInput(madre.fechaNacimiento)}
+                  disabled
+                />
+              </div>
             </div>
           </div>
 
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>
-              <i className="fas fa-info-circle"></i>
-              Información Demográfica
-            </h2>
-            <div className={styles.infoGrid}>
-              {madre.edad && (
-                <div className={styles.infoItem}>
-                  <label>Edad</label>
-                  <span>{madre.edad} años</span>
-                </div>
-              )}
-              {madre.fechaNacimiento && (
-                <div className={styles.infoItem}>
-                  <label>Fecha de Nacimiento</label>
-                  <span>
-                    {new Date(madre.fechaNacimiento).toLocaleDateString('es-CL')}
-                  </span>
-                </div>
-              )}
-              {madre.direccion && (
-                <div className={styles.infoItem}>
-                  <label>Dirección</label>
-                  <span>{madre.direccion}</span>
-                </div>
-              )}
-              {madre.telefono && (
-                <div className={styles.infoItem}>
-                  <label>Teléfono</label>
-                  <span>{madre.telefono}</span>
-                </div>
-              )}
+          {/* Sección: Datos de Contacto */}
+          <div className={formStyles.formSection}>
+            <h2 className={formStyles.sectionTitle}>Datos de Contacto</h2>
+            <div className={formStyles.formGrid}>
+              {/* Dirección */}
+              <div className={formStyles.formGroup}>
+                <label htmlFor="direccion">Dirección</label>
+                <input
+                  type="text"
+                  id="direccion"
+                  name="direccion"
+                  value={madre.direccion || ''}
+                  disabled
+                />
+              </div>
+
+              {/* Teléfono */}
+              <div className={formStyles.formGroup}>
+                <label htmlFor="telefono">Teléfono</label>
+                <input
+                  type="tel"
+                  id="telefono"
+                  name="telefono"
+                  value={madre.telefono || ''}
+                  disabled
+                />
+              </div>
+
+              {/* Ficha Clínica */}
+              <div className={formStyles.formGroup}>
+                <label htmlFor="fichaClinica">Ficha Clínica</label>
+                <input
+                  type="text"
+                  id="fichaClinica"
+                  name="fichaClinica"
+                  value={madre.fichaClinica || ''}
+                  disabled
+                />
+              </div>
             </div>
           </div>
 
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>
-              <i className="fas fa-baby"></i>
-              Partos Registrados ({madre.partos?.length || 0})
-            </h2>
-            {isLimited ? (
-              <p className={styles.emptyText}>
-                No tiene permisos para visualizar información de partos.
-              </p>
-            ) : !madre.partos || madre.partos.length === 0 ? (
-              <p className={styles.emptyText}>
-                No hay partos registrados para esta madre.
-              </p>
-            ) : (
-              <div className={styles.partosList}>
-                {madre.partos.map((parto) => (
-                  <div key={parto.id} className={styles.partoItem}>
-                    <div className={styles.partoHeader}>
-                      <span className={styles.partoDate}>
-                        {new Date(parto.fechaHora).toLocaleString('es-CL')}
-                      </span>
-                      <span className={styles.partoTipo}>{parto.tipo}</span>
-                    </div>
-                    <div className={styles.partoDetails}>
-                      <span>
-                        <strong>Lugar:</strong> {parto.lugar}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+          {/* Sección: Información Demográfica y Social */}
+          <div className={formStyles.formSection}>
+            <h2 className={formStyles.sectionTitle}>Información Demográfica y Social</h2>
+            <div className={formStyles.formGrid}>
+              {/* Pertenencia a Pueblo Originario */}
+              <div className={formStyles.formGroup}>
+                <label>Pertenencia a Pueblo Originario</label>
+                <input
+                  type="text"
+                  value={madre.pertenenciaPuebloOriginario === null ? 'No especificado' : madre.pertenenciaPuebloOriginario ? 'Sí' : 'No'}
+                  disabled
+                />
               </div>
-            )}
+
+              {/* Condición Migrante */}
+              <div className={formStyles.formGroup}>
+                <label>Condición Migrante</label>
+                <input
+                  type="text"
+                  value={madre.condicionMigrante === null ? 'No especificado' : madre.condicionMigrante ? 'Sí' : 'No'}
+                  disabled
+                />
+              </div>
+
+              {/* Condición Discapacidad */}
+              <div className={formStyles.formGroup}>
+                <label>Condición Discapacidad</label>
+                <input
+                  type="text"
+                  value={madre.condicionDiscapacidad === null ? 'No especificado' : madre.condicionDiscapacidad ? 'Sí' : 'No'}
+                  disabled
+                />
+              </div>
+
+              {/* Condición Privada de Libertad */}
+              <div className={formStyles.formGroup}>
+                <label>Condición Privada de Libertad</label>
+                <input
+                  type="text"
+                  value={madre.condicionPrivadaLibertad === null ? 'No especificado' : madre.condicionPrivadaLibertad ? 'Sí' : 'No'}
+                  disabled
+                />
+              </div>
+
+              {/* Identidad Trans */}
+              <div className={formStyles.formGroup}>
+                <label>Identidad Trans</label>
+                <input
+                  type="text"
+                  value={madre.identidadTrans === null ? 'No especificado' : madre.identidadTrans ? 'Sí' : 'No'}
+                  disabled
+                />
+              </div>
+
+              {/* Hepatitis B Positiva */}
+              <div className={formStyles.formGroup}>
+                <label>Hepatitis B Positiva</label>
+                <input
+                  type="text"
+                  value={madre.hepatitisBPositiva === null ? 'No especificado' : madre.hepatitisBPositiva ? 'Sí' : 'No'}
+                  disabled
+                />
+                <small className={formStyles.helpText}>
+                  Para sección J transmisión vertical
+                </small>
+              </div>
+
+              {/* Control Prenatal */}
+              <div className={formStyles.formGroup}>
+                <label>Control Prenatal</label>
+                <input
+                  type="text"
+                  value={madre.controlPrenatal === null ? 'No especificado' : madre.controlPrenatal ? 'Sí' : 'No'}
+                  disabled
+                />
+                <small className={formStyles.helpText}>
+                  Embarazo controlado / no controlado
+                </small>
+              </div>
+            </div>
           </div>
 
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>
-              <i className="fas fa-clock"></i>
-              Información del Sistema
-            </h2>
-            <div className={styles.infoGrid}>
-              <div className={styles.infoItem}>
+          {/* Sección: Partos Registrados */}
+          {!isLimited && (
+            <div className={formStyles.formSection}>
+              <h2 className={formStyles.sectionTitle}>
+                Partos Registrados ({madre.partos?.length || 0})
+              </h2>
+              {!madre.partos || madre.partos.length === 0 ? (
+                <p style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', margin: 0 }}>
+                  No hay partos registrados para esta madre.
+                </p>
+              ) : (
+                <div className={styles.partosList}>
+                  {madre.partos.map((parto) => (
+                    <div key={parto.id} className={styles.partoItem}>
+                      <div className={styles.partoHeader}>
+                        <span className={styles.partoDate}>
+                          {new Date(parto.fechaHora).toLocaleString('es-CL')}
+                        </span>
+                        <span className={styles.partoTipo}>{parto.tipo}</span>
+                      </div>
+                      <div className={styles.partoDetails}>
+                        <span>
+                          <strong>Lugar:</strong> {parto.lugar}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sección: Información del Sistema */}
+          <div className={formStyles.formSection}>
+            <h2 className={formStyles.sectionTitle}>Información del Sistema</h2>
+            <div className={formStyles.formGrid}>
+              <div className={formStyles.formGroup}>
                 <label>Fecha de Registro</label>
-                <span>
-                  {new Date(madre.createdAt).toLocaleString('es-CL')}
-                </span>
+                <input
+                  type="text"
+                  value={new Date(madre.createdAt).toLocaleString('es-CL')}
+                  disabled
+                />
               </div>
-              <div className={styles.infoItem}>
+              <div className={formStyles.formGroup}>
                 <label>Última Actualización</label>
-                <span>
-                  {new Date(madre.updatedAt).toLocaleString('es-CL')}
-                </span>
+                <input
+                  type="text"
+                  value={new Date(madre.updatedAt).toLocaleString('es-CL')}
+                  disabled
+                />
               </div>
             </div>
           </div>

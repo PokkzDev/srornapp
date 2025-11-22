@@ -51,9 +51,9 @@ export default function LoginPage() {
   const [rutError, setRutError] = useState('')
 
   useEffect(() => {
-    // Check if we're in development mode based on ENVIRONMENT variable
-    const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || 'production'
-    setIsDev(environment === 'development')
+    // Check if we're in development mode based on NEXT_PUBLIC_ENVIRONMENT from .env
+    const isDevelopment = process.env.NEXT_PUBLIC_ENVIRONMENT === 'development'
+    setIsDev(isDevelopment)
   }, [])
 
   const handleIdentifierChange = (value) => {

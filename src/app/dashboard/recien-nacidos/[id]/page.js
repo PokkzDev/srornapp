@@ -174,10 +174,10 @@ export default async function RecienNacidoDetailPage({ params }) {
                 <label>Sexo</label>
                 <span className={styles.badge}>{formatSexo(recienNacido.sexo)}</span>
               </div>
-              {recienNacido.pesoGr && (
+              {recienNacido.pesoNacimientoGramos && (
                 <div className={styles.infoItem}>
                   <label>Peso</label>
-                  <span>{recienNacido.pesoGr} g</span>
+                  <span>{recienNacido.pesoNacimientoGramos} g</span>
                 </div>
               )}
               {recienNacido.tallaCm && (
@@ -186,16 +186,16 @@ export default async function RecienNacidoDetailPage({ params }) {
                   <span>{recienNacido.tallaCm} cm</span>
                 </div>
               )}
-              {recienNacido.apgar1 !== null && recienNacido.apgar1 !== undefined && (
+              {recienNacido.apgar1Min !== null && recienNacido.apgar1Min !== undefined && (
                 <div className={styles.infoItem}>
                   <label>Apgar 1'</label>
-                  <span>{recienNacido.apgar1}</span>
+                  <span>{recienNacido.apgar1Min}</span>
                 </div>
               )}
-              {recienNacido.apgar5 !== null && recienNacido.apgar5 !== undefined && (
+              {recienNacido.apgar5Min !== null && recienNacido.apgar5Min !== undefined && (
                 <div className={styles.infoItem}>
                   <label>Apgar 5'</label>
-                  <span>{recienNacido.apgar5}</span>
+                  <span>{recienNacido.apgar5Min}</span>
                 </div>
               )}
             </div>

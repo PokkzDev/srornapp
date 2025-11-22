@@ -63,9 +63,13 @@ export async function POST(request, { params }) {
     }
 
     // Verificar que el episodio está en estado INGRESADO
-    if (episodio.estado === 'ALTA') {
+    if (episodio.estado !== 'INGRESADO') {
       return Response.json(
-        { error: 'El episodio URNI ya fue dado de alta' },
+        { 
+          error: episodio.estado === 'ALTA' 
+            ? 'El episodio URNI ya fue dado de alta' 
+            : `El episodio URNI no está en estado válido para procesar alta. Estado actual: ${episodio.estado || 'desconocido'}` 
+        },
         { status: 400 }
       )
     }

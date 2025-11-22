@@ -57,7 +57,7 @@ export async function GET(request) {
       ]
 
       // Buscar en enum TipoParto (case-insensitive)
-      const tiposValidos = ['EUTOCICO', 'DISTOCICO', 'CESAREA_ELECTIVA', 'CESAREA_EMERGENCIA']
+      const tiposValidos = ['VAGINAL', 'INSTRUMENTAL', 'CESAREA_ELECTIVA', 'CESAREA_URGENCIA', 'PREHOSPITALARIO', 'FUERA_RED', 'DOMICILIO_PROFESIONAL', 'DOMICILIO_SIN_PROFESIONAL']
       const tiposMatch = tiposValidos.filter(tipo => tipo.includes(searchUpper))
       if (tiposMatch.length > 0) {
         if (tiposMatch.length === 1) {
@@ -210,7 +210,7 @@ export async function POST(request) {
     // Validaciones de campos requeridos
     if (!data.madreId || !data.fechaHora || !data.tipo || !data.lugar) {
       return Response.json(
-        { error: 'Madre, fecha/hora, tipo y lugar son requeridos' },
+        { error: 'Madre, fecha/hora, tipo de parto y lugar son requeridos' },
         { status: 400 }
       )
     }
@@ -246,7 +246,7 @@ export async function POST(request) {
     }
 
     // Validar tipo (enum)
-    const tiposValidos = ['EUTOCICO', 'DISTOCICO', 'CESAREA_ELECTIVA', 'CESAREA_EMERGENCIA']
+    const tiposValidos = ['VAGINAL', 'INSTRUMENTAL', 'CESAREA_ELECTIVA', 'CESAREA_URGENCIA', 'PREHOSPITALARIO', 'FUERA_RED', 'DOMICILIO_PROFESIONAL', 'DOMICILIO_SIN_PROFESIONAL']
     if (!tiposValidos.includes(data.tipo)) {
       return Response.json(
         { error: 'Tipo de parto inválido' },
@@ -254,22 +254,20 @@ export async function POST(request) {
       )
     }
 
+    // Usar lugar proporcionado (ya es requerido)
+    const lugar = data.lugar
+
     // Validar lugar (enum)
     const lugaresValidos = ['SALA_PARTO', 'PABELLON', 'DOMICILIO', 'OTRO']
-    if (!lugaresValidos.includes(data.lugar)) {
+    if (!lugaresValidos.includes(lugar)) {
       return Response.json(
         { error: 'Lugar de parto inválido' },
         { status: 400 }
       )
     }
 
-    // Validar lugarDetalle si lugar es OTRO
-    if (data.lugar === 'OTRO' && (!data.lugarDetalle || data.lugarDetalle.trim() === '')) {
-      return Response.json(
-        { error: 'Detalle del lugar es requerido cuando el lugar es OTRO' },
-        { status: 400 }
-      )
-    }
+    // Usar lugarDetalle proporcionado
+    const lugarDetalle = data.lugarDetalle || null
 
     // Validar matronas si se proporcionan
     const matronasIds = Array.isArray(data.matronasIds) ? data.matronasIds : (data.matronaId ? [data.matronaId] : [])
@@ -336,8 +334,8 @@ export async function POST(request) {
       )
     }
 
-    // Validar al menos un médico si es cesárea
-    const esCesarea = data.tipo === 'CESAREA_ELECTIVA' || data.tipo === 'CESAREA_EMERGENCIA'
+    // Validar al menos un médico si es cesárea (verificar tipo puro o contexto especial)
+    const esCesarea = data.tipo === 'CESAREA_ELECTIVA' || data.tipo === 'CESAREA_URGENCIA'
     if (esCesarea && medicosIds.length === 0) {
       return Response.json(
         { error: 'Debe seleccionar al menos un médico cuando el tipo de parto es cesárea' },
@@ -371,17 +369,103 @@ export async function POST(request) {
       madreId: data.madreId,
       fechaHora: fechaHora,
       tipo: data.tipo,
-      lugar: data.lugar,
+      lugar: lugar,
       createdById: dbUser.id,
     }
 
     // Agregar campos opcionales
-    if (data.lugarDetalle && data.lugar === 'OTRO') {
-      partoData.lugarDetalle = data.lugarDetalle.trim()
+    if (lugarDetalle && lugar === 'OTRO') {
+      partoData.lugarDetalle = lugarDetalle.trim()
+    }
+
+    if (data.fechaParto) {
+      const fechaParto = new Date(data.fechaParto)
+      if (!isNaN(fechaParto.getTime())) {
+        partoData.fechaParto = fechaParto
+      }
+    }
+
+    if (data.establecimientoId) {
+      partoData.establecimientoId = data.establecimientoId.trim()
+    }
+
+    if (data.edadGestacionalSemanas !== undefined && data.edadGestacionalSemanas !== null) {
+      const edadGestacional = parseInt(data.edadGestacionalSemanas)
+      if (!isNaN(edadGestacional) && edadGestacional >= 0) {
+        partoData.edadGestacionalSemanas = edadGestacional
+      }
+    }
+
+    if (data.tipoCursoParto && ['EUTOCICO', 'DISTOCICO'].includes(data.tipoCursoParto)) {
+      partoData.tipoCursoParto = data.tipoCursoParto
+    }
+
+    if (data.inicioTrabajoParto && ['ESPONTANEO', 'INDUCIDO_MECANICO', 'INDUCIDO_FARMACOLOGICO'].includes(data.inicioTrabajoParto)) {
+      partoData.inicioTrabajoParto = data.inicioTrabajoParto
+    }
+
+    if (data.conduccionOxitocica !== undefined) {
+      partoData.conduccionOxitocica = Boolean(data.conduccionOxitocica)
+    }
+
+    if (data.libertadMovimiento !== undefined) {
+      partoData.libertadMovimiento = Boolean(data.libertadMovimiento)
+    }
+
+    if (data.regimenHidricoAmplio !== undefined) {
+      partoData.regimenHidricoAmplio = Boolean(data.regimenHidricoAmplio)
+    }
+
+    if (data.manejoDolorNoFarmacologico !== undefined) {
+      partoData.manejoDolorNoFarmacologico = Boolean(data.manejoDolorNoFarmacologico)
+    }
+
+    if (data.manejoDolorFarmacologico !== undefined) {
+      partoData.manejoDolorFarmacologico = Boolean(data.manejoDolorFarmacologico)
+    }
+
+    if (data.posicionExpulsivo && ['LITOTOMIA', 'OTRAS'].includes(data.posicionExpulsivo)) {
+      partoData.posicionExpulsivo = data.posicionExpulsivo
+    }
+
+    if (data.episiotomia !== undefined) {
+      partoData.episiotomia = Boolean(data.episiotomia)
+    }
+
+    if (data.acompananteDuranteTrabajo !== undefined) {
+      partoData.acompananteDuranteTrabajo = Boolean(data.acompananteDuranteTrabajo)
+    }
+
+    if (data.acompananteSoloExpulsivo !== undefined) {
+      partoData.acompananteSoloExpulsivo = Boolean(data.acompananteSoloExpulsivo)
+    }
+
+    if (data.oxitocinaProfilactica !== undefined) {
+      partoData.oxitocinaProfilactica = Boolean(data.oxitocinaProfilactica)
+    }
+
+    if (data.ligaduraTardiaCordon !== undefined) {
+      partoData.ligaduraTardiaCordon = Boolean(data.ligaduraTardiaCordon)
+    }
+
+    if (data.atencionPertinenciaCultural !== undefined) {
+      partoData.atencionPertinenciaCultural = Boolean(data.atencionPertinenciaCultural)
+    }
+
+    if (data.contactoPielPielMadre30min !== undefined) {
+      partoData.contactoPielPielMadre30min = Boolean(data.contactoPielPielMadre30min)
+    }
+
+    if (data.contactoPielPielAcomp30min !== undefined) {
+      partoData.contactoPielPielAcomp30min = Boolean(data.contactoPielPielAcomp30min)
+    }
+
+    if (data.lactancia60minAlMenosUnRn !== undefined) {
+      partoData.lactancia60minAlMenosUnRn = Boolean(data.lactancia60minAlMenosUnRn)
     }
 
     if (data.complicaciones) {
-      partoData.complicaciones = data.complicaciones.trim().substring(0, 500)
+      partoData.complicacionesTexto = data.complicaciones.trim().substring(0, 500)
     }
 
     if (data.observaciones) {

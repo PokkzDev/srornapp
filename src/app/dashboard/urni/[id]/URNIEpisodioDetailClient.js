@@ -31,6 +31,16 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
 
       const data = await response.json()
       setEpisodio(data.data)
+      
+      // Debug: verificar estado y permisos
+      if (data.data) {
+        console.log('Episodio cargado:', {
+          id: data.data.id,
+          estado: data.data.estado,
+          tienePermisoAlta: permissions?.alta,
+          permisos: permissions
+        })
+      }
     } catch (err) {
       console.error('Error loading episodio:', err)
       setError(err.message || 'Error al cargar el episodio')
@@ -40,6 +50,12 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
   }
 
   const handleProcesarAlta = async () => {
+    // Validar estado antes de proceder
+    if (!episodio || episodio.estado !== 'INGRESADO') {
+      alert(`No se puede procesar el alta. El episodio está en estado: ${episodio?.estado || 'desconocido'}`)
+      return
+    }
+
     if (!window.confirm('¿Está seguro que desea procesar el alta de este episodio URNI?')) {
       return
     }
@@ -59,6 +75,11 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
       const data = await response.json()
 
       if (!response.ok) {
+        console.error('Error al procesar alta:', {
+          status: response.status,
+          error: data.error,
+          episodioEstado: episodio?.estado
+        })
         alert(data.error || 'Error al procesar el alta')
         setProcesandoAlta(false)
         return
@@ -220,15 +241,38 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
             <h1>Detalle del Episodio URNI</h1>
             <p>Información completa del episodio de ingreso a URNI</p>
           </div>
-          {episodio.estado === 'INGRESADO' && permissions.alta && (
-            <button
-              onClick={() => setShowAltaForm(true)}
-              className={styles.btnAlta}
-            >
-              <i className="fas fa-door-open"></i>
-              Procesar Alta
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {episodio.estado === 'INGRESADO' && permissions.update && (
+              <Link
+                href={`/dashboard/urni/${episodioId}/editar`}
+                className={styles.btnEdit}
+              >
+                <i className="fas fa-edit"></i>
+                Editar
+              </Link>
+            )}
+            {episodio.estado === 'INGRESADO' && permissions.alta && (
+              <button
+                onClick={() => setShowAltaForm(true)}
+                className={styles.btnAlta}
+              >
+                <i className="fas fa-door-open"></i>
+                Procesar Alta
+              </button>
+            )}
+            {episodio.estado === 'INGRESADO' && !permissions.alta && (
+              <span style={{ 
+                color: '#856404', 
+                backgroundColor: '#fff3cd', 
+                padding: '0.5rem 1rem', 
+                borderRadius: '4px',
+                fontSize: '0.875rem',
+                border: '1px solid #ffc107'
+              }}>
+                <i className="fas fa-info-circle"></i> No tiene permisos para procesar altas
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -296,10 +340,10 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
                   <label>Sexo</label>
                   <span className={styles.badge}>{formatSexo(episodio.rn.sexo)}</span>
                 </div>
-                {episodio.rn.pesoGr && (
+                {episodio.rn.pesoNacimientoGramos && (
                   <div className={styles.infoItem}>
                     <label>Peso</label>
-                    <span>{episodio.rn.pesoGr} g</span>
+                    <span>{episodio.rn.pesoNacimientoGramos} g</span>
                   </div>
                 )}
                 {episodio.rn.tallaCm && (
@@ -308,16 +352,16 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
                     <span>{episodio.rn.tallaCm} cm</span>
                   </div>
                 )}
-                {episodio.rn.apgar1 !== null && episodio.rn.apgar1 !== undefined && (
+                {episodio.rn.apgar1Min !== null && episodio.rn.apgar1Min !== undefined && (
                   <div className={styles.infoItem}>
                     <label>Apgar 1'</label>
-                    <span>{episodio.rn.apgar1}</span>
+                    <span>{episodio.rn.apgar1Min}</span>
                   </div>
                 )}
-                {episodio.rn.apgar5 !== null && episodio.rn.apgar5 !== undefined && (
+                {episodio.rn.apgar5Min !== null && episodio.rn.apgar5Min !== undefined && (
                   <div className={styles.infoItem}>
                     <label>Apgar 5'</label>
-                    <span>{episodio.rn.apgar5}</span>
+                    <span>{episodio.rn.apgar5Min}</span>
                   </div>
                 )}
                 {episodio.rn.parto?.madre && (
@@ -523,6 +567,12 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
               <div className={styles.infoItem}>
                 <label>Registrado por</label>
                 <span>{episodio.createdBy.nombre}</span>
+              </div>
+            )}
+            {episodio.updatedBy && (
+              <div className={styles.infoItem}>
+                <label>Última modificación por</label>
+                <span>{episodio.updatedBy.nombre}</span>
               </div>
             )}
           </div>
