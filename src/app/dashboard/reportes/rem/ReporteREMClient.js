@@ -50,11 +50,6 @@ export default function ReporteREMClient() {
     }
   }
 
-  const exportarExcel = () => {
-    // TODO: Implementar exportación a Excel
-    alert('Funcionalidad de exportación en desarrollo')
-  }
-
   const exportarPDF = async () => {
     if (!reporte) {
       alert('Primero debe generar un reporte')
@@ -156,9 +151,6 @@ export default function ReporteREMClient() {
         <div className={styles.reportContainer}>
           {/* Botones de exportación */}
           <div className={styles.exportButtons}>
-            <button onClick={exportarExcel} className={styles.btnSuccess}>
-              <i className="fas fa-file-excel"></i> Exportar a Excel
-            </button>
             <button onClick={exportarPDF} className={styles.btnDanger}>
               <i className="fas fa-file-pdf"></i> Exportar a PDF
             </button>
