@@ -379,7 +379,7 @@ export default function UsuariosClient({ permissions }) {
         title={modal.title}
         message={modal.message}
         onConfirm={modal.onConfirm}
-        onCancel={closeModal}
+        onClose={closeModal}
         confirmText={modal.confirmText}
         cancelText={modal.cancelText}
         showCancel={modal.showCancel}
