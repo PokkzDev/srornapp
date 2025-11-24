@@ -4,6 +4,12 @@ import "./globals.css";
 export const metadata = {
   title: "Sistema SRORN",
   description: "Sistema de registro hospitalario",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({ children }) {
