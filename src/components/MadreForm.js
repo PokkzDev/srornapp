@@ -202,6 +202,13 @@ function calcularEdad(fechaNacimiento) {
   }
 }
 
+// Función helper para convertir valor booleano/null a string para select
+function booleanToString(valor) {
+  if (valor === true) return 'true'
+  if (valor === false) return 'false'
+  return ''
+}
+
 export default function MadreForm({ initialData = null, isEdit = false, madreId = null, isLimited = false }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -218,14 +225,19 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
     nombres: '',
     apellidos: '',
     edad: '',
+    edadAnos: '',
     fechaNacimiento: '',
     direccion: '',
     telefono: '',
     fichaClinica: '',
-    // Campos para REM
-    esPrimigestas: false,
-    numeroGestaciones: '',
-    numeroPartos: '',
+    // Campos REM
+    pertenenciaPuebloOriginario: null,
+    condicionMigrante: null,
+    condicionDiscapacidad: null,
+    condicionPrivadaLibertad: null,
+    identidadTrans: null,
+    hepatitisBPositiva: null,
+    controlPrenatal: null,
   })
 
   // Cargar datos iniciales si es modo edición
@@ -240,10 +252,14 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
         direccion: initialData.direccion || '',
         telefono: initialData.telefono || '',
         fichaClinica: initialData.fichaClinica || '',
-        // Campos para REM
-        esPrimigestas: initialData.esPrimigestas || false,
-        numeroGestaciones: initialData.numeroGestaciones?.toString() || '',
-        numeroPartos: initialData.numeroPartos?.toString() || '',
+        // Campos REM
+        pertenenciaPuebloOriginario: initialData.pertenenciaPuebloOriginario ?? null,
+        condicionMigrante: initialData.condicionMigrante ?? null,
+        condicionDiscapacidad: initialData.condicionDiscapacidad ?? null,
+        condicionPrivadaLibertad: initialData.condicionPrivadaLibertad ?? null,
+        identidadTrans: initialData.identidadTrans ?? null,
+        hepatitisBPositiva: initialData.hepatitisBPositiva ?? null,
+        controlPrenatal: initialData.controlPrenatal ?? null,
       })
     }
   }, [isEdit, initialData])
@@ -306,15 +322,46 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
         setTelefonoError('')
       }
     } else {
-      setFormData({ ...formData, [name]: value })
+      // Manejar campos booleanos con dropdowns (select)
+      const camposBooleanos = [
+        'pertenenciaPuebloOriginario',
+        'condicionMigrante',
+        'condicionDiscapacidad',
+        'condicionPrivadaLibertad',
+        'identidadTrans',
+        'hepatitisBPositiva',
+        'controlPrenatal'
+      ]
       
-      // Validar fecha de nacimiento en tiempo real
-      if (name === 'fechaNacimiento') {
-        const validacion = validarFechaNacimiento(value)
-        if (!validacion.valida) {
-          setFechaNacimientoError(validacion.error)
+      if (camposBooleanos.includes(name)) {
+        // Convertir string a boolean o null
+        let valorBooleano = null
+        if (value === 'true') {
+          valorBooleano = true
+        } else if (value === 'false') {
+          valorBooleano = false
         } else {
-          setFechaNacimientoError('')
+          valorBooleano = null
+        }
+        setFormData({ ...formData, [name]: valorBooleano })
+      } else {
+        setFormData({ ...formData, [name]: value })
+        
+        // Validar fecha de nacimiento en tiempo real
+        if (name === 'fechaNacimiento') {
+          const validacion = validarFechaNacimiento(value)
+          if (!validacion.valida) {
+            setFechaNacimientoError(validacion.error)
+          } else {
+            setFechaNacimientoError('')
+          }
+          // Calcular edad cuando se cambia fechaNacimiento
+          if (value) {
+            const edadCalculada = calcularEdad(value)
+            if (edadCalculada) {
+              setFormData(prev => ({ ...prev, edad: edadCalculada }))
+            }
+          }
         }
       }
     }
@@ -406,6 +453,39 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
       const edadCalculada = calcularEdad(datosParaEnviar.fechaNacimiento)
       datosParaEnviar.edad = edadCalculada || ''
     }
+    
+    // Sincronizar edadAnos con edad (para REM) - siempre desde edad, ya sea calculada o manual
+    if (datosParaEnviar.edad && datosParaEnviar.edad !== '') {
+      const edadNum = parseInt(datosParaEnviar.edad)
+      if (!isNaN(edadNum) && edadNum >= 0) {
+        datosParaEnviar.edadAnos = edadNum
+      } else {
+        datosParaEnviar.edadAnos = null
+      }
+    } else {
+      datosParaEnviar.edadAnos = null
+    }
+    
+    // Convertir campos booleanos: null -> null, 'true' -> true, 'false' -> false
+    const camposBooleanos = [
+      'pertenenciaPuebloOriginario',
+      'condicionMigrante',
+      'condicionDiscapacidad',
+      'condicionPrivadaLibertad',
+      'identidadTrans',
+      'hepatitisBPositiva',
+      'controlPrenatal'
+    ]
+    
+    camposBooleanos.forEach(campo => {
+      if (datosParaEnviar[campo] === 'true') {
+        datosParaEnviar[campo] = true
+      } else if (datosParaEnviar[campo] === 'false') {
+        datosParaEnviar[campo] = false
+      } else if (datosParaEnviar[campo] === '') {
+        datosParaEnviar[campo] = null
+      }
+    })
 
     try {
       const url = isEdit ? `/api/madres/${madreId}` : '/api/madres'
@@ -457,204 +537,278 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
       )}
 
       <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.formGrid}>
-          {/* RUT */}
-          <div className={styles.formGroup}>
-            <label htmlFor="rut">
-              RUT <span className={styles.required}>*</span>
-            </label>
-            <input
-              type="text"
-              id="rut"
-              name="rut"
-              value={formData.rut}
-              onChange={handleRUTChange}
-              placeholder="12345678-9"
-              maxLength="10"
-              required
-              disabled={isEdit}
-              className={rutError ? styles.inputError : ''}
-            />
-            {rutError && (
-              <span className={styles.errorText}>{rutError}</span>
-            )}
-            {!isEdit && (
-              <small className={styles.helpText}>
-                Sin puntos, con guion (ej: 12345678-9)
-              </small>
-            )}
-            {isEdit && (
-              <small className={styles.helpText}>
-                El RUT no se puede modificar
-              </small>
-            )}
-          </div>
-
-          {/* Nombres */}
-          <div className={styles.formGroup}>
-            <label htmlFor="nombres">
-              Nombres <span className={styles.required}>*</span>
-            </label>
-            <input
-              type="text"
-              id="nombres"
-              name="nombres"
-              value={formData.nombres}
-              onChange={handleChange}
-              required
-              maxLength={120}
-              className={nombresError ? styles.inputError : ''}
-            />
-            {nombresError && (
-              <span className={styles.errorText}>{nombresError}</span>
-            )}
-          </div>
-
-          {/* Apellidos */}
-          <div className={styles.formGroup}>
-            <label htmlFor="apellidos">
-              Apellidos <span className={styles.required}>*</span>
-            </label>
-            <input
-              type="text"
-              id="apellidos"
-              name="apellidos"
-              value={formData.apellidos}
-              onChange={handleChange}
-              required
-              maxLength={120}
-              className={apellidosError ? styles.inputError : ''}
-            />
-            {apellidosError && (
-              <span className={styles.errorText}>{apellidosError}</span>
-            )}
-          </div>
-
-          {/* Fecha de Nacimiento */}
-          <div className={styles.formGroup}>
-            <label htmlFor="fechaNacimiento">
-              Fecha de Nacimiento <span className={styles.required}>*</span>
-            </label>
-            <input
-              type="date"
-              id="fechaNacimiento"
-              name="fechaNacimiento"
-              value={formData.fechaNacimiento}
-              onChange={handleChange}
-              max={obtenerFechaActualSantiago()}
-              required
-              className={fechaNacimientoError ? styles.inputError : ''}
-            />
-            {fechaNacimientoError && (
-              <span className={styles.errorText}>{fechaNacimientoError}</span>
-            )}
-            <small className={styles.helpText}>
-              La edad se calculará automáticamente
-            </small>
-          </div>
-
-          {/* Dirección */}
-          <div className={styles.formGroup}>
-            <label htmlFor="direccion">Dirección</label>
-            <input
-              type="text"
-              id="direccion"
-              name="direccion"
-              value={formData.direccion}
-              onChange={handleChange}
-              maxLength={200}
-            />
-          </div>
-
-          {/* Teléfono */}
-          <div className={styles.formGroup}>
-            <label htmlFor="telefono">Teléfono</label>
-            <input
-              type="tel"
-              id="telefono"
-              name="telefono"
-              value={formData.telefono}
-              onChange={handleChange}
-              maxLength={16}
-              placeholder="+56912345678"
-              className={telefonoError ? styles.inputError : ''}
-            />
-            {telefonoError && (
-              <span className={styles.errorText}>{telefonoError}</span>
-            )}
-            <small className={styles.helpText}>
-              Formato internacional: + (código de país) + número (ej: +56912345678)
-            </small>
-          </div>
-
-          {/* Ficha Clínica */}
-          <div className={styles.formGroup}>
-            <label htmlFor="fichaClinica">Ficha Clínica</label>
-            <input
-              type="text"
-              id="fichaClinica"
-              name="fichaClinica"
-              value={formData.fichaClinica}
-              onChange={handleChange}
-              maxLength={30}
-              placeholder="Número de ficha clínica del hospital"
-            />
-            <small className={styles.helpText}>
-              Número de identificación clínica del hospital (opcional, debe ser único)
-            </small>
-          </div>
-          
-          {/* Es Primigesta (para REM) */}
-          <div className={styles.formGroup}>
-            <label className={styles.checkboxLabel}>
+        {/* Sección: Datos Personales */}
+        <div className={styles.formSection}>
+          <h2 className={styles.sectionTitle}>Datos Personales</h2>
+          <div className={styles.formGrid}>
+            {/* RUT */}
+            <div className={styles.formGroup}>
+              <label htmlFor="rut">
+                RUT <span className={styles.required}>*</span>
+              </label>
               <input
-                type="checkbox"
-                name="esPrimigestas"
-                checked={formData.esPrimigestas}
-                onChange={(e) => setFormData({...formData, esPrimigestas: e.target.checked})}
-                className={styles.checkbox}
+                type="text"
+                id="rut"
+                name="rut"
+                value={formData.rut}
+                onChange={handleRUTChange}
+                placeholder="12345678-9"
+                maxLength="10"
+                required
+                disabled={isEdit}
+                className={rutError ? styles.inputError : ''}
               />
-              <span>Es Primigesta (primer parto)</span>
-            </label>
+              {rutError && (
+                <span className={styles.errorText}>{rutError}</span>
+              )}
+              {!isEdit && (
+                <small className={styles.helpText}>
+                  Sin puntos, con guion (ej: 12345678-9)
+                </small>
+              )}
+              {isEdit && (
+                <small className={styles.helpText}>
+                  El RUT no se puede modificar
+                </small>
+              )}
+            </div>
+
+            {/* Nombres */}
+            <div className={styles.formGroup}>
+              <label htmlFor="nombres">
+                Nombres <span className={styles.required}>*</span>
+              </label>
+              <input
+                type="text"
+                id="nombres"
+                name="nombres"
+                value={formData.nombres}
+                onChange={handleChange}
+                required
+                maxLength={120}
+                className={nombresError ? styles.inputError : ''}
+              />
+              {nombresError && (
+                <span className={styles.errorText}>{nombresError}</span>
+              )}
+            </div>
+
+            {/* Apellidos */}
+            <div className={styles.formGroup}>
+              <label htmlFor="apellidos">
+                Apellidos <span className={styles.required}>*</span>
+              </label>
+              <input
+                type="text"
+                id="apellidos"
+                name="apellidos"
+                value={formData.apellidos}
+                onChange={handleChange}
+                required
+                maxLength={120}
+                className={apellidosError ? styles.inputError : ''}
+              />
+              {apellidosError && (
+                <span className={styles.errorText}>{apellidosError}</span>
+              )}
+            </div>
+
+            {/* Fecha de Nacimiento */}
+            <div className={styles.formGroup}>
+              <label htmlFor="fechaNacimiento">
+                Fecha de Nacimiento <span className={styles.required}>*</span>
+              </label>
+              <input
+                type="date"
+                id="fechaNacimiento"
+                name="fechaNacimiento"
+                value={formData.fechaNacimiento}
+                onChange={handleChange}
+                max={obtenerFechaActualSantiago()}
+                required
+                className={fechaNacimientoError ? styles.inputError : ''}
+              />
+              {fechaNacimientoError && (
+                <span className={styles.errorText}>{fechaNacimientoError}</span>
+              )}
+              <small className={styles.helpText}>
+                La edad se calculará automáticamente
+              </small>
+            </div>
+          </div>
+        </div>
+
+        {/* Sección: Datos de Contacto */}
+        <div className={styles.formSection}>
+          <h2 className={styles.sectionTitle}>Datos de Contacto</h2>
+          <div className={styles.formGrid}>
+            {/* Dirección */}
+            <div className={styles.formGroup}>
+              <label htmlFor="direccion">Dirección</label>
+              <input
+                type="text"
+                id="direccion"
+                name="direccion"
+                value={formData.direccion}
+                onChange={handleChange}
+                maxLength={200}
+              />
+            </div>
+
+            {/* Teléfono */}
+            <div className={styles.formGroup}>
+              <label htmlFor="telefono">Teléfono</label>
+              <input
+                type="tel"
+                id="telefono"
+                name="telefono"
+                value={formData.telefono}
+                onChange={handleChange}
+                maxLength={16}
+                placeholder="+56912345678"
+                className={telefonoError ? styles.inputError : ''}
+              />
+              {telefonoError && (
+                <span className={styles.errorText}>{telefonoError}</span>
+              )}
+              <small className={styles.helpText}>
+                Formato internacional: + (código de país) + número (ej: +56912345678)
+              </small>
+            </div>
+
+            {/* Ficha Clínica */}
+            <div className={styles.formGroup}>
+              <label htmlFor="fichaClinica">Ficha Clínica</label>
+              <input
+                type="text"
+                id="fichaClinica"
+                name="fichaClinica"
+                value={formData.fichaClinica}
+                onChange={handleChange}
+                maxLength={30}
+                placeholder="Número de ficha clínica del hospital"
+              />
+              <small className={styles.helpText}>
+                Número de identificación clínica del hospital (opcional, debe ser único)
+              </small>
+            </div>
+          </div>
+        </div>
+
+        {/* Sección: Información Demográfica y Social */}
+        <div className={styles.formSection}>
+          <h2 className={styles.sectionTitle}>Información Demográfica y Social</h2>
+          <div className={styles.formGrid}>
+          {/* Pertenencia a Pueblo Originario */}
+          <div className={styles.formGroup}>
+            <label htmlFor="pertenenciaPuebloOriginario">Pertenencia a Pueblo Originario</label>
+            <select
+              id="pertenenciaPuebloOriginario"
+              name="pertenenciaPuebloOriginario"
+              value={booleanToString(formData.pertenenciaPuebloOriginario)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+
+          {/* Condición Migrante */}
+          <div className={styles.formGroup}>
+            <label htmlFor="condicionMigrante">Condición Migrante</label>
+            <select
+              id="condicionMigrante"
+              name="condicionMigrante"
+              value={booleanToString(formData.condicionMigrante)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+
+          {/* Condición Discapacidad */}
+          <div className={styles.formGroup}>
+            <label htmlFor="condicionDiscapacidad">Condición Discapacidad</label>
+            <select
+              id="condicionDiscapacidad"
+              name="condicionDiscapacidad"
+              value={booleanToString(formData.condicionDiscapacidad)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+
+          {/* Condición Privada de Libertad */}
+          <div className={styles.formGroup}>
+            <label htmlFor="condicionPrivadaLibertad">Condición Privada de Libertad</label>
+            <select
+              id="condicionPrivadaLibertad"
+              name="condicionPrivadaLibertad"
+              value={booleanToString(formData.condicionPrivadaLibertad)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+
+          {/* Identidad Trans */}
+          <div className={styles.formGroup}>
+            <label htmlFor="identidadTrans">Identidad Trans</label>
+            <select
+              id="identidadTrans"
+              name="identidadTrans"
+              value={booleanToString(formData.identidadTrans)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+
+          {/* Hepatitis B Positiva */}
+          <div className={styles.formGroup}>
+            <label htmlFor="hepatitisBPositiva">Hepatitis B Positiva</label>
+            <select
+              id="hepatitisBPositiva"
+              name="hepatitisBPositiva"
+              value={booleanToString(formData.hepatitisBPositiva)}
+              onChange={handleChange}
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
             <small className={styles.helpText}>
-              Marcar si es la primera vez que dará a luz (para reportes REM)
+              Para sección J transmisión vertical
             </small>
           </div>
-          
-          {/* Número de Gestaciones (G) */}
+
+          {/* Control Prenatal */}
           <div className={styles.formGroup}>
-            <label htmlFor="numeroGestaciones">Número de Gestaciones (G)</label>
-            <input
-              type="number"
-              id="numeroGestaciones"
-              name="numeroGestaciones"
-              value={formData.numeroGestaciones}
+            <label htmlFor="controlPrenatal">Control Prenatal</label>
+            <select
+              id="controlPrenatal"
+              name="controlPrenatal"
+              value={booleanToString(formData.controlPrenatal)}
               onChange={handleChange}
-              min="0"
-              max="20"
-              placeholder="Ej: 2"
-            />
+            >
+              <option value="">No especificado</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
             <small className={styles.helpText}>
-              Número total de gestaciones incluyendo la actual
+              Embarazo controlado / no controlado
             </small>
           </div>
-          
-          {/* Número de Partos (P) */}
-          <div className={styles.formGroup}>
-            <label htmlFor="numeroPartos">Número de Partos Previos (P)</label>
-            <input
-              type="number"
-              id="numeroPartos"
-              name="numeroPartos"
-              value={formData.numeroPartos}
-              onChange={handleChange}
-              min="0"
-              max="20"
-              placeholder="Ej: 1"
-            />
-            <small className={styles.helpText}>
-              Número de partos previos (sin incluir el actual)
-            </small>
           </div>
         </div>
 

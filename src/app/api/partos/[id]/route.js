@@ -71,10 +71,10 @@ export async function GET(request, { params }) {
           select: {
             id: true,
             sexo: true,
-            pesoGr: true,
+            pesoNacimientoGramos: true,
             tallaCm: true,
-            apgar1: true,
-            apgar5: true,
+            apgar1Min: true,
+            apgar5Min: true,
           },
         },
       },
@@ -154,7 +154,7 @@ export async function PUT(request, { params }) {
     // Validaciones de campos requeridos
     if (!data.madreId || !data.fechaHora || !data.tipo || !data.lugar) {
       return Response.json(
-        { error: 'Madre, fecha/hora, tipo y lugar son requeridos' },
+        { error: 'Madre, fecha/hora, tipo de parto y lugar son requeridos' },
         { status: 400 }
       )
     }
@@ -190,7 +190,7 @@ export async function PUT(request, { params }) {
     }
 
     // Validar tipo (enum)
-    const tiposValidos = ['EUTOCICO', 'DISTOCICO', 'CESAREA_ELECTIVA', 'CESAREA_EMERGENCIA']
+    const tiposValidos = ['VAGINAL', 'INSTRUMENTAL', 'CESAREA_ELECTIVA', 'CESAREA_URGENCIA', 'PREHOSPITALARIO', 'FUERA_RED', 'DOMICILIO_PROFESIONAL', 'DOMICILIO_SIN_PROFESIONAL']
     if (!tiposValidos.includes(data.tipo)) {
       return Response.json(
         { error: 'Tipo de parto inválido' },
@@ -198,22 +198,20 @@ export async function PUT(request, { params }) {
       )
     }
 
+    // Usar lugar proporcionado (ya es requerido)
+    const lugar = data.lugar
+
     // Validar lugar (enum)
     const lugaresValidos = ['SALA_PARTO', 'PABELLON', 'DOMICILIO', 'OTRO']
-    if (!lugaresValidos.includes(data.lugar)) {
+    if (!lugaresValidos.includes(lugar)) {
       return Response.json(
         { error: 'Lugar de parto inválido' },
         { status: 400 }
       )
     }
 
-    // Validar lugarDetalle si lugar es OTRO
-    if (data.lugar === 'OTRO' && (!data.lugarDetalle || data.lugarDetalle.trim() === '')) {
-      return Response.json(
-        { error: 'Detalle del lugar es requerido cuando el lugar es OTRO' },
-        { status: 400 }
-      )
-    }
+    // Usar lugarDetalle proporcionado
+    const lugarDetalle = data.lugarDetalle || null
 
     // Validar matronas si se proporcionan
     const matronasIds = Array.isArray(data.matronasIds) ? data.matronasIds : (data.matronaId ? [data.matronaId] : [])
@@ -280,8 +278,8 @@ export async function PUT(request, { params }) {
       )
     }
 
-    // Validar al menos un médico si es cesárea
-    const esCesarea = data.tipo === 'CESAREA_ELECTIVA' || data.tipo === 'CESAREA_EMERGENCIA'
+    // Validar al menos un médico si es cesárea (verificar tipo puro o contexto especial)
+    const esCesarea = data.tipo === 'CESAREA_ELECTIVA' || data.tipo === 'CESAREA_URGENCIA'
     if (esCesarea && medicosIds.length === 0) {
       return Response.json(
         { error: 'Debe seleccionar al menos un médico cuando el tipo de parto es cesárea' },
@@ -315,19 +313,117 @@ export async function PUT(request, { params }) {
       madreId: data.madreId,
       fechaHora: fechaHora,
       tipo: data.tipo,
-      lugar: data.lugar,
+      lugar: lugar,
       updatedById: user.id,
     }
 
     // Agregar campos opcionales
-    if (data.lugar === 'OTRO') {
-      partoData.lugarDetalle = data.lugarDetalle ? data.lugarDetalle.trim() : null
+    if (lugar === 'OTRO') {
+      partoData.lugarDetalle = lugarDetalle ? lugarDetalle.trim() : null
     } else {
       partoData.lugarDetalle = null
     }
 
+    if (data.fechaParto !== undefined) {
+      if (data.fechaParto) {
+        const fechaParto = new Date(data.fechaParto)
+        if (!isNaN(fechaParto.getTime())) {
+          partoData.fechaParto = fechaParto
+        } else {
+          partoData.fechaParto = null
+        }
+      } else {
+        partoData.fechaParto = null
+      }
+    }
+
+    if (data.establecimientoId !== undefined) {
+      partoData.establecimientoId = data.establecimientoId ? data.establecimientoId.trim() : null
+    }
+
+    if (data.edadGestacionalSemanas !== undefined) {
+      if (data.edadGestacionalSemanas !== null && data.edadGestacionalSemanas !== '') {
+        const edadGestacional = parseInt(data.edadGestacionalSemanas)
+        if (!isNaN(edadGestacional) && edadGestacional >= 0) {
+          partoData.edadGestacionalSemanas = edadGestacional
+        } else {
+          partoData.edadGestacionalSemanas = null
+        }
+      } else {
+        partoData.edadGestacionalSemanas = null
+      }
+    }
+
+    if (data.tipoCursoParto !== undefined) {
+      partoData.tipoCursoParto = (data.tipoCursoParto && ['EUTOCICO', 'DISTOCICO'].includes(data.tipoCursoParto)) ? data.tipoCursoParto : null
+    }
+
+    if (data.inicioTrabajoParto !== undefined) {
+      partoData.inicioTrabajoParto = (data.inicioTrabajoParto && ['ESPONTANEO', 'INDUCIDO_MECANICO', 'INDUCIDO_FARMACOLOGICO'].includes(data.inicioTrabajoParto)) ? data.inicioTrabajoParto : null
+    }
+
+    if (data.conduccionOxitocica !== undefined) {
+      partoData.conduccionOxitocica = data.conduccionOxitocica ? Boolean(data.conduccionOxitocica) : null
+    }
+
+    if (data.libertadMovimiento !== undefined) {
+      partoData.libertadMovimiento = data.libertadMovimiento ? Boolean(data.libertadMovimiento) : null
+    }
+
+    if (data.regimenHidricoAmplio !== undefined) {
+      partoData.regimenHidricoAmplio = data.regimenHidricoAmplio ? Boolean(data.regimenHidricoAmplio) : null
+    }
+
+    if (data.manejoDolorNoFarmacologico !== undefined) {
+      partoData.manejoDolorNoFarmacologico = data.manejoDolorNoFarmacologico ? Boolean(data.manejoDolorNoFarmacologico) : null
+    }
+
+    if (data.manejoDolorFarmacologico !== undefined) {
+      partoData.manejoDolorFarmacologico = data.manejoDolorFarmacologico ? Boolean(data.manejoDolorFarmacologico) : null
+    }
+
+    if (data.posicionExpulsivo !== undefined) {
+      partoData.posicionExpulsivo = (data.posicionExpulsivo && ['LITOTOMIA', 'OTRAS'].includes(data.posicionExpulsivo)) ? data.posicionExpulsivo : null
+    }
+
+    if (data.episiotomia !== undefined) {
+      partoData.episiotomia = data.episiotomia ? Boolean(data.episiotomia) : null
+    }
+
+    if (data.acompananteDuranteTrabajo !== undefined) {
+      partoData.acompananteDuranteTrabajo = data.acompananteDuranteTrabajo ? Boolean(data.acompananteDuranteTrabajo) : null
+    }
+
+    if (data.acompananteSoloExpulsivo !== undefined) {
+      partoData.acompananteSoloExpulsivo = data.acompananteSoloExpulsivo ? Boolean(data.acompananteSoloExpulsivo) : null
+    }
+
+    if (data.oxitocinaProfilactica !== undefined) {
+      partoData.oxitocinaProfilactica = data.oxitocinaProfilactica ? Boolean(data.oxitocinaProfilactica) : null
+    }
+
+    if (data.ligaduraTardiaCordon !== undefined) {
+      partoData.ligaduraTardiaCordon = data.ligaduraTardiaCordon ? Boolean(data.ligaduraTardiaCordon) : null
+    }
+
+    if (data.atencionPertinenciaCultural !== undefined) {
+      partoData.atencionPertinenciaCultural = data.atencionPertinenciaCultural ? Boolean(data.atencionPertinenciaCultural) : null
+    }
+
+    if (data.contactoPielPielMadre30min !== undefined) {
+      partoData.contactoPielPielMadre30min = data.contactoPielPielMadre30min ? Boolean(data.contactoPielPielMadre30min) : null
+    }
+
+    if (data.contactoPielPielAcomp30min !== undefined) {
+      partoData.contactoPielPielAcomp30min = data.contactoPielPielAcomp30min ? Boolean(data.contactoPielPielAcomp30min) : null
+    }
+
+    if (data.lactancia60minAlMenosUnRn !== undefined) {
+      partoData.lactancia60minAlMenosUnRn = data.lactancia60minAlMenosUnRn ? Boolean(data.lactancia60minAlMenosUnRn) : null
+    }
+
     if (data.complicaciones !== undefined) {
-      partoData.complicaciones = data.complicaciones ? data.complicaciones.trim().substring(0, 500) : null
+      partoData.complicacionesTexto = data.complicaciones ? data.complicaciones.trim().substring(0, 500) : null
     }
 
     if (data.observaciones !== undefined) {

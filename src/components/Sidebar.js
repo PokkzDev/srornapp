@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { getCurrentUser, getUserPermissions } from '@/lib/auth'
 import UserMenu from './UserMenu'
 import styles from './Sidebar.module.css'
@@ -175,6 +176,14 @@ export default async function Sidebar() {
   return (
     <aside className={styles.sidebar}>
       <div className={styles.header}>
+        <Image
+          src="/logo.png"
+          alt="SRORN Logo"
+          width={180}
+          height={180}
+          className={styles.logo}
+          priority
+        />
         <h2>Sistema SRORN</h2>
       </div>
       <nav className={styles.nav}>

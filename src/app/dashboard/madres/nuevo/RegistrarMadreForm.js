@@ -146,6 +146,14 @@ export default function RegistrarMadreForm() {
     direccion: '',
     telefono: '',
     fichaClinica: '',
+    // Campos REM
+    pertenenciaPuebloOriginario: null,
+    condicionMigrante: null,
+    condicionDiscapacidad: null,
+    condicionPrivadaLibertad: null,
+    identidadTrans: null,
+    hepatitisBPositiva: null,
+    controlPrenatal: null,
   })
 
   // Validar RUT en tiempo real
@@ -185,7 +193,31 @@ export default function RegistrarMadreForm() {
         setTelefonoError('')
       }
     } else {
-      setFormData({ ...formData, [name]: value })
+      // Manejar campos booleanos con radio buttons
+      const camposBooleanos = [
+        'pertenenciaPuebloOriginario',
+        'condicionMigrante',
+        'condicionDiscapacidad',
+        'condicionPrivadaLibertad',
+        'identidadTrans',
+        'hepatitisBPositiva',
+        'controlPrenatal'
+      ]
+      
+      if (camposBooleanos.includes(name)) {
+        // Convertir string a boolean o null
+        let valorBooleano = null
+        if (value === 'true') {
+          valorBooleano = true
+        } else if (value === 'false') {
+          valorBooleano = false
+        } else {
+          valorBooleano = null
+        }
+        setFormData({ ...formData, [name]: valorBooleano })
+      } else {
+        setFormData({ ...formData, [name]: value })
+      }
     }
     
     // Limpiar errores al cambiar campos
@@ -225,13 +257,45 @@ export default function RegistrarMadreForm() {
       }
     }
 
+    // Preparar datos para enviar
+    const datosParaEnviar = { ...formData }
+    
+    // Sincronizar edadAnos con edad (para REM) - siempre desde edad, ya sea calculada o manual
+    if (datosParaEnviar.edad && datosParaEnviar.edad !== '') {
+      const edadNum = parseInt(datosParaEnviar.edad)
+      if (!isNaN(edadNum) && edadNum >= 0) {
+        datosParaEnviar.edadAnos = edadNum
+      } else {
+        datosParaEnviar.edadAnos = null
+      }
+    } else {
+      datosParaEnviar.edadAnos = null
+    }
+    
+    // Convertir campos booleanos: null -> null, true -> true, false -> false
+    const camposBooleanos = [
+      'pertenenciaPuebloOriginario',
+      'condicionMigrante',
+      'condicionDiscapacidad',
+      'condicionPrivadaLibertad',
+      'identidadTrans',
+      'hepatitisBPositiva',
+      'controlPrenatal'
+    ]
+    
+    camposBooleanos.forEach(campo => {
+      if (datosParaEnviar[campo] === '') {
+        datosParaEnviar[campo] = null
+      }
+    })
+
     try {
       const response = await fetch('/api/madres', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(datosParaEnviar),
       })
 
       const data = await response.json()
@@ -272,138 +336,419 @@ export default function RegistrarMadreForm() {
       )}
 
       <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.formGrid}>
-          {/* RUT */}
+        {/* Sección: Datos Personales */}
+        <div className={styles.formSection}>
+          <h2 className={styles.sectionTitle}>Datos Personales</h2>
+          <div className={styles.formGrid}>
+            {/* RUT */}
+            <div className={styles.formGroup}>
+              <label htmlFor="rut">
+                RUT <span className={styles.required}>*</span>
+              </label>
+              <input
+                type="text"
+                id="rut"
+                name="rut"
+                value={formData.rut}
+                onChange={handleRUTChange}
+                placeholder="12345678-9"
+                maxLength="10"
+                required
+                className={rutError ? styles.inputError : ''}
+              />
+              {rutError && (
+                <span className={styles.errorText}>{rutError}</span>
+              )}
+              <small className={styles.helpText}>
+                Sin puntos, con guion (ej: 12345678-9)
+              </small>
+            </div>
+
+            {/* Nombres */}
+            <div className={styles.formGroup}>
+              <label htmlFor="nombres">
+                Nombres <span className={styles.required}>*</span>
+              </label>
+              <input
+                type="text"
+                id="nombres"
+                name="nombres"
+                value={formData.nombres}
+                onChange={handleChange}
+                required
+                maxLength={120}
+              />
+            </div>
+
+            {/* Apellidos */}
+            <div className={styles.formGroup}>
+              <label htmlFor="apellidos">
+                Apellidos <span className={styles.required}>*</span>
+              </label>
+              <input
+                type="text"
+                id="apellidos"
+                name="apellidos"
+                value={formData.apellidos}
+                onChange={handleChange}
+                required
+                maxLength={120}
+              />
+            </div>
+
+            {/* Edad */}
+            <div className={styles.formGroup}>
+              <label htmlFor="edad">Edad</label>
+              <input
+                type="number"
+                id="edad"
+                name="edad"
+                value={formData.edad}
+                onChange={handleChange}
+                min="0"
+                max="150"
+              />
+            </div>
+
+            {/* Fecha de Nacimiento */}
+            <div className={styles.formGroup}>
+              <label htmlFor="fechaNacimiento">Fecha de Nacimiento</label>
+              <input
+                type="date"
+                id="fechaNacimiento"
+                name="fechaNacimiento"
+                value={formData.fechaNacimiento}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Sección: Datos de Contacto */}
+        <div className={styles.formSection}>
+          <h2 className={styles.sectionTitle}>Datos de Contacto</h2>
+          <div className={styles.formGrid}>
+            {/* Dirección */}
+            <div className={styles.formGroup}>
+              <label htmlFor="direccion">Dirección</label>
+              <input
+                type="text"
+                id="direccion"
+                name="direccion"
+                value={formData.direccion}
+                onChange={handleChange}
+                maxLength={200}
+              />
+            </div>
+
+            {/* Teléfono */}
+            <div className={styles.formGroup}>
+              <label htmlFor="telefono">Teléfono</label>
+              <input
+                type="tel"
+                id="telefono"
+                name="telefono"
+                value={formData.telefono}
+                onChange={handleChange}
+                maxLength={16}
+                placeholder="+56912345678"
+                className={telefonoError ? styles.inputError : ''}
+              />
+              {telefonoError && (
+                <span className={styles.errorText}>{telefonoError}</span>
+              )}
+              <small className={styles.helpText}>
+                Formato internacional: + (código de país) + número (ej: +56912345678)
+              </small>
+            </div>
+
+            {/* Ficha Clínica */}
+            <div className={styles.formGroup}>
+              <label htmlFor="fichaClinica">Ficha Clínica</label>
+              <input
+                type="text"
+                id="fichaClinica"
+                name="fichaClinica"
+                value={formData.fichaClinica}
+                onChange={handleChange}
+                maxLength={30}
+                placeholder="Número de ficha clínica del hospital"
+              />
+              <small className={styles.helpText}>
+                Número de identificación clínica del hospital (opcional, debe ser único)
+              </small>
+            </div>
+          </div>
+        </div>
+
+        {/* Sección: Información Demográfica y Social */}
+        <div className={styles.formSection}>
+          <h2 className={styles.sectionTitle}>Información Demográfica y Social</h2>
+          <div className={styles.formGrid}>
+          {/* Pertenencia a Pueblo Originario */}
           <div className={styles.formGroup}>
-            <label htmlFor="rut">
-              RUT <span className={styles.required}>*</span>
-            </label>
-            <input
-              type="text"
-              id="rut"
-              name="rut"
-              value={formData.rut}
-              onChange={handleRUTChange}
-              placeholder="12345678-9"
-              maxLength="10"
-              required
-              className={rutError ? styles.inputError : ''}
-            />
-            {rutError && (
-              <span className={styles.errorText}>{rutError}</span>
-            )}
+            <label>Pertenencia a Pueblo Originario</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="pertenenciaPuebloOriginario"
+                  value=""
+                  checked={formData.pertenenciaPuebloOriginario === null}
+                  onChange={handleChange}
+                />
+                <span>No especificado</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="pertenenciaPuebloOriginario"
+                  value="true"
+                  checked={formData.pertenenciaPuebloOriginario === true}
+                  onChange={handleChange}
+                />
+                <span>Sí</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="pertenenciaPuebloOriginario"
+                  value="false"
+                  checked={formData.pertenenciaPuebloOriginario === false}
+                  onChange={handleChange}
+                />
+                <span>No</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Condición Migrante */}
+          <div className={styles.formGroup}>
+            <label>Condición Migrante</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="condicionMigrante"
+                  value=""
+                  checked={formData.condicionMigrante === null}
+                  onChange={handleChange}
+                />
+                <span>No especificado</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="condicionMigrante"
+                  value="true"
+                  checked={formData.condicionMigrante === true}
+                  onChange={handleChange}
+                />
+                <span>Sí</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="condicionMigrante"
+                  value="false"
+                  checked={formData.condicionMigrante === false}
+                  onChange={handleChange}
+                />
+                <span>No</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Condición Discapacidad */}
+          <div className={styles.formGroup}>
+            <label>Condición Discapacidad</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="condicionDiscapacidad"
+                  value=""
+                  checked={formData.condicionDiscapacidad === null}
+                  onChange={handleChange}
+                />
+                <span>No especificado</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="condicionDiscapacidad"
+                  value="true"
+                  checked={formData.condicionDiscapacidad === true}
+                  onChange={handleChange}
+                />
+                <span>Sí</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="condicionDiscapacidad"
+                  value="false"
+                  checked={formData.condicionDiscapacidad === false}
+                  onChange={handleChange}
+                />
+                <span>No</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Condición Privada de Libertad */}
+          <div className={styles.formGroup}>
+            <label>Condición Privada de Libertad</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="condicionPrivadaLibertad"
+                  value=""
+                  checked={formData.condicionPrivadaLibertad === null}
+                  onChange={handleChange}
+                />
+                <span>No especificado</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="condicionPrivadaLibertad"
+                  value="true"
+                  checked={formData.condicionPrivadaLibertad === true}
+                  onChange={handleChange}
+                />
+                <span>Sí</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="condicionPrivadaLibertad"
+                  value="false"
+                  checked={formData.condicionPrivadaLibertad === false}
+                  onChange={handleChange}
+                />
+                <span>No</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Identidad Trans */}
+          <div className={styles.formGroup}>
+            <label>Identidad Trans</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="identidadTrans"
+                  value=""
+                  checked={formData.identidadTrans === null}
+                  onChange={handleChange}
+                />
+                <span>No especificado</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="identidadTrans"
+                  value="true"
+                  checked={formData.identidadTrans === true}
+                  onChange={handleChange}
+                />
+                <span>Sí</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="identidadTrans"
+                  value="false"
+                  checked={formData.identidadTrans === false}
+                  onChange={handleChange}
+                />
+                <span>No</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Hepatitis B Positiva */}
+          <div className={styles.formGroup}>
+            <label>Hepatitis B Positiva</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="hepatitisBPositiva"
+                  value=""
+                  checked={formData.hepatitisBPositiva === null}
+                  onChange={handleChange}
+                />
+                <span>No especificado</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="hepatitisBPositiva"
+                  value="true"
+                  checked={formData.hepatitisBPositiva === true}
+                  onChange={handleChange}
+                />
+                <span>Sí</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="hepatitisBPositiva"
+                  value="false"
+                  checked={formData.hepatitisBPositiva === false}
+                  onChange={handleChange}
+                />
+                <span>No</span>
+              </label>
+            </div>
             <small className={styles.helpText}>
-              Sin puntos, con guion (ej: 12345678-9)
+              Para sección J transmisión vertical
             </small>
           </div>
 
-          {/* Nombres */}
+          {/* Control Prenatal */}
           <div className={styles.formGroup}>
-            <label htmlFor="nombres">
-              Nombres <span className={styles.required}>*</span>
-            </label>
-            <input
-              type="text"
-              id="nombres"
-              name="nombres"
-              value={formData.nombres}
-              onChange={handleChange}
-              required
-              maxLength={120}
-            />
-          </div>
-
-          {/* Apellidos */}
-          <div className={styles.formGroup}>
-            <label htmlFor="apellidos">
-              Apellidos <span className={styles.required}>*</span>
-            </label>
-            <input
-              type="text"
-              id="apellidos"
-              name="apellidos"
-              value={formData.apellidos}
-              onChange={handleChange}
-              required
-              maxLength={120}
-            />
-          </div>
-
-          {/* Edad */}
-          <div className={styles.formGroup}>
-            <label htmlFor="edad">Edad</label>
-            <input
-              type="number"
-              id="edad"
-              name="edad"
-              value={formData.edad}
-              onChange={handleChange}
-              min="0"
-              max="150"
-            />
-          </div>
-
-          {/* Fecha de Nacimiento */}
-          <div className={styles.formGroup}>
-            <label htmlFor="fechaNacimiento">Fecha de Nacimiento</label>
-            <input
-              type="date"
-              id="fechaNacimiento"
-              name="fechaNacimiento"
-              value={formData.fechaNacimiento}
-              onChange={handleChange}
-            />
-          </div>
-
-          {/* Dirección */}
-          <div className={styles.formGroup}>
-            <label htmlFor="direccion">Dirección</label>
-            <input
-              type="text"
-              id="direccion"
-              name="direccion"
-              value={formData.direccion}
-              onChange={handleChange}
-              maxLength={200}
-            />
-          </div>
-
-          {/* Teléfono */}
-          <div className={styles.formGroup}>
-            <label htmlFor="telefono">Teléfono</label>
-            <input
-              type="tel"
-              id="telefono"
-              name="telefono"
-              value={formData.telefono}
-              onChange={handleChange}
-              maxLength={16}
-              placeholder="+56912345678"
-              className={telefonoError ? styles.inputError : ''}
-            />
-            {telefonoError && (
-              <span className={styles.errorText}>{telefonoError}</span>
-            )}
+            <label>Control Prenatal</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="controlPrenatal"
+                  value=""
+                  checked={formData.controlPrenatal === null}
+                  onChange={handleChange}
+                />
+                <span>No especificado</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="controlPrenatal"
+                  value="true"
+                  checked={formData.controlPrenatal === true}
+                  onChange={handleChange}
+                />
+                <span>Sí</span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="controlPrenatal"
+                  value="false"
+                  checked={formData.controlPrenatal === false}
+                  onChange={handleChange}
+                />
+                <span>No</span>
+              </label>
+            </div>
             <small className={styles.helpText}>
-              Formato internacional: + (código de país) + número (ej: +56912345678)
+              Embarazo controlado / no controlado
             </small>
           </div>
-
-          {/* Ficha Clínica */}
-          <div className={styles.formGroup}>
-            <label htmlFor="fichaClinica">Ficha Clínica</label>
-            <input
-              type="text"
-              id="fichaClinica"
-              name="fichaClinica"
-              value={formData.fichaClinica}
-              onChange={handleChange}
-              maxLength={30}
-              placeholder="Número de ficha clínica del hospital"
-            />
-            <small className={styles.helpText}>
-              Número de identificación clínica del hospital (opcional, debe ser único)
-            </small>
           </div>
         </div>
 

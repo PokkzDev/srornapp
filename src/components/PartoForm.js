@@ -4,21 +4,33 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './PartoForm.module.css'
 
-// Función para formatear fecha para input datetime-local (YYYY-MM-DDTHH:mm)
+// Función para formatear fecha para input datetime-local (YYYY-MM-DDTHH:mm:ss)
 function formatearFechaParaInput(fecha) {
   if (!fecha) return ''
   const date = new Date(fecha)
   if (isNaN(date.getTime())) return ''
-  // Convertir a zona horaria local y formatear
+  // Convertir a zona horaria local y formatear con segundos
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day}T${hours}:${minutes}`
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
 }
 
-// Función para obtener la fecha y hora actual en formato datetime-local
+// Función para formatear fecha para input date (YYYY-MM-DD)
+function formatearFechaDate(fecha) {
+  if (!fecha) return ''
+  const date = new Date(fecha)
+  if (isNaN(date.getTime())) return ''
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Función para obtener la fecha y hora actual en formato datetime-local con segundos
 function obtenerFechaHoraActual() {
   const now = new Date()
   const year = now.getFullYear()
@@ -26,7 +38,102 @@ function obtenerFechaHoraActual() {
   const day = String(now.getDate()).padStart(2, '0')
   const hours = String(now.getHours()).padStart(2, '0')
   const minutes = String(now.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day}T${hours}:${minutes}`
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+}
+
+// Función para derivar el lugar del tipo de parto
+function derivarLugarDeTipo(tipo) {
+  if (!tipo) return null
+  
+  // Si el tipo ya incluye el lugar, extraerlo
+  switch (tipo) {
+    case 'DOMICILIO_PROFESIONAL':
+    case 'DOMICILIO_SIN_PROFESIONAL':
+      return 'DOMICILIO'
+    case 'PREHOSPITALARIO':
+    case 'FUERA_RED':
+      return 'OTRO'
+    case 'CESAREA_ELECTIVA':
+    case 'CESAREA_URGENCIA':
+      return 'PABELLON'
+    case 'VAGINAL':
+    case 'INSTRUMENTAL':
+    default:
+      return 'SALA_PARTO'
+  }
+}
+
+// Función para obtener el tipo de parto puro (sin lugar)
+function obtenerTipoPartoPuro(tipo) {
+  if (!tipo) return null
+  
+  // Si el tipo incluye lugar, extraer solo el tipo médico
+  switch (tipo) {
+    case 'DOMICILIO_PROFESIONAL':
+    case 'DOMICILIO_SIN_PROFESIONAL':
+      return 'VAGINAL' // Asumimos que domicilio es vaginal
+    case 'PREHOSPITALARIO':
+    case 'FUERA_RED':
+      return 'VAGINAL' // Asumimos que prehospitalario es vaginal
+    case 'VAGINAL':
+    case 'INSTRUMENTAL':
+    case 'CESAREA_ELECTIVA':
+    case 'CESAREA_URGENCIA':
+      return tipo
+    default:
+      return tipo
+  }
+}
+
+// Función para obtener el contexto/lugar especial del tipo
+function obtenerContextoEspecial(tipo) {
+  if (!tipo) return null
+  
+  switch (tipo) {
+    case 'DOMICILIO_PROFESIONAL':
+      return 'DOMICILIO_PROFESIONAL'
+    case 'DOMICILIO_SIN_PROFESIONAL':
+      return 'DOMICILIO_SIN_PROFESIONAL'
+    case 'PREHOSPITALARIO':
+      return 'PREHOSPITALARIO'
+    case 'FUERA_RED':
+      return 'FUERA_RED'
+    default:
+      return null
+  }
+}
+
+// Función para determinar el curso del parto sugerido basado en el tipo
+function obtenerCursoPartoSugerido(tipo) {
+  if (!tipo) return ''
+  
+  switch (tipo) {
+    case 'VAGINAL':
+      return 'EUTOCICO' // Parto vaginal normal, sin complicaciones
+    case 'INSTRUMENTAL':
+      return 'DISTOCICO' // Fórceps/vacuum = distocia, requiere intervención
+    case 'CESAREA_ELECTIVA':
+      return 'EUTOCICO' // Cesárea planificada, sin complicaciones
+    case 'CESAREA_URGENCIA':
+      return 'DISTOCICO' // Cesárea por complicaciones
+    default:
+      return ''
+  }
+}
+
+// Función para derivar el detalle del lugar del tipo de parto
+function derivarLugarDetalleDeTipo(tipo) {
+  if (!tipo) return null
+  
+  switch (tipo) {
+    case 'PREHOSPITALARIO':
+      return 'Prehospitalario'
+    case 'FUERA_RED':
+      return 'Fuera de red'
+    default:
+      return null
+  }
 }
 
 export default function PartoForm({ initialData = null, isEdit = false, partoId = null, preselectedMadreId = null }) {
@@ -43,16 +150,53 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
   const [loadingMatronas, setLoadingMatronas] = useState(true)
   const [loadingMedicos, setLoadingMedicos] = useState(true)
   const [loadingEnfermeras, setLoadingEnfermeras] = useState(true)
+  const [cursoModificadoManualmente, setCursoModificadoManualmente] = useState(false)
 
   const [formData, setFormData] = useState({
     madreId: preselectedMadreId || '',
     fechaHora: '',
+    fechaParto: '',
     tipo: '',
     lugar: '',
     lugarDetalle: '',
+    contextoEspecial: '',
+    establecimientoId: '',
+    edadGestacionalSemanas: '',
+    tipoCursoParto: '',
+    inicioTrabajoParto: '',
+    conduccionOxitocica: false,
+    libertadMovimiento: false,
+    regimenHidricoAmplio: false,
+    manejoDolorNoFarmacologico: false,
+    manejoDolorFarmacologico: false,
+    posicionExpulsivo: '',
+    episiotomia: false,
+    // Anestesia y/o Analgesia del parto
+    anestesiaNeuroaxial: false,
+    oxidoNitroso: false,
+    analgesiaEndovenosa: false,
+    anestesiaGeneral: false,
+    anestesiaLocal: false,
+    medidasNoFarmacologicasAnestesia: false,
+    // Acompañamiento
+    acompananteDuranteTrabajo: false,
+    acompananteSoloExpulsivo: false,
+    // Buenas prácticas
+    oxitocinaProfilactica: false,
+    ligaduraTardiaCordon: false,
+    atencionPertinenciaCultural: false,
+    contactoPielPielMadre30min: false,
+    contactoPielPielAcomp30min: false,
+    lactancia60minAlMenosUnRn: false,
+    // Campos adicionales REM
+    planDeParto: false,
+    entregaPlacentaSolicitud: false,
+    embarazoNoControlado: false,
+    // Profesionales
     matronasIds: [],
     medicosIds: [],
     enfermerasIds: [],
+    // Observaciones
     complicaciones: '',
     observaciones: '',
     // Campos para REM
@@ -97,28 +241,58 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
 
         // Cargar matronas
         setLoadingMatronas(true)
-        const matronasResponse = await fetch('/api/users?role=matrona')
-        if (matronasResponse.ok) {
-          const matronasData = await matronasResponse.json()
-          setMatronas(matronasData.data || [])
+        try {
+          const matronasResponse = await fetch('/api/partos/profesionales?role=matrona')
+          if (matronasResponse.ok) {
+            const matronasData = await matronasResponse.json()
+            console.log('Matronas cargadas:', matronasData.data?.length || 0)
+            setMatronas(matronasData.data || [])
+          } else {
+            const errorData = await matronasResponse.json().catch(() => ({ error: 'Error desconocido' }))
+            console.error('Error loading matronas:', errorData.error, 'Status:', matronasResponse.status)
+            setError(`Error al cargar matronas: ${errorData.error || 'Error desconocido'}`)
+          }
+        } catch (err) {
+          console.error('Error loading matronas:', err)
+          setError('Error al conectar con el servidor para cargar matronas')
         }
         setLoadingMatronas(false)
 
         // Cargar médicos
         setLoadingMedicos(true)
-        const medicosResponse = await fetch('/api/users?role=medico')
-        if (medicosResponse.ok) {
-          const medicosData = await medicosResponse.json()
-          setMedicos(medicosData.data || [])
+        try {
+          const medicosResponse = await fetch('/api/partos/profesionales?role=medico')
+          if (medicosResponse.ok) {
+            const medicosData = await medicosResponse.json()
+            console.log('Médicos cargados:', medicosData.data?.length || 0)
+            setMedicos(medicosData.data || [])
+          } else {
+            const errorData = await medicosResponse.json().catch(() => ({ error: 'Error desconocido' }))
+            console.error('Error loading medicos:', errorData.error, 'Status:', medicosResponse.status)
+            setError(`Error al cargar médicos: ${errorData.error || 'Error desconocido'}`)
+          }
+        } catch (err) {
+          console.error('Error loading medicos:', err)
+          setError('Error al conectar con el servidor para cargar médicos')
         }
         setLoadingMedicos(false)
 
         // Cargar enfermeras
         setLoadingEnfermeras(true)
-        const enfermerasResponse = await fetch('/api/users?role=enfermera')
-        if (enfermerasResponse.ok) {
-          const enfermerasData = await enfermerasResponse.json()
-          setEnfermeras(enfermerasData.data || [])
+        try {
+          const enfermerasResponse = await fetch('/api/partos/profesionales?role=enfermera')
+          if (enfermerasResponse.ok) {
+            const enfermerasData = await enfermerasResponse.json()
+            console.log('Enfermeras cargadas:', enfermerasData.data?.length || 0)
+            setEnfermeras(enfermerasData.data || [])
+          } else {
+            const errorData = await enfermerasResponse.json().catch(() => ({ error: 'Error desconocido' }))
+            console.error('Error loading enfermeras:', errorData.error, 'Status:', enfermerasResponse.status)
+            setError(`Error al cargar enfermeras: ${errorData.error || 'Error desconocido'}`)
+          }
+        } catch (err) {
+          console.error('Error loading enfermeras:', err)
+          setError('Error al conectar con el servidor para cargar enfermeras')
         }
         setLoadingEnfermeras(false)
       } catch (err) {
@@ -136,16 +310,65 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
   // Cargar datos iniciales si es modo edición
   useEffect(() => {
     if (isEdit && initialData) {
+      const tipoPuro = obtenerTipoPartoPuro(initialData.tipo)
+      const contextoEspecial = obtenerContextoEspecial(initialData.tipo)
+      const lugar = derivarLugarDeTipo(initialData.tipo)
+      const lugarDetalle = derivarLugarDetalleDeTipo(initialData.tipo)
+      
+      // Verificar si el curso del parto difiere del sugerido (fue modificado manualmente)
+      const cursoSugerido = obtenerCursoPartoSugerido(tipoPuro || initialData.tipo)
+      const cursoExiste = initialData.tipoCursoParto && initialData.tipoCursoParto !== ''
+      const cursoDifiere = cursoExiste && initialData.tipoCursoParto !== cursoSugerido
+      if (cursoDifiere) {
+        setCursoModificadoManualmente(true)
+      }
+      
       setFormData({
         madreId: initialData.madreId || '',
         fechaHora: formatearFechaParaInput(initialData.fechaHora),
-        tipo: initialData.tipo || '',
-        lugar: initialData.lugar || '',
-        lugarDetalle: initialData.lugarDetalle || '',
+        fechaParto: formatearFechaDate(initialData.fechaParto),
+        tipo: tipoPuro || '',
+        lugar: initialData.lugar || lugar || '',
+        lugarDetalle: initialData.lugarDetalle || lugarDetalle || '',
+        contextoEspecial: contextoEspecial || '',
+        establecimientoId: initialData.establecimientoId || '',
+        edadGestacionalSemanas: initialData.edadGestacionalSemanas || '',
+        tipoCursoParto: initialData.tipoCursoParto || '',
+        inicioTrabajoParto: initialData.inicioTrabajoParto || '',
+        conduccionOxitocica: initialData.conduccionOxitocica || false,
+        libertadMovimiento: initialData.libertadMovimiento || false,
+        regimenHidricoAmplio: initialData.regimenHidricoAmplio || false,
+        manejoDolorNoFarmacologico: initialData.manejoDolorNoFarmacologico || false,
+        manejoDolorFarmacologico: initialData.manejoDolorFarmacologico || false,
+        posicionExpulsivo: initialData.posicionExpulsivo || '',
+        episiotomia: initialData.episiotomia || false,
+        // Anestesia y/o Analgesia del parto
+        anestesiaNeuroaxial: initialData.anestesiaNeuroaxial || false,
+        oxidoNitroso: initialData.oxidoNitroso || false,
+        analgesiaEndovenosa: initialData.analgesiaEndovenosa || false,
+        anestesiaGeneral: initialData.anestesiaGeneral || false,
+        anestesiaLocal: initialData.anestesiaLocal || false,
+        medidasNoFarmacologicasAnestesia: initialData.medidasNoFarmacologicasAnestesia || false,
+        // Acompañamiento
+        acompananteDuranteTrabajo: initialData.acompananteDuranteTrabajo || false,
+        acompananteSoloExpulsivo: initialData.acompananteSoloExpulsivo || false,
+        // Buenas prácticas
+        oxitocinaProfilactica: initialData.oxitocinaProfilactica || false,
+        ligaduraTardiaCordon: initialData.ligaduraTardiaCordon || false,
+        atencionPertinenciaCultural: initialData.atencionPertinenciaCultural || false,
+        contactoPielPielMadre30min: initialData.contactoPielPielMadre30min || false,
+        contactoPielPielAcomp30min: initialData.contactoPielPielAcomp30min || false,
+        lactancia60minAlMenosUnRn: initialData.lactancia60minAlMenosUnRn || false,
+        // Campos adicionales REM
+        planDeParto: initialData.planDeParto || false,
+        entregaPlacentaSolicitud: initialData.entregaPlacentaSolicitud || false,
+        embarazoNoControlado: initialData.embarazoNoControlado || false,
+        // Profesionales
         matronasIds: initialData.matronas?.map((m) => m.user.id) || [],
         medicosIds: initialData.medicos?.map((m) => m.user.id) || [],
         enfermerasIds: initialData.enfermeras?.map((e) => e.user.id) || [],
-        complicaciones: initialData.complicaciones || '',
+        // Observaciones
+        complicaciones: initialData.complicacionesTexto || '',
         observaciones: initialData.observaciones || '',
         // Campos para REM
         semanasGestacion: initialData.semanasGestacion?.toString() || '',
@@ -156,12 +379,76 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
   }, [isEdit, initialData])
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
+    const { name, value, type, checked } = e.target
+    const newValue = type === 'checkbox' ? checked : value
     
-    // Limpiar lugarDetalle si lugar cambia y no es OTRO
+    // Si cambia el tipo de parto, auto-completar el curso del parto sugerido
+    if (name === 'tipo') {
+      const cursoSugerido = obtenerCursoPartoSugerido(value)
+      setFormData((prev) => ({
+        ...prev,
+        tipo: value,
+        // Solo auto-completar si el curso está vacío o si no ha sido modificado manualmente
+        // Si el usuario ya seleccionó un curso diferente manualmente, no sobrescribirlo
+        tipoCursoParto: (!cursoModificadoManualmente && (prev.tipoCursoParto === '' || prev.tipoCursoParto === obtenerCursoPartoSugerido(prev.tipo)))
+          ? cursoSugerido 
+          : prev.tipoCursoParto
+      }))
+      return
+    }
+    
+    // Si el usuario cambia manualmente el curso del parto, marcar como modificado manualmente
+    if (name === 'tipoCursoParto') {
+      setCursoModificadoManualmente(true)
+      setFormData({ ...formData, tipoCursoParto: value })
+      return
+    }
+    
+    // Si cambia el contexto especial, ajustar lugar automáticamente
+    if (name === 'contextoEspecial') {
+      if (value === 'DOMICILIO_PROFESIONAL' || value === 'DOMICILIO_SIN_PROFESIONAL') {
+        setFormData((prev) => ({
+          ...prev,
+          contextoEspecial: value,
+          lugar: 'DOMICILIO',
+          lugarDetalle: '',
+        }))
+      } else if (value === 'PREHOSPITALARIO' || value === 'FUERA_RED') {
+        setFormData((prev) => ({
+          ...prev,
+          contextoEspecial: value,
+          lugar: 'OTRO',
+          lugarDetalle: value === 'PREHOSPITALARIO' ? 'Prehospitalario' : value === 'FUERA_RED' ? 'Fuera de red' : '',
+        }))
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          contextoEspecial: value || '',
+          lugarDetalle: '',
+        }))
+      }
+    } else {
+      setFormData({ ...formData, [name]: newValue })
+    }
+    
+    // Si cambia el lugar, limpiar lugarDetalle si no aplica
     if (name === 'lugar' && value !== 'OTRO') {
       setFormData((prev) => ({ ...prev, lugarDetalle: '' }))
+    }
+    
+    // Si cambia el lugar y hay contexto especial incompatible, limpiar contexto especial
+    if (name === 'lugar') {
+      if (value === 'DOMICILIO' && formData.contextoEspecial && 
+          formData.contextoEspecial !== 'DOMICILIO_PROFESIONAL' && 
+          formData.contextoEspecial !== 'DOMICILIO_SIN_PROFESIONAL') {
+        setFormData((prev) => ({ ...prev, contextoEspecial: '' }))
+      } else if (value === 'OTRO' && formData.contextoEspecial && 
+                 formData.contextoEspecial !== 'PREHOSPITALARIO' && 
+                 formData.contextoEspecial !== 'FUERA_RED') {
+        setFormData((prev) => ({ ...prev, contextoEspecial: '' }))
+      } else if (value !== 'DOMICILIO' && value !== 'OTRO') {
+        setFormData((prev) => ({ ...prev, contextoEspecial: '' }))
+      }
     }
     
     // Limpiar errores al cambiar campos
@@ -227,7 +514,7 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
 
     // Validaciones básicas
     if (!formData.madreId || !formData.fechaHora || !formData.tipo || !formData.lugar) {
-      setError('Madre, fecha/hora, tipo y lugar son requeridos')
+      setError('Madre, fecha/hora, tipo de parto y lugar son requeridos')
       setLoading(false)
       return
     }
@@ -241,11 +528,34 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
       return
     }
 
-    // Validar lugarDetalle si lugar es OTRO
-    if (formData.lugar === 'OTRO' && !formData.lugarDetalle.trim()) {
-      setError('El detalle del lugar es requerido cuando el lugar es OTRO')
+    // Validar lugarDetalle si lugar es OTRO y no hay contexto especial
+    if (formData.lugar === 'OTRO' && !formData.contextoEspecial && !formData.lugarDetalle.trim()) {
+      setError('Debe especificar el detalle del lugar cuando el lugar es OTRO')
       setLoading(false)
       return
+    }
+
+    // Determinar el tipo de parto final según tipo + contexto especial
+    let tipoFinal = formData.tipo
+    if (formData.contextoEspecial) {
+      // Si hay contexto especial, usar ese como tipo
+      tipoFinal = formData.contextoEspecial
+    }
+
+    // Determinar lugar y lugarDetalle
+    let lugarFinal = formData.lugar
+    let lugarDetalleFinal = formData.lugarDetalle || null
+    
+    // Si hay contexto especial, ajustar lugar y detalle
+    if (formData.contextoEspecial === 'DOMICILIO_PROFESIONAL' || formData.contextoEspecial === 'DOMICILIO_SIN_PROFESIONAL') {
+      lugarFinal = 'DOMICILIO'
+      lugarDetalleFinal = null
+    } else if (formData.contextoEspecial === 'PREHOSPITALARIO') {
+      lugarFinal = 'OTRO'
+      lugarDetalleFinal = 'Prehospitalario'
+    } else if (formData.contextoEspecial === 'FUERA_RED') {
+      lugarFinal = 'OTRO'
+      lugarDetalleFinal = 'Fuera de red'
     }
 
     // Validar al menos una matrona (obligatorio siempre)
@@ -263,7 +573,7 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
     }
 
     // Validar al menos un médico si es cesárea
-    const esCesarea = formData.tipo === 'CESAREA_ELECTIVA' || formData.tipo === 'CESAREA_EMERGENCIA'
+    const esCesarea = tipoFinal === 'CESAREA_ELECTIVA' || tipoFinal === 'CESAREA_URGENCIA'
     if (esCesarea && (!formData.medicosIds || formData.medicosIds.length === 0)) {
       setError('Debe seleccionar al menos un médico cuando el tipo de parto es cesárea')
       setLoading(false)
@@ -278,13 +588,46 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
       const submitData = {
         madreId: formData.madreId,
         fechaHora: formData.fechaHora,
-        tipo: formData.tipo,
-        lugar: formData.lugar,
-        lugarDetalle: formData.lugar === 'OTRO' ? formData.lugarDetalle : '',
+        fechaParto: formData.fechaParto || null,
+        tipo: tipoFinal,
+        lugar: lugarFinal,
+        lugarDetalle: lugarDetalleFinal,
+        establecimientoId: formData.establecimientoId || null,
+        edadGestacionalSemanas: formData.edadGestacionalSemanas ? parseInt(formData.edadGestacionalSemanas) : null,
+        tipoCursoParto: formData.tipoCursoParto || null,
+        inicioTrabajoParto: formData.inicioTrabajoParto || null,
+        conduccionOxitocica: formData.conduccionOxitocica || null,
+        libertadMovimiento: formData.libertadMovimiento || null,
+        regimenHidricoAmplio: formData.regimenHidricoAmplio || null,
+        manejoDolorNoFarmacologico: formData.manejoDolorNoFarmacologico || null,
+        manejoDolorFarmacologico: formData.manejoDolorFarmacologico || null,
+        posicionExpulsivo: formData.posicionExpulsivo || null,
+        episiotomia: formData.episiotomia || null,
+        // Anestesia y/o Analgesia del parto
+        anestesiaNeuroaxial: formData.anestesiaNeuroaxial || null,
+        oxidoNitroso: formData.oxidoNitroso || null,
+        analgesiaEndovenosa: formData.analgesiaEndovenosa || null,
+        anestesiaGeneral: formData.anestesiaGeneral || null,
+        anestesiaLocal: formData.anestesiaLocal || null,
+        medidasNoFarmacologicasAnestesia: formData.medidasNoFarmacologicasAnestesia || null,
+        // Acompañamiento
+        acompananteDuranteTrabajo: formData.acompananteDuranteTrabajo || null,
+        acompananteSoloExpulsivo: formData.acompananteSoloExpulsivo || null,
+        // Buenas prácticas
+        oxitocinaProfilactica: formData.oxitocinaProfilactica || null,
+        ligaduraTardiaCordon: formData.ligaduraTardiaCordon || null,
+        atencionPertinenciaCultural: formData.atencionPertinenciaCultural || null,
+        contactoPielPielMadre30min: formData.contactoPielPielMadre30min || null,
+        contactoPielPielAcomp30min: formData.contactoPielPielAcomp30min || null,
+        lactancia60minAlMenosUnRn: formData.lactancia60minAlMenosUnRn || null,
+        // Campos adicionales REM
+        planDeParto: formData.planDeParto || null,
+        entregaPlacentaSolicitud: formData.entregaPlacentaSolicitud || null,
+        embarazoNoControlado: formData.embarazoNoControlado || null,
         matronasIds: formData.matronasIds || [],
         medicosIds: formData.medicosIds || [],
         enfermerasIds: formData.enfermerasIds || [],
-        complicaciones: formData.complicaciones || null,
+        complicacionesTexto: formData.complicaciones || null,
         observaciones: formData.observaciones || null,
         // Campos para REM
         semanasGestacion: formData.semanasGestacion ? parseInt(formData.semanasGestacion) : null,
@@ -395,11 +738,31 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
                 value={formData.fechaHora}
                 onChange={handleChange}
                 max={obtenerFechaHoraActual()}
+                step="1"
                 required
               />
+              <small className={styles.helpText}>
+                Incluye minutos y segundos para mayor precisión
+              </small>
             </div>
 
-            {/* Tipo */}
+            {/* Fecha del Parto */}
+            <div className={styles.formGroup}>
+              <label htmlFor="fechaParto">Fecha del Parto</label>
+              <input
+                type="date"
+                id="fechaParto"
+                name="fechaParto"
+                value={formData.fechaParto}
+                onChange={handleChange}
+                max={obtenerFechaHoraActual().split('T')[0]}
+              />
+              <small className={styles.helpText}>
+                Fecha específica del parto (opcional, diferente de fecha y hora)
+              </small>
+            </div>
+
+            {/* Tipo de Parto */}
             <div className={styles.formGroup}>
               <label htmlFor="tipo">
                 Tipo de Parto <span className={styles.required}>*</span>
@@ -413,10 +776,10 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
                 className={styles.select}
               >
                 <option value="">Seleccione un tipo</option>
-                <option value="EUTOCICO">Eutócico</option>
-                <option value="DISTOCICO">Distócico</option>
+                <option value="VAGINAL">Vaginal</option>
+                <option value="INSTRUMENTAL">Instrumental</option>
                 <option value="CESAREA_ELECTIVA">Cesárea Electiva</option>
-                <option value="CESAREA_EMERGENCIA">Cesárea Emergencia</option>
+                <option value="CESAREA_URGENCIA">Cesárea Urgencia</option>
               </select>
             </div>
 
@@ -441,8 +804,41 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
               </select>
             </div>
 
-            {/* Lugar Detalle (solo si lugar es OTRO) */}
-            {formData.lugar === 'OTRO' && (
+            {/* Contexto Especial (solo para partos vaginales en domicilio u otros lugares especiales) */}
+            {(formData.tipo === 'VAGINAL' || formData.tipo === 'INSTRUMENTAL') && (
+              <div className={styles.formGroup}>
+                <label htmlFor="contextoEspecial">
+                  Contexto Especial
+                </label>
+                <select
+                  id="contextoEspecial"
+                  name="contextoEspecial"
+                  value={formData.contextoEspecial}
+                  onChange={handleChange}
+                  className={styles.select}
+                >
+                  <option value="">Ninguno (parto estándar)</option>
+                  {formData.lugar === 'DOMICILIO' && (
+                    <>
+                      <option value="DOMICILIO_PROFESIONAL">Domicilio con Profesional</option>
+                      <option value="DOMICILIO_SIN_PROFESIONAL">Domicilio sin Profesional</option>
+                    </>
+                  )}
+                  {formData.lugar === 'OTRO' && (
+                    <>
+                      <option value="PREHOSPITALARIO">Prehospitalario</option>
+                      <option value="FUERA_RED">Fuera de Red</option>
+                    </>
+                  )}
+                </select>
+                <small className={styles.helpText}>
+                  Especifique si el parto ocurrió en un contexto especial
+                </small>
+              </div>
+            )}
+
+            {/* Lugar Detalle (solo cuando lugar es OTRO y no hay contexto especial) */}
+            {formData.lugar === 'OTRO' && !formData.contextoEspecial && (
               <div className={styles.formGroup}>
                 <label htmlFor="lugarDetalle">
                   Detalle del Lugar <span className={styles.required}>*</span>
@@ -453,16 +849,425 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
                   name="lugarDetalle"
                   value={formData.lugarDetalle}
                   onChange={handleChange}
-                  required={formData.lugar === 'OTRO'}
-                  maxLength={120}
                   placeholder="Especifique el lugar"
+                  required={formData.lugar === 'OTRO' && !formData.contextoEspecial}
                 />
               </div>
             )}
             </div>
           </div>
 
-          {/* Sección 2: Personal Asistente */}
+          {/* Sección 2: Características del Parto */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-info-circle"></i>
+              Características del Parto
+            </h2>
+            <div className={styles.formGrid}>
+              {/* Establecimiento ID */}
+              <div className={styles.formGroup}>
+                <label htmlFor="establecimientoId">Establecimiento ID</label>
+                <input
+                  type="text"
+                  id="establecimientoId"
+                  name="establecimientoId"
+                  value={formData.establecimientoId}
+                  onChange={handleChange}
+                  placeholder="ID del establecimiento"
+                />
+              </div>
+
+              {/* Edad Gestacional */}
+              <div className={styles.formGroup}>
+                <label htmlFor="edadGestacionalSemanas">Edad Gestacional (semanas)</label>
+                <input
+                  type="number"
+                  id="edadGestacionalSemanas"
+                  name="edadGestacionalSemanas"
+                  value={formData.edadGestacionalSemanas}
+                  onChange={handleChange}
+                  min="0"
+                  max="50"
+                  placeholder="Semanas"
+                />
+              </div>
+
+              {/* Curso del Parto */}
+              <div className={styles.formGroup}>
+                <label htmlFor="tipoCursoParto">Curso del Parto</label>
+                <select
+                  id="tipoCursoParto"
+                  name="tipoCursoParto"
+                  value={formData.tipoCursoParto}
+                  onChange={handleChange}
+                  className={styles.select}
+                >
+                  <option value="">Seleccione una opción</option>
+                  <option value="EUTOCICO">Eutócico</option>
+                  <option value="DISTOCICO">Distócico</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Sección 3: Modelo de Atención */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-hospital"></i>
+              Modelo de Atención
+            </h2>
+            <div className={styles.formGrid}>
+              {/* Inicio Trabajo Parto */}
+              <div className={styles.formGroup}>
+                <label htmlFor="inicioTrabajoParto">Inicio Trabajo Parto</label>
+                <select
+                  id="inicioTrabajoParto"
+                  name="inicioTrabajoParto"
+                  value={formData.inicioTrabajoParto}
+                  onChange={handleChange}
+                  className={styles.select}
+                >
+                  <option value="">Seleccione una opción</option>
+                  <option value="ESPONTANEO">Espontáneo</option>
+                  <option value="INDUCIDO_MECANICO">Inducido Mecánico</option>
+                  <option value="INDUCIDO_FARMACOLOGICO">Inducido Farmacológico</option>
+                </select>
+              </div>
+
+              {/* Posición Expulsivo */}
+              <div className={styles.formGroup}>
+                <label htmlFor="posicionExpulsivo">Posición Expulsivo</label>
+                <select
+                  id="posicionExpulsivo"
+                  name="posicionExpulsivo"
+                  value={formData.posicionExpulsivo}
+                  onChange={handleChange}
+                  className={styles.select}
+                >
+                  <option value="">Seleccione una opción</option>
+                  <option value="LITOTOMIA">Litotomía</option>
+                  <option value="OTRAS">Otras</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Checkboxes del Modelo de Atención */}
+            <div className={styles.checkboxGrid}>
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="conduccionOxitocica"
+                    checked={formData.conduccionOxitocica}
+                    onChange={handleChange}
+                  />
+                  <span>Conducción Oxitócica</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="libertadMovimiento"
+                    checked={formData.libertadMovimiento}
+                    onChange={handleChange}
+                  />
+                  <span>Libertad de Movimiento</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="regimenHidricoAmplio"
+                    checked={formData.regimenHidricoAmplio}
+                    onChange={handleChange}
+                  />
+                  <span>Régimen Hídrico Amplio</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="manejoDolorNoFarmacologico"
+                    checked={formData.manejoDolorNoFarmacologico}
+                    onChange={handleChange}
+                  />
+                  <span>Manejo Dolor No Farmacológico</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="manejoDolorFarmacologico"
+                    checked={formData.manejoDolorFarmacologico}
+                    onChange={handleChange}
+                  />
+                  <span>Manejo Dolor Farmacológico</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="episiotomia"
+                    checked={formData.episiotomia}
+                    onChange={handleChange}
+                  />
+                  <span>Episiotomía</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Sección 3.5: Anestesia y/o Analgesia del Parto */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-syringe"></i>
+              Anestesia y/o Analgesia del Parto
+            </h2>
+            <div className={styles.checkboxGrid}>
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="anestesiaNeuroaxial"
+                    checked={formData.anestesiaNeuroaxial}
+                    onChange={handleChange}
+                  />
+                  <span>Anestesia Neuroaxial</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="oxidoNitroso"
+                    checked={formData.oxidoNitroso}
+                    onChange={handleChange}
+                  />
+                  <span>Óxido Nitroso</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="analgesiaEndovenosa"
+                    checked={formData.analgesiaEndovenosa}
+                    onChange={handleChange}
+                  />
+                  <span>Analgesia Endovenosa</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="anestesiaGeneral"
+                    checked={formData.anestesiaGeneral}
+                    onChange={handleChange}
+                  />
+                  <span>Anestesia General</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="anestesiaLocal"
+                    checked={formData.anestesiaLocal}
+                    onChange={handleChange}
+                  />
+                  <span>Anestesia Local</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="medidasNoFarmacologicasAnestesia"
+                    checked={formData.medidasNoFarmacologicasAnestesia}
+                    onChange={handleChange}
+                  />
+                  <span>Medidas No Farmacológicas (Anestesia)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Sección 4: Acompañamiento */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-users"></i>
+              Acompañamiento
+            </h2>
+            <div className={styles.checkboxGrid}>
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="acompananteDuranteTrabajo"
+                    checked={formData.acompananteDuranteTrabajo}
+                    onChange={handleChange}
+                  />
+                  <span>Acompañante Durante Trabajo</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="acompananteSoloExpulsivo"
+                    checked={formData.acompananteSoloExpulsivo}
+                    onChange={handleChange}
+                  />
+                  <span>Acompañante Solo en Expulsivo</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Sección 5: Buenas Prácticas */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-check-circle"></i>
+              Buenas Prácticas
+            </h2>
+            <div className={styles.checkboxGrid}>
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="oxitocinaProfilactica"
+                    checked={formData.oxitocinaProfilactica}
+                    onChange={handleChange}
+                  />
+                  <span>Oxitocina Profiláctica</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="ligaduraTardiaCordon"
+                    checked={formData.ligaduraTardiaCordon}
+                    onChange={handleChange}
+                  />
+                  <span>Ligadura Tardía Cordón</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="atencionPertinenciaCultural"
+                    checked={formData.atencionPertinenciaCultural}
+                    onChange={handleChange}
+                  />
+                  <span>Atención Pertinencia Cultural</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="contactoPielPielMadre30min"
+                    checked={formData.contactoPielPielMadre30min}
+                    onChange={handleChange}
+                  />
+                  <span>Contacto Piel-Piel Madre (30 min)</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="contactoPielPielAcomp30min"
+                    checked={formData.contactoPielPielAcomp30min}
+                    onChange={handleChange}
+                  />
+                  <span>Contacto Piel-Piel Acompañante (30 min)</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="lactancia60minAlMenosUnRn"
+                    checked={formData.lactancia60minAlMenosUnRn}
+                    onChange={handleChange}
+                  />
+                  <span>Lactancia 60 min (al menos 1 RN)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Sección 5.5: Campos Adicionales REM */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-clipboard-list"></i>
+              Campos Adicionales REM
+            </h2>
+            <div className={styles.checkboxGrid}>
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="planDeParto"
+                    checked={formData.planDeParto}
+                    onChange={handleChange}
+                  />
+                  <span>Plan de Parto</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="entregaPlacentaSolicitud"
+                    checked={formData.entregaPlacentaSolicitud}
+                    onChange={handleChange}
+                  />
+                  <span>Entrega de Placenta a Solicitud</span>
+                </label>
+              </div>
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="embarazoNoControlado"
+                    checked={formData.embarazoNoControlado}
+                    onChange={handleChange}
+                  />
+                  <span>Embarazo No Controlado</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Sección 6: Personal Asistente */}
           <div className={styles.formSection}>
             <h2 className={styles.sectionTitle}>
               <i className="fas fa-user-md"></i>
@@ -485,6 +1290,9 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
                   disabled={loadingMatronas}
                 >
                   <option value="">Seleccionar matrona para agregar</option>
+                  {matronas.length === 0 && !loadingMatronas && (
+                    <option value="" disabled>No hay matronas disponibles</option>
+                  )}
                   {matronas
                     .filter((matrona) => !formData.matronasIds.includes(matrona.id))
                     .map((matrona) => (
@@ -520,7 +1328,7 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
             <div className={styles.professionalGroup}>
               <label className={styles.professionalLabel}>
                 <i className="fas fa-stethoscope"></i>
-                Médicos {(formData.tipo === 'CESAREA_ELECTIVA' || formData.tipo === 'CESAREA_EMERGENCIA') && <span className={styles.required}>*</span>}
+                Médicos {(formData.tipo === 'CESAREA_ELECTIVA' || formData.tipo === 'CESAREA_URGENCIA') && <span className={styles.required}>*</span>}
               </label>
               <div className={styles.professionalContainer}>
                 <select
@@ -532,6 +1340,9 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
                   disabled={loadingMedicos}
                 >
                   <option value="">Seleccionar médico para agregar</option>
+                  {medicos.length === 0 && !loadingMedicos && (
+                    <option value="" disabled>No hay médicos disponibles</option>
+                  )}
                   {medicos
                     .filter((medico) => !formData.medicosIds.includes(medico.id))
                     .map((medico) => (
@@ -579,6 +1390,9 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
                   disabled={loadingEnfermeras}
                 >
                   <option value="">Seleccionar enfermera para agregar</option>
+                  {enfermeras.length === 0 && !loadingEnfermeras && (
+                    <option value="" disabled>No hay enfermeras disponibles</option>
+                  )}
                   {enfermeras
                     .filter((enfermera) => !formData.enfermerasIds.includes(enfermera.id))
                     .map((enfermera) => (
@@ -611,7 +1425,7 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
             </div>
           </div>
 
-          {/* Sección 3: Observaciones Clínicas */}
+          {/* Sección 7: Observaciones Clínicas */}
           <div className={styles.formSection}>
             <h2 className={styles.sectionTitle}>
               <i className="fas fa-notes-medical"></i>

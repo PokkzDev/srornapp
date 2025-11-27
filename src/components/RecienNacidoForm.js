@@ -16,10 +16,34 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
   const [formData, setFormData] = useState({
     partoId: preselectedPartoId || '',
     sexo: '',
-    pesoGr: '',
+    pesoNacimientoGramos: '',
     tallaCm: '',
-    apgar1: '',
-    apgar5: '',
+    apgar1Min: '',
+    apgar5Min: '',
+    // REM
+    esNacidoVivo: true,
+    categoriaPeso: '',
+    // Anomalías congénitas
+    anomaliaCongenita: false,
+    anomaliaCongenitaDescripcion: '',
+    // Reanimación y EHI
+    reanimacionBasica: false,
+    reanimacionAvanzada: false,
+    ehiGradoII_III: false,
+    // Profilaxis inmediata
+    profilaxisOcularGonorrea: false,
+    profilaxisHepatitisB: false,
+    profilaxisCompletaHepatitisB: false,
+    // Transmisión vertical Hep B
+    hijoMadreHepatitisBPositiva: false,
+    // Lactancia / contacto / alojamiento
+    lactancia60Min: false,
+    alojamientoConjuntoInmediato: false,
+    contactoPielPielInmediato: false,
+    // Condición étnica/migrante
+    esPuebloOriginario: false,
+    esMigrante: false,
+    // Observaciones
     observaciones: '',
     // Campos para REM
     tieneAnomaliaCongenita: false,
@@ -97,10 +121,26 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
       setFormData({
         partoId: initialData.partoId || '',
         sexo: initialData.sexo || '',
-        pesoGr: initialData.pesoGr?.toString() || '',
-        tallaCm: initialData.tallaCm?.toString() || '',
-        apgar1: initialData.apgar1?.toString() || '',
-        apgar5: initialData.apgar5?.toString() || '',
+        pesoNacimientoGramos: initialData.pesoNacimientoGramos != null ? initialData.pesoNacimientoGramos.toString() : '',
+        tallaCm: initialData.tallaCm != null ? initialData.tallaCm.toString() : '',
+        apgar1Min: initialData.apgar1Min != null ? initialData.apgar1Min.toString() : '',
+        apgar5Min: initialData.apgar5Min != null ? initialData.apgar5Min.toString() : '',
+        esNacidoVivo: initialData.esNacidoVivo !== undefined ? initialData.esNacidoVivo : true,
+        categoriaPeso: initialData.categoriaPeso || '',
+        anomaliaCongenita: initialData.anomaliaCongenita === true,
+        anomaliaCongenitaDescripcion: initialData.anomaliaCongenitaDescripcion || '',
+        reanimacionBasica: initialData.reanimacionBasica === true,
+        reanimacionAvanzada: initialData.reanimacionAvanzada === true,
+        ehiGradoII_III: initialData.ehiGradoII_III === true,
+        profilaxisOcularGonorrea: initialData.profilaxisOcularGonorrea === true,
+        profilaxisHepatitisB: initialData.profilaxisHepatitisB === true,
+        profilaxisCompletaHepatitisB: initialData.profilaxisCompletaHepatitisB === true,
+        hijoMadreHepatitisBPositiva: initialData.hijoMadreHepatitisBPositiva === true,
+        lactancia60Min: initialData.lactancia60Min === true,
+        alojamientoConjuntoInmediato: initialData.alojamientoConjuntoInmediato === true,
+        contactoPielPielInmediato: initialData.contactoPielPielInmediato === true,
+        esPuebloOriginario: initialData.esPuebloOriginario === true,
+        esMigrante: initialData.esMigrante === true,
         observaciones: initialData.observaciones || '',
         // Campos para REM
         tieneAnomaliaCongenita: initialData.tieneAnomaliaCongenita || false,
@@ -116,8 +156,11 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
   }, [isEdit, initialData])
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
+    const { name, value, type, checked } = e.target
+    setFormData({ 
+      ...formData, 
+      [name]: type === 'checkbox' ? checked : value 
+    })
     
     // Limpiar errores al cambiar campos
     if (error) setError('')
@@ -137,15 +180,48 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
       return
     }
 
-    // Validar Apgar si están presentes
-    if (formData.apgar1 && (parseInt(formData.apgar1) < 0 || parseInt(formData.apgar1) > 10)) {
-      setError('El Apgar 1\' debe ser un número entre 0 y 10')
-      setLoading(false)
-      return
+    // Validar peso si está presente
+    if (formData.pesoNacimientoGramos && formData.pesoNacimientoGramos !== '') {
+      const peso = parseInt(formData.pesoNacimientoGramos)
+      if (isNaN(peso) || peso <= 0) {
+        setError('El peso debe ser un número mayor a 0')
+        setLoading(false)
+        return
+      }
     }
 
-    if (formData.apgar5 && (parseInt(formData.apgar5) < 0 || parseInt(formData.apgar5) > 10)) {
-      setError('El Apgar 5\' debe ser un número entre 0 y 10')
+    // Validar talla si está presente
+    if (formData.tallaCm && formData.tallaCm !== '') {
+      const talla = parseInt(formData.tallaCm)
+      if (isNaN(talla) || talla <= 0) {
+        setError('La talla debe ser un número mayor a 0')
+        setLoading(false)
+        return
+      }
+    }
+
+    // Validar Apgar si están presentes
+    if (formData.apgar1Min && formData.apgar1Min !== '') {
+      const apgar1 = parseInt(formData.apgar1Min)
+      if (isNaN(apgar1) || apgar1 < 0 || apgar1 > 10) {
+        setError('El Apgar 1\' debe ser un número entre 0 y 10')
+        setLoading(false)
+        return
+      }
+    }
+
+    if (formData.apgar5Min && formData.apgar5Min !== '') {
+      const apgar5 = parseInt(formData.apgar5Min)
+      if (isNaN(apgar5) || apgar5 < 0 || apgar5 > 10) {
+        setError('El Apgar 5\' debe ser un número entre 0 y 10')
+        setLoading(false)
+        return
+      }
+    }
+
+    // Validar que si hay anomalía congénita, debe haber descripción
+    if (formData.anomaliaCongenita && !formData.anomaliaCongenitaDescripcion?.trim()) {
+      setError('Si presenta anomalía congénita, debe proporcionar una descripción')
       setLoading(false)
       return
     }
@@ -154,15 +230,40 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
       const url = isEdit ? `/api/recien-nacidos/${recienNacidoId}` : '/api/recien-nacidos'
       const method = isEdit ? 'PUT' : 'POST'
 
-      // Preparar datos para enviar
+      // Función helper para convertir strings vacíos a null y números
+      const toIntOrNull = (value) => {
+        if (!value || value === '') return null
+        const num = parseInt(value)
+        return isNaN(num) ? null : num
+      }
+
+      // Preparar datos para enviar (usar nombres exactos del schema)
       const submitData = {
         partoId: formData.partoId,
         sexo: formData.sexo,
-        pesoGr: formData.pesoGr || null,
-        tallaCm: formData.tallaCm || null,
-        apgar1: formData.apgar1 || null,
-        apgar5: formData.apgar5 || null,
-        observaciones: formData.observaciones || null,
+        pesoNacimientoGramos: toIntOrNull(formData.pesoNacimientoGramos),
+        tallaCm: toIntOrNull(formData.tallaCm),
+        apgar1Min: toIntOrNull(formData.apgar1Min),
+        apgar5Min: toIntOrNull(formData.apgar5Min),
+        esNacidoVivo: formData.esNacidoVivo !== undefined ? formData.esNacidoVivo : true,
+        categoriaPeso: formData.categoriaPeso && formData.categoriaPeso !== '' ? formData.categoriaPeso : null,
+        anomaliaCongenita: formData.anomaliaCongenita || null,
+        anomaliaCongenitaDescripcion: formData.anomaliaCongenita && formData.anomaliaCongenitaDescripcion?.trim() 
+          ? formData.anomaliaCongenitaDescripcion.trim().substring(0, 500) 
+          : null,
+        reanimacionBasica: formData.reanimacionBasica || null,
+        reanimacionAvanzada: formData.reanimacionAvanzada || null,
+        ehiGradoII_III: formData.ehiGradoII_III || null,
+        profilaxisOcularGonorrea: formData.profilaxisOcularGonorrea || null,
+        profilaxisHepatitisB: formData.profilaxisHepatitisB || null,
+        profilaxisCompletaHepatitisB: formData.profilaxisCompletaHepatitisB || null,
+        hijoMadreHepatitisBPositiva: formData.hijoMadreHepatitisBPositiva || null,
+        lactancia60Min: formData.lactancia60Min || null,
+        alojamientoConjuntoInmediato: formData.alojamientoConjuntoInmediato || null,
+        contactoPielPielInmediato: formData.contactoPielPielInmediato || null,
+        esPuebloOriginario: formData.esPuebloOriginario || null,
+        esMigrante: formData.esMigrante || null,
+        observaciones: formData.observaciones?.trim() ? formData.observaciones.trim().substring(0, 500) : null,
       }
 
       const response = await fetch(url, {
@@ -228,153 +329,480 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
         </div>
       ) : (
         <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGrid}>
-            {/* Parto */}
-            <div className={styles.formGroup}>
-              <label htmlFor="partoId">
-                Parto <span className={styles.required}>*</span>
-              </label>
-              {(preselectedPartoId || (isEdit && initialData?.partoId)) && preselectedParto ? (
-                <div className={styles.preselectedParto}>
-                  <div className={styles.partoDisplay}>
-                    <strong>
-                      {preselectedParto.madre?.nombres} {preselectedParto.madre?.apellidos}
-                    </strong>
-                    <span className={styles.partoDate}>
-                      {new Date(preselectedParto.fechaHora).toLocaleString('es-CL')}
-                    </span>
-                    {preselectedParto.tipo && (
-                      <span className={styles.partoTipo}>{formatTipo(preselectedParto.tipo)}</span>
-                    )}
+          {/* Sección 1: Información Básica */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-info-circle"></i>
+              Información Básica
+            </h2>
+            <div className={styles.formGrid}>
+              {/* Parto */}
+              <div className={styles.formGroup}>
+                <label htmlFor="partoId">
+                  Parto <span className={styles.required}>*</span>
+                </label>
+                {(preselectedPartoId || (isEdit && initialData?.partoId)) && preselectedParto ? (
+                  <div className={styles.preselectedParto}>
+                    <div className={styles.partoDisplay}>
+                      <strong>
+                        {preselectedParto.madre?.nombres} {preselectedParto.madre?.apellidos}
+                      </strong>
+                      <span className={styles.partoDate}>
+                        {new Date(preselectedParto.fechaHora).toLocaleString('es-CL')}
+                      </span>
+                      {preselectedParto.tipo && (
+                        <span className={styles.partoTipo}>{formatTipo(preselectedParto.tipo)}</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ) : (
+                ) : (
+                  <select
+                    id="partoId"
+                    name="partoId"
+                    value={formData.partoId}
+                    onChange={handleChange}
+                    required
+                    className={styles.select}
+                    disabled={loadingPartos || isEdit || !!preselectedPartoId}
+                  >
+                    <option value="">Seleccione un parto</option>
+                    {partos.map((parto) => (
+                      <option key={parto.id} value={parto.id}>
+                        {parto.madre
+                          ? `${parto.madre.nombres} ${parto.madre.apellidos} - ${new Date(parto.fechaHora).toLocaleString('es-CL')}`
+                          : `Parto ${parto.id}`}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {isEdit && (
+                  <small className={styles.helpText}>
+                    El parto no se puede modificar
+                  </small>
+                )}
+              </div>
+
+              {/* Sexo */}
+              <div className={styles.formGroup}>
+                <label htmlFor="sexo">
+                  Sexo <span className={styles.required}>*</span>
+                </label>
                 <select
-                  id="partoId"
-                  name="partoId"
-                  value={formData.partoId}
+                  id="sexo"
+                  name="sexo"
+                  value={formData.sexo}
                   onChange={handleChange}
                   required
                   className={styles.select}
-                  disabled={loadingPartos || isEdit || !!preselectedPartoId}
                 >
-                  <option value="">Seleccione un parto</option>
-                  {partos.map((parto) => (
-                    <option key={parto.id} value={parto.id}>
-                      {parto.madre
-                        ? `${parto.madre.nombres} ${parto.madre.apellidos} - ${new Date(parto.fechaHora).toLocaleString('es-CL')}`
-                        : `Parto ${parto.id}`}
-                    </option>
-                  ))}
+                  <option value="">Seleccione un sexo</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                  <option value="I">Indeterminado</option>
                 </select>
-              )}
-              {isEdit && (
+              </div>
+
+              {/* Peso */}
+              <div className={styles.formGroup}>
+                <label htmlFor="pesoNacimientoGramos">Peso al Nacimiento (gramos)</label>
+                <input
+                  type="number"
+                  id="pesoNacimientoGramos"
+                  name="pesoNacimientoGramos"
+                  value={formData.pesoNacimientoGramos}
+                  onChange={handleChange}
+                  min="1"
+                  step="1"
+                  placeholder="Ej: 3250"
+                />
                 <small className={styles.helpText}>
-                  El parto no se puede modificar
+                  Peso en gramos al momento del nacimiento
                 </small>
+              </div>
+
+              {/* Talla */}
+              <div className={styles.formGroup}>
+                <label htmlFor="tallaCm">Talla (centímetros)</label>
+                <input
+                  type="number"
+                  id="tallaCm"
+                  name="tallaCm"
+                  value={formData.tallaCm}
+                  onChange={handleChange}
+                  min="1"
+                  step="1"
+                  placeholder="Ej: 50"
+                />
+                <small className={styles.helpText}>
+                  Talla en centímetros al momento del nacimiento
+                </small>
+              </div>
+
+              {/* Apgar 1' */}
+              <div className={styles.formGroup}>
+                <label htmlFor="apgar1Min">Apgar 1'</label>
+                <input
+                  type="number"
+                  id="apgar1Min"
+                  name="apgar1Min"
+                  value={formData.apgar1Min}
+                  onChange={handleChange}
+                  min="0"
+                  max="10"
+                  placeholder="0-10"
+                />
+                <small className={styles.helpText}>
+                  Escala de 0 a 10
+                </small>
+              </div>
+
+              {/* Apgar 5' */}
+              <div className={styles.formGroup}>
+                <label htmlFor="apgar5Min">Apgar 5'</label>
+                <input
+                  type="number"
+                  id="apgar5Min"
+                  name="apgar5Min"
+                  value={formData.apgar5Min}
+                  onChange={handleChange}
+                  min="0"
+                  max="10"
+                  placeholder="0-10"
+                />
+                <small className={styles.helpText}>
+                  Escala de 0 a 10
+                </small>
+              </div>
+            </div>
+          </div>
+
+          {/* Sección 2: REM - Estado y Categoría */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-clipboard-list"></i>
+              REM - Estado y Categoría
+            </h2>
+            <div className={styles.formGrid}>
+              {/* Es Nacido Vivo */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="esNacidoVivo"
+                    name="esNacidoVivo"
+                    checked={formData.esNacidoVivo}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="esNacidoVivo">Es Nacido Vivo</label>
+                </div>
+              </div>
+
+              {/* Categoría de Peso */}
+              <div className={styles.formGroup}>
+                <label htmlFor="categoriaPeso">Categoría de Peso (REM)</label>
+                <select
+                  id="categoriaPeso"
+                  name="categoriaPeso"
+                  value={formData.categoriaPeso}
+                  onChange={handleChange}
+                  className={styles.select}
+                >
+                  <option value="">Seleccione una categoría</option>
+                  <option value="MENOR_500">Menor a 500g</option>
+                  <option value="RANGO_500_999">500 - 999g</option>
+                  <option value="RANGO_1000_1499">1000 - 1499g</option>
+                  <option value="RANGO_1500_1999">1500 - 1999g</option>
+                  <option value="RANGO_2000_2499">2000 - 2499g</option>
+                  <option value="RANGO_2500_2999">2500 - 2999g</option>
+                  <option value="RANGO_3000_3999">3000 - 3999g</option>
+                  <option value="RANGO_4000_MAS">4000g o más</option>
+                </select>
+                <small className={styles.helpText}>
+                  Clasificación según peso al nacer para reportes REM
+                </small>
+              </div>
+            </div>
+          </div>
+
+          {/* Sección 3: Anomalías Congénitas */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-exclamation-triangle"></i>
+              Anomalías Congénitas
+            </h2>
+            <div className={styles.formGrid}>
+              {/* Anomalía Congénita */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="anomaliaCongenita"
+                    name="anomaliaCongenita"
+                    checked={formData.anomaliaCongenita}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="anomaliaCongenita">Presenta Anomalía Congénita</label>
+                </div>
+              </div>
+
+              {/* Descripción de Anomalía */}
+              {formData.anomaliaCongenita && (
+                <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+                  <label htmlFor="anomaliaCongenitaDescripcion">Descripción de la Anomalía</label>
+                  <textarea
+                    id="anomaliaCongenitaDescripcion"
+                    name="anomaliaCongenitaDescripcion"
+                    value={formData.anomaliaCongenitaDescripcion}
+                    onChange={handleChange}
+                    rows={3}
+                    maxLength={500}
+                    className={styles.textarea}
+                    placeholder="Describa la anomalía congénita..."
+                  />
+                  <small className={styles.helpText}>
+                    {formData.anomaliaCongenitaDescripcion.length}/500 caracteres
+                  </small>
+                </div>
               )}
             </div>
+          </div>
 
-            {/* Sexo */}
-            <div className={styles.formGroup}>
-              <label htmlFor="sexo">
-                Sexo <span className={styles.required}>*</span>
-              </label>
-              <select
-                id="sexo"
-                name="sexo"
-                value={formData.sexo}
-                onChange={handleChange}
-                required
-                className={styles.select}
-              >
-                <option value="">Seleccione un sexo</option>
-                <option value="M">Masculino</option>
-                <option value="F">Femenino</option>
-                <option value="I">Indeterminado</option>
-              </select>
+          {/* Sección 4: Reanimación y EHI */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-heartbeat"></i>
+              Reanimación y EHI
+            </h2>
+            <div className={styles.formGrid}>
+              {/* Reanimación Básica */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="reanimacionBasica"
+                    name="reanimacionBasica"
+                    checked={formData.reanimacionBasica}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="reanimacionBasica">Reanimación Básica</label>
+                </div>
+              </div>
+
+              {/* Reanimación Avanzada */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="reanimacionAvanzada"
+                    name="reanimacionAvanzada"
+                    checked={formData.reanimacionAvanzada}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="reanimacionAvanzada">Reanimación Avanzada</label>
+                </div>
+              </div>
+
+              {/* EHI Grado II-III */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="ehiGradoII_III"
+                    name="ehiGradoII_III"
+                    checked={formData.ehiGradoII_III}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="ehiGradoII_III">EHI Grado II-III</label>
+                </div>
+              </div>
             </div>
+          </div>
 
-            {/* Peso */}
-            <div className={styles.formGroup}>
-              <label htmlFor="pesoGr">Peso (gramos)</label>
-              <input
-                type="number"
-                id="pesoGr"
-                name="pesoGr"
-                value={formData.pesoGr}
-                onChange={handleChange}
-                min="0"
-                placeholder="Ej: 3250"
-              />
+          {/* Sección 5: Profilaxis Inmediata */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-shield-alt"></i>
+              Profilaxis Inmediata
+            </h2>
+            <div className={styles.formGrid}>
+              {/* Profilaxis Ocular Gonorrea */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="profilaxisOcularGonorrea"
+                    name="profilaxisOcularGonorrea"
+                    checked={formData.profilaxisOcularGonorrea}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="profilaxisOcularGonorrea">Profilaxis Ocular Gonorrea</label>
+                </div>
+              </div>
+
+              {/* Profilaxis Hepatitis B */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="profilaxisHepatitisB"
+                    name="profilaxisHepatitisB"
+                    checked={formData.profilaxisHepatitisB}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="profilaxisHepatitisB">Profilaxis Hepatitis B</label>
+                </div>
+              </div>
+
+              {/* Profilaxis Completa Hepatitis B */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="profilaxisCompletaHepatitisB"
+                    name="profilaxisCompletaHepatitisB"
+                    checked={formData.profilaxisCompletaHepatitisB}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="profilaxisCompletaHepatitisB">Profilaxis Completa Hepatitis B</label>
+                </div>
+              </div>
             </div>
+          </div>
 
-            {/* Talla */}
-            <div className={styles.formGroup}>
-              <label htmlFor="tallaCm">Talla (centímetros)</label>
-              <input
-                type="number"
-                id="tallaCm"
-                name="tallaCm"
-                value={formData.tallaCm}
-                onChange={handleChange}
-                min="0"
-                placeholder="Ej: 50"
-              />
+          {/* Sección 6: Transmisión Vertical Hep B */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-virus"></i>
+              Transmisión Vertical Hepatitis B
+            </h2>
+            <div className={styles.formGrid}>
+              {/* Hijo de Madre Hepatitis B Positiva */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="hijoMadreHepatitisBPositiva"
+                    name="hijoMadreHepatitisBPositiva"
+                    checked={formData.hijoMadreHepatitisBPositiva}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="hijoMadreHepatitisBPositiva">Hijo de Madre Hepatitis B Positiva</label>
+                </div>
+              </div>
             </div>
+          </div>
 
-            {/* Apgar 1' */}
-            <div className={styles.formGroup}>
-              <label htmlFor="apgar1">Apgar 1'</label>
-              <input
-                type="number"
-                id="apgar1"
-                name="apgar1"
-                value={formData.apgar1}
-                onChange={handleChange}
-                min="0"
-                max="10"
-                placeholder="0-10"
-              />
-              <small className={styles.helpText}>
-                Escala de 0 a 10
-              </small>
+          {/* Sección 7: Lactancia / Contacto / Alojamiento */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-baby"></i>
+              Lactancia / Contacto / Alojamiento
+            </h2>
+            <div className={styles.formGrid}>
+              {/* Lactancia 60 Min */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="lactancia60Min"
+                    name="lactancia60Min"
+                    checked={formData.lactancia60Min}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="lactancia60Min">Lactancia en los primeros 60 minutos</label>
+                </div>
+              </div>
+
+              {/* Alojamiento Conjunto Inmediato */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="alojamientoConjuntoInmediato"
+                    name="alojamientoConjuntoInmediato"
+                    checked={formData.alojamientoConjuntoInmediato}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="alojamientoConjuntoInmediato">Alojamiento Conjunto Inmediato</label>
+                </div>
+              </div>
+
+              {/* Contacto Piel a Piel Inmediato */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="contactoPielPielInmediato"
+                    name="contactoPielPielInmediato"
+                    checked={formData.contactoPielPielInmediato}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="contactoPielPielInmediato">Contacto Piel a Piel Inmediato</label>
+                </div>
+              </div>
             </div>
+          </div>
 
-            {/* Apgar 5' */}
-            <div className={styles.formGroup}>
-              <label htmlFor="apgar5">Apgar 5'</label>
-              <input
-                type="number"
-                id="apgar5"
-                name="apgar5"
-                value={formData.apgar5}
-                onChange={handleChange}
-                min="0"
-                max="10"
-                placeholder="0-10"
-              />
-              <small className={styles.helpText}>
-                Escala de 0 a 10
-              </small>
+          {/* Sección 8: Condición Étnica/Migrante */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-globe"></i>
+              Condición Étnica/Migrante
+            </h2>
+            <div className={styles.formGrid}>
+              {/* Es Pueblo Originario */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="esPuebloOriginario"
+                    name="esPuebloOriginario"
+                    checked={formData.esPuebloOriginario}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="esPuebloOriginario">Es Pueblo Originario</label>
+                </div>
+              </div>
+
+              {/* Es Migrante */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxGroup}>
+                  <input
+                    type="checkbox"
+                    id="esMigrante"
+                    name="esMigrante"
+                    checked={formData.esMigrante}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="esMigrante">Es Migrante</label>
+                </div>
+              </div>
             </div>
+          </div>
 
-            {/* Observaciones */}
-            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="observaciones">Observaciones</label>
-              <textarea
-                id="observaciones"
-                name="observaciones"
-                value={formData.observaciones}
-                onChange={handleChange}
-                rows={4}
-                maxLength={500}
-                className={styles.textarea}
-                placeholder="Agregue observaciones adicionales"
-              />
-              <small className={styles.helpText}>
-                {formData.observaciones.length}/500 caracteres
-              </small>
+          {/* Sección 9: Observaciones */}
+          <div className={styles.formSection}>
+            <h2 className={styles.sectionTitle}>
+              <i className="fas fa-notes-medical"></i>
+              Observaciones
+            </h2>
+            <div className={styles.formGrid}>
+              <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+                <label htmlFor="observaciones">Observaciones Generales</label>
+                <textarea
+                  id="observaciones"
+                  name="observaciones"
+                  value={formData.observaciones}
+                  onChange={handleChange}
+                  rows={4}
+                  maxLength={500}
+                  className={styles.textarea}
+                  placeholder="Agregue observaciones adicionales"
+                />
+                <small className={styles.helpText}>
+                  {formData.observaciones.length}/500 caracteres
+                </small>
+              </div>
             </div>
             
             {/* Sección: Datos para Reportes REM */}
@@ -530,4 +958,3 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
     </>
   )
 }
-

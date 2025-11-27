@@ -44,6 +44,26 @@
   text-decoration: none;
 }
 
+.btnEdit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.5rem;
+  background: rgba(0, 102, 164, 0.1);
+  color: var(--color-primary);
+  border: 1px solid rgba(0, 102, 164, 0.3);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-decoration: none;
+}
+
+.btnEdit:hover {
+  background: rgba(0, 102, 164, 0.2);
+  text-decoration: none;
+}
+
 .btnAlta {
   display: inline-flex;
   align-items: center;
@@ -369,6 +389,7 @@
     align-items: stretch;
   }
 
+  .btnEdit,
   .btnAlta {
     width: 100%;
     justify-content: center;

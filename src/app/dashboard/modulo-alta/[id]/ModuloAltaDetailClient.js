@@ -399,10 +399,10 @@ export default function ModuloAltaDetailClient({ episodioId }) {
                         {episodio.informe.recienNacidos.map((rn, index) => (
                           <tr key={index}>
                             <td>{formatSexo(rn.sexo)}</td>
-                            <td>{rn.pesoGr}</td>
+                            <td>{rn.pesoNacimientoGramos}</td>
                             <td>{rn.tallaCm}</td>
-                            <td>{rn.apgar1}</td>
-                            <td>{rn.apgar5}</td>
+                            <td>{rn.apgar1Min}</td>
+                            <td>{rn.apgar5Min}</td>
                             <td>{rn.observaciones || '-'}</td>
                           </tr>
                         ))}

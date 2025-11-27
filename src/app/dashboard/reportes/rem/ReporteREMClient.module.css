@@ -1,6 +1,8 @@
 /* Reporte REM Client Styles */
 .container {
   padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .header {
@@ -11,14 +13,20 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: var(--color-text);
   font-size: 2rem;
-  margin-bottom: 0.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+}
+
+.header h1 i {
+  color: var(--color-primary);
 }
 
 .subtitle {
   color: var(--color-text-muted);
-  font-size: 1rem;
+  font-size: 0.95rem;
+  margin: 0;
 }
 
 /* Controls */
@@ -30,6 +38,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   margin-bottom: 2rem;
 }
 
@@ -51,10 +60,17 @@
   padding: 0.65rem 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--color-surface);
+  color: var(--color-text);
   font-family: inherit;
   font-size: 0.95rem;
   min-width: 150px;
+  transition: all 0.15s ease-in-out;
+}
+
+.select:hover,
+.input:hover {
+  border-color: #B8C5D6;
 }
 
 .select:focus,
@@ -133,6 +149,10 @@
   border: 1px solid rgba(217, 48, 37, 0.2);
 }
 
+.alertError i {
+  font-size: 1.1rem;
+}
+
 /* Report Container */
 .reportContainer {
   background: var(--color-surface);
@@ -147,7 +167,7 @@
   justify-content: flex-end;
   gap: 1rem;
   margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  padding-bottom: 1.5rem;
   border-bottom: 2px solid var(--color-border);
 }
 
@@ -164,15 +184,35 @@
   align-items: center;
   gap: 1rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 102, 164, 0.2);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .statIcon {
-  font-size: 2.5rem;
-  opacity: 0.9;
+  width: 3rem;
+  height: 3rem;
+  min-width: 3rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.statIcon i {
+  font-size: 1.5rem;
+  color: #fff;
+  display: inline-block;
+  line-height: 1;
 }
 
 .statContent {
@@ -184,11 +224,13 @@
   font-weight: 700;
   line-height: 1;
   margin-bottom: 0.25rem;
+  color: var(--color-text);
 }
 
 .statLabel {
   font-size: 0.9rem;
-  opacity: 0.9;
+  color: var(--color-text-muted);
+  font-weight: 500;
 }
 
 /* Section */
@@ -197,17 +239,19 @@
 }
 
 .section h2 {
-  color: var(--color-primary);
   font-size: 1.5rem;
-  margin-bottom: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 1.5rem 0;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid var(--color-primary);
+  border-bottom: 2px solid var(--color-border);
 }
 
 .section h3 {
   color: var(--color-text);
   font-size: 1.25rem;
-  margin-bottom: 1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--color-border);
 }
@@ -215,7 +259,8 @@
 .section h4 {
   color: var(--color-text);
   font-size: 1.1rem;
-  margin-bottom: 0.75rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
 }
 
 /* Subsection Grid */
@@ -226,32 +271,31 @@
 }
 
 .subsection {
-  background: rgba(0, 102, 164, 0.02);
+  background: var(--color-surface);
   padding: 1.25rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(0, 102, 164, 0.1);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Table */
 .table {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  background: var(--color-surface);
 }
 
 .table thead {
-  background: var(--color-primary);
-  color: #fff;
+  background: var(--color-primary-soft);
 }
 
 .table th {
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
   text-align: left;
   font-weight: 600;
+  color: var(--color-text);
   font-size: 0.9rem;
+  border-bottom: 2px solid var(--color-border);
 }
 
 .table tbody tr {
@@ -260,7 +304,7 @@
 }
 
 .table tbody tr:hover {
-  background: rgba(0, 102, 164, 0.02);
+  background: var(--color-primary-soft);
 }
 
 .table tbody tr:last-child {
@@ -268,7 +312,7 @@
 }
 
 .table td {
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
   font-size: 0.95rem;
   color: var(--color-text);
 }
@@ -279,7 +323,7 @@
 }
 
 .totalRow {
-  background: rgba(0, 102, 164, 0.05) !important;
+  background: var(--color-primary-soft) !important;
   font-weight: 600;
 }
 
@@ -287,6 +331,10 @@
 @media (max-width: 768px) {
   .container {
     padding: 1rem;
+  }
+
+  .header h1 {
+    font-size: 1.5rem;
   }
 
   .controls {
@@ -328,6 +376,6 @@
 
   .table th,
   .table td {
-    padding: 0.5rem;
+    padding: 0.75rem;
   }
 }

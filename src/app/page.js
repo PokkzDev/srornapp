@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import styles from './page.module.css'
 import { validarRUT, formatearRUT, esEmail } from '@/lib/rut'
 
@@ -51,9 +52,9 @@ export default function LoginPage() {
   const [rutError, setRutError] = useState('')
 
   useEffect(() => {
-    // Check if we're in development mode based on ENVIRONMENT variable
-    const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || 'production'
-    setIsDev(environment === 'development')
+    // Check if we're in development mode based on NEXT_PUBLIC_ENVIRONMENT from .env
+    const isDevelopment = process.env.NEXT_PUBLIC_ENVIRONMENT === 'development'
+    setIsDev(isDevelopment)
   }, [])
 
   const handleIdentifierChange = (value) => {
@@ -141,6 +142,14 @@ export default function LoginPage() {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.header}>
+          <Image
+            src="/logo.png"
+            alt="SRORN Logo"
+            width={120}
+            height={120}
+            className={styles.logo}
+            priority
+          />
           <h1>Sistema SRORN</h1>
           <p className={styles.subtitle}>Ingrese sus credenciales para continuar</p>
         </div>

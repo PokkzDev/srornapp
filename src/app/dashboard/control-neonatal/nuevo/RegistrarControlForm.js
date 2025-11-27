@@ -492,26 +492,6 @@ export default function RegistrarControlForm() {
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="tipo">
-            Tipo de Control <span className={styles.required}>*</span>
-          </label>
-          <select
-            id="tipo"
-            name="tipo"
-            value={formData.tipo}
-            onChange={handleChange}
-            required
-            className={styles.select}
-          >
-            <option value="SIGNOS_VITALES">Signos Vitales</option>
-            <option value="GLUCEMIA">Glucemia</option>
-            <option value="ALIMENTACION">Alimentación</option>
-            <option value="MEDICACION">Medicación</option>
-            <option value="OTRO">Otro</option>
-          </select>
-        </div>
-
-        <div className={styles.formGroup}>
           <label htmlFor="episodioUrniId">
             Episodio URNI (Opcional)
           </label>
@@ -536,6 +516,26 @@ export default function RegistrarControlForm() {
               ))}
             </select>
           )}
+        </div>
+
+        <div className={styles.formGroup}>
+          <label htmlFor="tipo">
+            Tipo de Control <span className={styles.required}>*</span>
+          </label>
+          <select
+            id="tipo"
+            name="tipo"
+            value={formData.tipo}
+            onChange={handleChange}
+            required
+            className={styles.select}
+          >
+            <option value="SIGNOS_VITALES">Signos Vitales</option>
+            <option value="GLUCEMIA">Glucemia</option>
+            <option value="ALIMENTACION">Alimentación</option>
+            <option value="MEDICACION">Medicación</option>
+            {/* <option value="OTRO">Otro</option> */}
+          </select>
         </div>
 
         <div className={styles.formGroup}>

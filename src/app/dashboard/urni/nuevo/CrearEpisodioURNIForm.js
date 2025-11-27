@@ -48,12 +48,13 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
     const loadMedicos = async () => {
       setLoadingMedicos(true)
       try {
-        const response = await fetch('/api/users')
+        const response = await fetch('/api/users?role=medico')
         if (response.ok) {
           const data = await response.json()
-          // Filtrar usuarios con rol médico (asumiendo que el API devuelve roles)
-          // Por ahora, mostrar todos los usuarios y el backend validará
           setMedicos(data.data || [])
+        } else {
+          const errorData = await response.json()
+          console.error('Error loading medicos:', errorData.error)
         }
       } catch (err) {
         console.error('Error loading medicos:', err)
@@ -115,6 +116,12 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
 
     if (!formData.fechaHoraIngreso) {
       setError('La fecha/hora de ingreso es requerida')
+      return
+    }
+
+    // Validar longitud de motivoIngreso
+    if (formData.motivoIngreso && formData.motivoIngreso.length > 300) {
+      setError('El motivo de ingreso no puede exceder 300 caracteres')
       return
     }
 
@@ -217,7 +224,7 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
                   <small>
                     Parto: {formatFecha(selectedRN.parto?.fechaHora)} | 
                     Sexo: {selectedRN.sexo === 'M' ? 'Masculino' : selectedRN.sexo === 'F' ? 'Femenino' : 'Indeterminado'}
-                    {selectedRN.pesoGr && ` | Peso: ${selectedRN.pesoGr}g`}
+                    {selectedRN.pesoNacimientoGramos && ` | Peso: ${selectedRN.pesoNacimientoGramos}g`}
                   </small>
                 </div>
                 <button

@@ -123,12 +123,12 @@ export async function GET(request) {
 
     // Promedios de peso y talla
     const rnConPeso = await prisma.recienNacido.findMany({
-      where: { ...rnWhere, pesoGr: { not: null } },
-      select: { pesoGr: true, tallaCm: true, apgar1: true, apgar5: true },
+      where: { ...rnWhere, pesoNacimientoGramos: { not: null } },
+      select: { pesoNacimientoGramos: true, tallaCm: true, apgar1Min: true, apgar5Min: true },
     })
 
     const pesoPromedio = rnConPeso.length > 0
-      ? Math.round(rnConPeso.reduce((sum, rn) => sum + (rn.pesoGr || 0), 0) / rnConPeso.length)
+      ? Math.round(rnConPeso.reduce((sum, rn) => sum + (rn.pesoNacimientoGramos || 0), 0) / rnConPeso.length)
       : 0
 
     const tallaPromedio = rnConPeso.length > 0
@@ -137,22 +137,22 @@ export async function GET(request) {
 
     // Distribución de Apgar
     const apgar1Dist = {
-      bajo: rnConPeso.filter(rn => rn.apgar1 !== null && rn.apgar1 < 7).length,
-      normal: rnConPeso.filter(rn => rn.apgar1 !== null && rn.apgar1 >= 7 && rn.apgar1 <= 9).length,
-      excelente: rnConPeso.filter(rn => rn.apgar1 !== null && rn.apgar1 === 10).length,
+      bajo: rnConPeso.filter(rn => rn.apgar1Min !== null && rn.apgar1Min < 7).length,
+      normal: rnConPeso.filter(rn => rn.apgar1Min !== null && rn.apgar1Min >= 7 && rn.apgar1Min <= 9).length,
+      excelente: rnConPeso.filter(rn => rn.apgar1Min !== null && rn.apgar1Min === 10).length,
     }
 
     const apgar5Dist = {
-      bajo: rnConPeso.filter(rn => rn.apgar5 !== null && rn.apgar5 < 7).length,
-      normal: rnConPeso.filter(rn => rn.apgar5 !== null && rn.apgar5 >= 7 && rn.apgar5 <= 9).length,
-      excelente: rnConPeso.filter(rn => rn.apgar5 !== null && rn.apgar5 === 10).length,
+      bajo: rnConPeso.filter(rn => rn.apgar5Min !== null && rn.apgar5Min < 7).length,
+      normal: rnConPeso.filter(rn => rn.apgar5Min !== null && rn.apgar5Min >= 7 && rn.apgar5Min <= 9).length,
+      excelente: rnConPeso.filter(rn => rn.apgar5Min !== null && rn.apgar5Min === 10).length,
     }
 
     // Distribución por rangos de peso
     const pesoRangos = {
-      bajoPeso: rnConPeso.filter(rn => rn.pesoGr && rn.pesoGr < 2500).length,
-      normal: rnConPeso.filter(rn => rn.pesoGr && rn.pesoGr >= 2500 && rn.pesoGr <= 4000).length,
-      macrosomia: rnConPeso.filter(rn => rn.pesoGr && rn.pesoGr > 4000).length,
+      bajoPeso: rnConPeso.filter(rn => rn.pesoNacimientoGramos && rn.pesoNacimientoGramos < 2500).length,
+      normal: rnConPeso.filter(rn => rn.pesoNacimientoGramos && rn.pesoNacimientoGramos >= 2500 && rn.pesoNacimientoGramos <= 4000).length,
+      macrosomia: rnConPeso.filter(rn => rn.pesoNacimientoGramos && rn.pesoNacimientoGramos > 4000).length,
     }
 
     // ============================================

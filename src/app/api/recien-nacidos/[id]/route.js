@@ -129,10 +129,15 @@ export async function PUT(request, { params }) {
       )
     }
 
+    // Normalizar nombres de campos (aceptar ambos nombres antiguos y nuevos)
+    const pesoNacimientoGramos = data.pesoNacimientoGramos !== undefined ? data.pesoNacimientoGramos : data.pesoGr
+    const apgar1Min = data.apgar1Min !== undefined ? data.apgar1Min : data.apgar1
+    const apgar5Min = data.apgar5Min !== undefined ? data.apgar5Min : data.apgar5
+
     // Validar valores numéricos si están presentes
-    if (data.pesoGr !== undefined && data.pesoGr !== null && data.pesoGr !== '') {
-      const pesoGr = parseInt(data.pesoGr)
-      if (isNaN(pesoGr) || pesoGr < 0) {
+    if (pesoNacimientoGramos !== undefined && pesoNacimientoGramos !== null && pesoNacimientoGramos !== '') {
+      const peso = parseInt(pesoNacimientoGramos)
+      if (isNaN(peso) || peso < 0) {
         return Response.json(
           { error: 'El peso debe ser un número válido (gramos)' },
           { status: 400 }
@@ -150,8 +155,8 @@ export async function PUT(request, { params }) {
       }
     }
 
-    if (data.apgar1 !== undefined && data.apgar1 !== null && data.apgar1 !== '') {
-      const apgar1 = parseInt(data.apgar1)
+    if (apgar1Min !== undefined && apgar1Min !== null && apgar1Min !== '') {
+      const apgar1 = parseInt(apgar1Min)
       if (isNaN(apgar1) || apgar1 < 0 || apgar1 > 10) {
         return Response.json(
           { error: 'El Apgar 1\' debe ser un número entre 0 y 10' },
@@ -160,8 +165,8 @@ export async function PUT(request, { params }) {
       }
     }
 
-    if (data.apgar5 !== undefined && data.apgar5 !== null && data.apgar5 !== '') {
-      const apgar5 = parseInt(data.apgar5)
+    if (apgar5Min !== undefined && apgar5Min !== null && apgar5Min !== '') {
+      const apgar5 = parseInt(apgar5Min)
       if (isNaN(apgar5) || apgar5 < 0 || apgar5 > 10) {
         return Response.json(
           { error: 'El Apgar 5\' debe ser un número entre 0 y 10' },
@@ -170,35 +175,60 @@ export async function PUT(request, { params }) {
       }
     }
 
-    // Preparar datos para actualizar
+    // Preparar datos para actualizar (usar nombres nuevos del schema)
     const rnData = {
       sexo: data.sexo,
       updatedById: user.id,
+      // REM
+      esNacidoVivo: data.esNacidoVivo !== undefined ? data.esNacidoVivo : rnExistente.esNacidoVivo !== undefined ? rnExistente.esNacidoVivo : true,
+      categoriaPeso: data.categoriaPeso !== undefined ? (data.categoriaPeso || null) : rnExistente.categoriaPeso,
+      // Anomalías congénitas
+      anomaliaCongenita: data.anomaliaCongenita !== undefined ? (data.anomaliaCongenita || null) : rnExistente.anomaliaCongenita,
+      anomaliaCongenitaDescripcion: data.anomaliaCongenita !== undefined 
+        ? (data.anomaliaCongenita ? (data.anomaliaCongenitaDescripcion?.trim().substring(0, 500) || null) : null)
+        : rnExistente.anomaliaCongenitaDescripcion,
+      // Reanimación y EHI
+      reanimacionBasica: data.reanimacionBasica !== undefined ? (data.reanimacionBasica || null) : rnExistente.reanimacionBasica,
+      reanimacionAvanzada: data.reanimacionAvanzada !== undefined ? (data.reanimacionAvanzada || null) : rnExistente.reanimacionAvanzada,
+      ehiGradoII_III: data.ehiGradoII_III !== undefined ? (data.ehiGradoII_III || null) : rnExistente.ehiGradoII_III,
+      // Profilaxis inmediata
+      profilaxisOcularGonorrea: data.profilaxisOcularGonorrea !== undefined ? (data.profilaxisOcularGonorrea || null) : rnExistente.profilaxisOcularGonorrea,
+      profilaxisHepatitisB: data.profilaxisHepatitisB !== undefined ? (data.profilaxisHepatitisB || null) : rnExistente.profilaxisHepatitisB,
+      profilaxisCompletaHepatitisB: data.profilaxisCompletaHepatitisB !== undefined ? (data.profilaxisCompletaHepatitisB || null) : rnExistente.profilaxisCompletaHepatitisB,
+      // Transmisión vertical Hep B
+      hijoMadreHepatitisBPositiva: data.hijoMadreHepatitisBPositiva !== undefined ? (data.hijoMadreHepatitisBPositiva || null) : rnExistente.hijoMadreHepatitisBPositiva,
+      // Lactancia / contacto / alojamiento
+      lactancia60Min: data.lactancia60Min !== undefined ? (data.lactancia60Min || null) : rnExistente.lactancia60Min,
+      alojamientoConjuntoInmediato: data.alojamientoConjuntoInmediato !== undefined ? (data.alojamientoConjuntoInmediato || null) : rnExistente.alojamientoConjuntoInmediato,
+      contactoPielPielInmediato: data.contactoPielPielInmediato !== undefined ? (data.contactoPielPielInmediato || null) : rnExistente.contactoPielPielInmediato,
+      // Condición étnica/migrante
+      esPuebloOriginario: data.esPuebloOriginario !== undefined ? (data.esPuebloOriginario || null) : rnExistente.esPuebloOriginario,
+      esMigrante: data.esMigrante !== undefined ? (data.esMigrante || null) : rnExistente.esMigrante,
     }
 
-    // Agregar campos opcionales
-    if (data.pesoGr !== undefined && data.pesoGr !== null && data.pesoGr !== '') {
-      rnData.pesoGr = parseInt(data.pesoGr)
-    } else {
-      rnData.pesoGr = null
+    // Agregar campos numéricos (usar nombres nuevos)
+    if (pesoNacimientoGramos !== undefined && pesoNacimientoGramos !== null && pesoNacimientoGramos !== '') {
+      rnData.pesoNacimientoGramos = parseInt(pesoNacimientoGramos)
+    } else if (data.pesoNacimientoGramos === null || data.pesoGr === null) {
+      rnData.pesoNacimientoGramos = null
     }
 
     if (data.tallaCm !== undefined && data.tallaCm !== null && data.tallaCm !== '') {
       rnData.tallaCm = parseInt(data.tallaCm)
-    } else {
+    } else if (data.tallaCm === null) {
       rnData.tallaCm = null
     }
 
-    if (data.apgar1 !== undefined && data.apgar1 !== null && data.apgar1 !== '') {
-      rnData.apgar1 = parseInt(data.apgar1)
-    } else {
-      rnData.apgar1 = null
+    if (apgar1Min !== undefined && apgar1Min !== null && apgar1Min !== '') {
+      rnData.apgar1Min = parseInt(apgar1Min)
+    } else if (data.apgar1Min === null || data.apgar1 === null) {
+      rnData.apgar1Min = null
     }
 
-    if (data.apgar5 !== undefined && data.apgar5 !== null && data.apgar5 !== '') {
-      rnData.apgar5 = parseInt(data.apgar5)
-    } else {
-      rnData.apgar5 = null
+    if (apgar5Min !== undefined && apgar5Min !== null && apgar5Min !== '') {
+      rnData.apgar5Min = parseInt(apgar5Min)
+    } else if (data.apgar5Min === null || data.apgar5 === null) {
+      rnData.apgar5Min = null
     }
 
     if (data.observaciones !== undefined) {

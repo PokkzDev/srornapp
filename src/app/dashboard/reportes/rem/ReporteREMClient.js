@@ -50,14 +50,33 @@ export default function ReporteREMClient() {
     }
   }
 
-  const exportarExcel = () => {
-    // TODO: Implementar exportación a Excel
-    alert('Funcionalidad de exportación en desarrollo')
-  }
+  const exportarPDF = async () => {
+    if (!reporte) {
+      alert('Primero debe generar un reporte')
+      return
+    }
 
-  const exportarPDF = () => {
-    // TODO: Implementar exportación a PDF
-    alert('Funcionalidad de exportación en desarrollo')
+    try {
+      const response = await fetch(`/api/reportes/rem/export?mes=${mes}&anio=${anio}`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al exportar el PDF')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Reporte_REM_${anio}_${mes.toString().padStart(2, '0')}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      console.error('Error exporting PDF:', err)
+      alert('Error al exportar el PDF: ' + err.message)
+    }
   }
 
   return (
@@ -132,9 +151,6 @@ export default function ReporteREMClient() {
         <div className={styles.reportContainer}>
           {/* Botones de exportación */}
           <div className={styles.exportButtons}>
-            <button onClick={exportarExcel} className={styles.btnSuccess}>
-              <i className="fas fa-file-excel"></i> Exportar a Excel
-            </button>
             <button onClick={exportarPDF} className={styles.btnDanger}>
               <i className="fas fa-file-pdf"></i> Exportar a PDF
             </button>
@@ -149,7 +165,7 @@ export default function ReporteREMClient() {
                   <i className="fas fa-baby"></i>
                 </div>
                 <div className={styles.statContent}>
-                  <div className={styles.statValue}>{reporte.caracteristicasParto.totalPartos}</div>
+                  <div className={styles.statValue}>{reporte.caracteristicasParto.total.total}</div>
                   <div className={styles.statLabel}>Total Partos</div>
                 </div>
               </div>
@@ -159,7 +175,7 @@ export default function ReporteREMClient() {
                   <i className="fas fa-baby-carriage"></i>
                 </div>
                 <div className={styles.statContent}>
-                  <div className={styles.statValue}>{reporte.recienNacidosVivos.total}</div>
+                  <div className={styles.statValue}>{reporte.seccionD1.total}</div>
                   <div className={styles.statLabel}>Recién Nacidos Vivos</div>
                 </div>
               </div>
@@ -169,8 +185,8 @@ export default function ReporteREMClient() {
                   <i className="fas fa-heartbeat"></i>
                 </div>
                 <div className={styles.statContent}>
-                  <div className={styles.statValue}>{reporte.caracteristicasParto.tiposParto.eutocico}</div>
-                  <div className={styles.statLabel}>Partos Eutócicos</div>
+                  <div className={styles.statValue}>{reporte.seccionD2.tipoParto.vaginal}</div>
+                  <div className={styles.statLabel}>Partos Vaginales</div>
                 </div>
               </div>
               
@@ -180,8 +196,7 @@ export default function ReporteREMClient() {
                 </div>
                 <div className={styles.statContent}>
                   <div className={styles.statValue}>
-                    {reporte.caracteristicasParto.tiposParto.cesareasElectivas + 
-                     reporte.caracteristicasParto.tiposParto.cesareasEmergencia}
+                    {reporte.seccionD2.cesareas.urgencia + reporte.seccionD2.cesareas.electiva}
                   </div>
                   <div className={styles.statLabel}>Cesáreas</div>
                 </div>
@@ -203,82 +218,39 @@ export default function ReporteREMClient() {
               <tbody>
                 <tr>
                   <td>&lt; 15 años</td>
-                  <td>{reporte.caracteristicasParto.partosSegunEdadMadre.menor15}</td>
+                  <td>{reporte.caracteristicasParto.total.edadMadre.menor15}</td>
                   <td>
-                    {reporte.caracteristicasParto.totalPartos > 0
-                      ? ((reporte.caracteristicasParto.partosSegunEdadMadre.menor15 / reporte.caracteristicasParto.totalPartos) * 100).toFixed(1)
+                    {reporte.caracteristicasParto.total.total > 0
+                      ? ((reporte.caracteristicasParto.total.edadMadre.menor15 / reporte.caracteristicasParto.total.total) * 100).toFixed(1)
                       : 0}%
                   </td>
                 </tr>
                 <tr>
                   <td>15-19 años</td>
-                  <td>{reporte.caracteristicasParto.partosSegunEdadMadre.entre15y19}</td>
+                  <td>{reporte.caracteristicasParto.total.edadMadre.entre15y19}</td>
                   <td>
-                    {reporte.caracteristicasParto.totalPartos > 0
-                      ? ((reporte.caracteristicasParto.partosSegunEdadMadre.entre15y19 / reporte.caracteristicasParto.totalPartos) * 100).toFixed(1)
+                    {reporte.caracteristicasParto.total.total > 0
+                      ? ((reporte.caracteristicasParto.total.edadMadre.entre15y19 / reporte.caracteristicasParto.total.total) * 100).toFixed(1)
                       : 0}%
                   </td>
                 </tr>
                 <tr>
-                  <td>20-24 años</td>
-                  <td>{reporte.caracteristicasParto.partosSegunEdadMadre.entre20y24}</td>
+                  <td>20-34 años</td>
+                  <td>{reporte.caracteristicasParto.total.edadMadre.entre20y34}</td>
                   <td>
-                    {reporte.caracteristicasParto.totalPartos > 0
-                      ? ((reporte.caracteristicasParto.partosSegunEdadMadre.entre20y24 / reporte.caracteristicasParto.totalPartos) * 100).toFixed(1)
+                    {reporte.caracteristicasParto.total.total > 0
+                      ? ((reporte.caracteristicasParto.total.edadMadre.entre20y34 / reporte.caracteristicasParto.total.total) * 100).toFixed(1)
                       : 0}%
                   </td>
                 </tr>
                 <tr>
-                  <td>&gt; 35 años</td>
-                  <td>{reporte.caracteristicasParto.partosSegunEdadMadre.mayor35}</td>
+                  <td>≥ 35 años</td>
+                  <td>{reporte.caracteristicasParto.total.edadMadre.mayor35}</td>
                   <td>
-                    {reporte.caracteristicasParto.totalPartos > 0
-                      ? ((reporte.caracteristicasParto.partosSegunEdadMadre.mayor35 / reporte.caracteristicasParto.totalPartos) * 100).toFixed(1)
+                    {reporte.caracteristicasParto.total.total > 0
+                      ? ((reporte.caracteristicasParto.total.edadMadre.mayor35 / reporte.caracteristicasParto.total.total) * 100).toFixed(1)
                       : 0}%
                   </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Partos Primíparas */}
-          <div className={styles.section}>
-            <h3>Partos Primíparas según Semanas de Gestación</h3>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Categoría</th>
-                  <th>Cantidad</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Total Primíparas</td>
-                  <td><strong>{reporte.caracteristicasParto.partosPrimiparas.totalPrimiparas}</strong></td>
-                </tr>
-                <tr>
-                  <td>&lt; 20 semanas</td>
-                  <td>{reporte.caracteristicasParto.partosPrimiparas.menor20Semanas}</td>
-                </tr>
-                <tr>
-                  <td>20-36 semanas</td>
-                  <td>{reporte.caracteristicasParto.partosPrimiparas.entre20y36Semanas}</td>
-                </tr>
-                <tr>
-                  <td>≥ 37 semanas</td>
-                  <td>{reporte.caracteristicasParto.partosPrimiparas.mayor37Semanas}</td>
-                </tr>
-                <tr>
-                  <td>Presentación de nalgas</td>
-                  <td>{reporte.caracteristicasParto.partosPrimiparas.presentacionNalgas}</td>
-                </tr>
-                <tr>
-                  <td>Presentación de cara</td>
-                  <td>{reporte.caracteristicasParto.partosPrimiparas.presentacionCara}</td>
-                </tr>
-                <tr>
-                  <td>Presentación transversa</td>
-                  <td>{reporte.caracteristicasParto.partosPrimiparas.presentacionTransversa}</td>
                 </tr>
               </tbody>
             </table>
@@ -286,7 +258,7 @@ export default function ReporteREMClient() {
 
           {/* Peso al Nacer */}
           <div className={styles.section}>
-            <h3>Sección D.1: Peso al Nacer (Gramos)</h3>
+            <h3>SECCIÓN D.1: Información General de Recién Nacidos Vivos</h3>
             <table className={styles.table}>
               <thead>
                 <tr>
@@ -298,82 +270,82 @@ export default function ReporteREMClient() {
               <tbody>
                 <tr>
                   <td>&lt; 500g</td>
-                  <td>{reporte.recienNacidosVivos.pesoAlNacer.menor500}</td>
+                  <td>{reporte.seccionD1.pesoAlNacer.menor500}</td>
                   <td>
-                    {reporte.recienNacidosVivos.total > 0
-                      ? ((reporte.recienNacidosVivos.pesoAlNacer.menor500 / reporte.recienNacidosVivos.total) * 100).toFixed(1)
+                    {reporte.seccionD1.total > 0
+                      ? ((reporte.seccionD1.pesoAlNacer.menor500 / reporte.seccionD1.total) * 100).toFixed(1)
                       : 0}%
                   </td>
                 </tr>
                 <tr>
                   <td>500-999g</td>
-                  <td>{reporte.recienNacidosVivos.pesoAlNacer.entre500y999}</td>
+                  <td>{reporte.seccionD1.pesoAlNacer.entre500y999}</td>
                   <td>
-                    {reporte.recienNacidosVivos.total > 0
-                      ? ((reporte.recienNacidosVivos.pesoAlNacer.entre500y999 / reporte.recienNacidosVivos.total) * 100).toFixed(1)
+                    {reporte.seccionD1.total > 0
+                      ? ((reporte.seccionD1.pesoAlNacer.entre500y999 / reporte.seccionD1.total) * 100).toFixed(1)
                       : 0}%
                   </td>
                 </tr>
                 <tr>
                   <td>1,000-1,499g</td>
-                  <td>{reporte.recienNacidosVivos.pesoAlNacer.entre1000y1499}</td>
+                  <td>{reporte.seccionD1.pesoAlNacer.entre1000y1499}</td>
                   <td>
-                    {reporte.recienNacidosVivos.total > 0
-                      ? ((reporte.recienNacidosVivos.pesoAlNacer.entre1000y1499 / reporte.recienNacidosVivos.total) * 100).toFixed(1)
+                    {reporte.seccionD1.total > 0
+                      ? ((reporte.seccionD1.pesoAlNacer.entre1000y1499 / reporte.seccionD1.total) * 100).toFixed(1)
                       : 0}%
                   </td>
                 </tr>
                 <tr>
                   <td>1,500-1,999g</td>
-                  <td>{reporte.recienNacidosVivos.pesoAlNacer.entre1500y1999}</td>
+                  <td>{reporte.seccionD1.pesoAlNacer.entre1500y1999}</td>
                   <td>
-                    {reporte.recienNacidosVivos.total > 0
-                      ? ((reporte.recienNacidosVivos.pesoAlNacer.entre1500y1999 / reporte.recienNacidosVivos.total) * 100).toFixed(1)
+                    {reporte.seccionD1.total > 0
+                      ? ((reporte.seccionD1.pesoAlNacer.entre1500y1999 / reporte.seccionD1.total) * 100).toFixed(1)
                       : 0}%
                   </td>
                 </tr>
                 <tr>
                   <td>2,000-2,499g</td>
-                  <td>{reporte.recienNacidosVivos.pesoAlNacer.entre2000y2499}</td>
+                  <td>{reporte.seccionD1.pesoAlNacer.entre2000y2499}</td>
                   <td>
-                    {reporte.recienNacidosVivos.total > 0
-                      ? ((reporte.recienNacidosVivos.pesoAlNacer.entre2000y2499 / reporte.recienNacidosVivos.total) * 100).toFixed(1)
+                    {reporte.seccionD1.total > 0
+                      ? ((reporte.seccionD1.pesoAlNacer.entre2000y2499 / reporte.seccionD1.total) * 100).toFixed(1)
                       : 0}%
                   </td>
                 </tr>
                 <tr>
                   <td>2,500-2,999g</td>
-                  <td>{reporte.recienNacidosVivos.pesoAlNacer.entre2500y2999}</td>
+                  <td>{reporte.seccionD1.pesoAlNacer.entre2500y2999}</td>
                   <td>
-                    {reporte.recienNacidosVivos.total > 0
-                      ? ((reporte.recienNacidosVivos.pesoAlNacer.entre2500y2999 / reporte.recienNacidosVivos.total) * 100).toFixed(1)
+                    {reporte.seccionD1.total > 0
+                      ? ((reporte.seccionD1.pesoAlNacer.entre2500y2999 / reporte.seccionD1.total) * 100).toFixed(1)
                       : 0}%
                   </td>
                 </tr>
                 <tr>
                   <td>3,000-3,999g</td>
-                  <td>{reporte.recienNacidosVivos.pesoAlNacer.entre3000y3999}</td>
+                  <td>{reporte.seccionD1.pesoAlNacer.entre3000y3999}</td>
                   <td>
-                    {reporte.recienNacidosVivos.total > 0
-                      ? ((reporte.recienNacidosVivos.pesoAlNacer.entre3000y3999 / reporte.recienNacidosVivos.total) * 100).toFixed(1)
+                    {reporte.seccionD1.total > 0
+                      ? ((reporte.seccionD1.pesoAlNacer.entre3000y3999 / reporte.seccionD1.total) * 100).toFixed(1)
                       : 0}%
                   </td>
                 </tr>
                 <tr>
                   <td>≥ 4,000g</td>
-                  <td>{reporte.recienNacidosVivos.pesoAlNacer.entre4000yMas}</td>
+                  <td>{reporte.seccionD1.pesoAlNacer.entre4000yMas}</td>
                   <td>
-                    {reporte.recienNacidosVivos.total > 0
-                      ? ((reporte.recienNacidosVivos.pesoAlNacer.entre4000yMas / reporte.recienNacidosVivos.total) * 100).toFixed(1)
+                    {reporte.seccionD1.total > 0
+                      ? ((reporte.seccionD1.pesoAlNacer.entre4000yMas / reporte.seccionD1.total) * 100).toFixed(1)
                       : 0}%
                   </td>
                 </tr>
                 <tr className={styles.totalRow}>
                   <td><strong>Anomalías Congénitas</strong></td>
-                  <td><strong>{reporte.recienNacidosVivos.anomaliasCongenitas}</strong></td>
+                  <td><strong>{reporte.seccionD1.anomaliasCongenitas}</strong></td>
                   <td>
-                    {reporte.recienNacidosVivos.total > 0
-                      ? ((reporte.recienNacidosVivos.anomaliasCongenitas / reporte.recienNacidosVivos.total) * 100).toFixed(1)
+                    {reporte.seccionD1.total > 0
+                      ? ((reporte.seccionD1.anomaliasCongenitas / reporte.seccionD1.total) * 100).toFixed(1)
                       : 0}%
                   </td>
                 </tr>
@@ -383,7 +355,7 @@ export default function ReporteREMClient() {
 
           {/* Atención Inmediata */}
           <div className={styles.section}>
-            <h3>Sección D.2: Atención Inmediata del Recién Nacido</h3>
+            <h3>SECCIÓN D.2: Atención Inmediata del Recién Nacido</h3>
             <div className={styles.subsectionGrid}>
               <div className={styles.subsection}>
                 <h4>Profilaxis</h4>
@@ -391,11 +363,11 @@ export default function ReporteREMClient() {
                   <tbody>
                     <tr>
                       <td>Hepatitis B</td>
-                      <td>{reporte.atencionInmediata.profilaxis.hepatitisB}</td>
+                      <td>{reporte.seccionD2.profilaxis.hepatitisB}</td>
                     </tr>
                     <tr>
                       <td>Ocular</td>
-                      <td>{reporte.atencionInmediata.profilaxis.ocular}</td>
+                      <td>{reporte.seccionD2.profilaxis.ocular}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -407,19 +379,51 @@ export default function ReporteREMClient() {
                   <tbody>
                     <tr>
                       <td>Vaginal</td>
-                      <td>{reporte.atencionInmediata.tipoParto.vaginal}</td>
+                      <td>{reporte.seccionD2.tipoParto.vaginal}</td>
                     </tr>
                     <tr>
                       <td>Instrumental</td>
-                      <td>{reporte.atencionInmediata.tipoParto.instrumental}</td>
+                      <td>{reporte.seccionD2.tipoParto.instrumental}</td>
                     </tr>
                     <tr>
                       <td>Cesárea</td>
-                      <td>{reporte.atencionInmediata.tipoParto.cesarea}</td>
+                      <td>{reporte.seccionD2.tipoParto.cesarea}</td>
                     </tr>
                     <tr>
                       <td>Extrahospitalario</td>
-                      <td>{reporte.atencionInmediata.tipoParto.extrahospitalario}</td>
+                      <td>{reporte.seccionD2.tipoParto.extrahospitalario}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className={styles.subsection}>
+                <h4>Desglose Instrumental</h4>
+                <table className={styles.table}>
+                  <tbody>
+                    <tr>
+                      <td>Distócico</td>
+                      <td>{reporte.seccionD2.instrumental.distocico}</td>
+                    </tr>
+                    <tr>
+                      <td>Vacuum</td>
+                      <td>{reporte.seccionD2.instrumental.vacuum}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className={styles.subsection}>
+                <h4>Desglose Cesáreas</h4>
+                <table className={styles.table}>
+                  <tbody>
+                    <tr>
+                      <td>Urgencia</td>
+                      <td>{reporte.seccionD2.cesareas.urgencia}</td>
+                    </tr>
+                    <tr>
+                      <td>Electiva</td>
+                      <td>{reporte.seccionD2.cesareas.electiva}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -430,12 +434,12 @@ export default function ReporteREMClient() {
                 <table className={styles.table}>
                   <tbody>
                     <tr>
-                      <td>0-3 al 1 minuto</td>
-                      <td>{reporte.atencionInmediata.apgar.apgar0a3al1min}</td>
+                      <td>≤3 al 1 minuto</td>
+                      <td>{reporte.seccionD2.apgar.menorIgual3al1min}</td>
                     </tr>
                     <tr>
-                      <td>6-5 a los 5 minutos</td>
-                      <td>{reporte.atencionInmediata.apgar.apgar6a5a5min}</td>
+                      <td>≤6 a los 5 minutos</td>
+                      <td>{reporte.seccionD2.apgar.menorIgual6a5min}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -447,15 +451,15 @@ export default function ReporteREMClient() {
                   <tbody>
                     <tr>
                       <td>Básica</td>
-                      <td>{reporte.atencionInmediata.reanimacion.basica}</td>
+                      <td>{reporte.seccionD2.reanimacion.basica}</td>
                     </tr>
                     <tr>
                       <td>Avanzada</td>
-                      <td>{reporte.atencionInmediata.reanimacion.avanzada}</td>
+                      <td>{reporte.seccionD2.reanimacion.avanzada}</td>
                     </tr>
                     <tr>
                       <td>EHI Grado II y III</td>
-                      <td>{reporte.atencionInmediata.ehi23}</td>
+                      <td>{reporte.seccionD2.ehi23}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -463,75 +467,107 @@ export default function ReporteREMClient() {
             </div>
           </div>
 
-          {/* Lactancia Materna */}
+          {/* SECCIÓN D: Profilaxis Ocular */}
           <div className={styles.section}>
-            <h3>Lactancia Materna en primeros 60 minutos (RN ≥ 2,500g)</h3>
+            <h3>SECCIÓN D: Aplicación de Profilaxis Ocular para Gonorrea en Recién Nacidos</h3>
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>Tipo de Parto</th>
-                  <th>Total Partos</th>
-                  <th>Con Lactancia 60 min</th>
-                  <th>Porcentaje</th>
+                  <th>Concepto</th>
+                  <th>Total</th>
+                  <th>Pueblos Originarios</th>
+                  <th>Migrantes</th>
+                  <th>REM A11</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>Total</td>
-                  <td>{reporte.lactanciaMaterna.totalPartos}</td>
-                  <td>{reporte.lactanciaMaterna.lactanciaEn60Min}</td>
-                  <td>
-                    {reporte.lactanciaMaterna.totalPartos > 0
-                      ? ((reporte.lactanciaMaterna.lactanciaEn60Min / reporte.lactanciaMaterna.totalPartos) * 100).toFixed(1)
-                      : 0}%
-                  </td>
+                  <td>RN vivos que reciben profilaxis ocular</td>
+                  <td>{reporte.seccionDProfilaxisOcular.totalConProfilaxis}</td>
+                  <td>{reporte.seccionDProfilaxisOcular.pueblosOriginarios}</td>
+                  <td>{reporte.seccionDProfilaxisOcular.migrantes}</td>
+                  <td>{reporte.seccionDProfilaxisOcular.remA11 || '-'}</td>
                 </tr>
                 <tr>
-                  <td>Vaginal</td>
-                  <td>{reporte.lactanciaMaterna.vaginal}</td>
-                  <td>-</td>
-                  <td>-</td>
+                  <td>Recién nacidos vivos</td>
+                  <td>{reporte.seccionDProfilaxisOcular.totalRNVivos}</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>{reporte.seccionDProfilaxisOcular.remA11 || '-'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* SECCIÓN J: Profilaxis Hepatitis B */}
+          <div className={styles.section}>
+            <h3>SECCIÓN J: Profilaxis de Transmisión Vertical Aplicada al Recién Nacido</h3>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Concepto</th>
+                  <th>Total</th>
+                  <th>Pueblos Originarios</th>
+                  <th>Migrantes</th>
+                  <th>REM A11</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>RN hijos de madre Hepatitis B positiva</td>
+                  <td>{reporte.seccionJ.hijosHepatitisBPositiva.total}</td>
+                  <td>{reporte.seccionJ.hijosHepatitisBPositiva.pueblosOriginarios}</td>
+                  <td>{reporte.seccionJ.hijosHepatitisBPositiva.migrantes}</td>
+                  <td>{reporte.seccionJ.hijosHepatitisBPositiva.remA11 || '-'}</td>
                 </tr>
                 <tr>
-                  <td>Instrumental</td>
-                  <td>{reporte.lactanciaMaterna.instrumental}</td>
-                  <td>-</td>
-                  <td>-</td>
+                  <td>RN con profilaxis completa según normativa</td>
+                  <td>{reporte.seccionJ.profilaxisCompleta.total}</td>
+                  <td>{reporte.seccionJ.profilaxisCompleta.pueblosOriginarios}</td>
+                  <td>{reporte.seccionJ.profilaxisCompleta.migrantes}</td>
+                  <td>{reporte.seccionJ.profilaxisCompleta.remA11 || '-'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* SECCIÓN G: Esterilizaciones Quirúrgicas */}
+          <div className={styles.section}>
+            <h3>SECCIÓN G: Esterilizaciones Quirúrgicas</h3>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>SEXO</th>
+                  <th>TOTAL</th>
+                  <th>&lt;20 años</th>
+                  <th>20-34 años</th>
+                  <th>≥35 años</th>
+                  <th>Trans</th>
+                  <th>REM A21</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>MUJER</td>
+                  <td>{reporte.seccionGEsterilizaciones.mujer.total}</td>
+                  <td>{reporte.seccionGEsterilizaciones.mujer.menor20}</td>
+                  <td>{reporte.seccionGEsterilizaciones.mujer.entre20y34}</td>
+                  <td>{reporte.seccionGEsterilizaciones.mujer.mayor35}</td>
+                  <td>{reporte.seccionGEsterilizaciones.mujer.trans}</td>
+                  <td>{reporte.seccionGEsterilizaciones.mujer.remA21 || '-'}</td>
                 </tr>
                 <tr>
-                  <td>Cesárea Electiva</td>
-                  <td>{reporte.lactanciaMaterna.cesareasElectivas}</td>
+                  <td>HOMBRE</td>
+                  <td>{reporte.seccionGEsterilizaciones.hombre.total}</td>
                   <td>-</td>
                   <td>-</td>
-                </tr>
-                <tr>
-                  <td>Cesárea Urgencia</td>
-                  <td>{reporte.lactanciaMaterna.cesareasUrgencia}</td>
+                  <td>-</td>
                   <td>-</td>
                   <td>-</td>
                 </tr>
               </tbody>
             </table>
           </div>
-
-          {/* Profilaxis Hepatitis B */}
-          {reporte.profilaxisHepatitisB.hijosDeHepatitisBPositiva > 0 && (
-            <div className={styles.section}>
-              <h3>Sección J: Profilaxis de Transmisión Vertical Hepatitis B</h3>
-              <table className={styles.table}>
-                <tbody>
-                  <tr>
-                    <td>RN hijos de madre Hepatitis B positiva</td>
-                    <td>{reporte.profilaxisHepatitisB.hijosDeHepatitisBPositiva}</td>
-                  </tr>
-                  <tr>
-                    <td>Con profilaxis completa según normativa</td>
-                    <td>{reporte.profilaxisHepatitisB.profilaxisCompleta}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
       )}
     </div>

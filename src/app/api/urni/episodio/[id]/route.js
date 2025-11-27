@@ -231,6 +231,13 @@ export async function PUT(request, { params }) {
           { status: 400 }
         )
       }
+      // Validar que la fecha de ingreso no sea posterior a la fecha de alta si existe
+      if (episodioActual.fechaHoraAlta && fechaHoraIngreso > episodioActual.fechaHoraAlta) {
+        return Response.json(
+          { error: 'La fecha/hora de ingreso no puede ser posterior a la fecha/hora de alta' },
+          { status: 400 }
+        )
+      }
       updateData.fechaHoraIngreso = fechaHoraIngreso
     }
 
@@ -266,6 +273,18 @@ export async function PUT(request, { params }) {
               id: true,
               nombre: true,
               email: true,
+            },
+          },
+          createdBy: {
+            select: {
+              id: true,
+              nombre: true,
+            },
+          },
+          updatedBy: {
+            select: {
+              id: true,
+              nombre: true,
             },
           },
         },

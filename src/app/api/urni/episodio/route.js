@@ -366,6 +366,12 @@ export async function POST(request) {
               email: true,
             },
           },
+          createdBy: {
+            select: {
+              id: true,
+              nombre: true,
+            },
+          },
         },
       })
 
