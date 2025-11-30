@@ -71,6 +71,13 @@ export async function GET(request) {
     const maxWidth = pageWidth - (margin * 2)
     let yPos = margin
 
+    // Colores del tema
+    const colorPrimario = [0, 82, 147] // Azul oscuro
+    const colorSecundario = [41, 128, 185] // Azul medio
+    const colorHeaderBg = [52, 73, 94] // Gris azulado oscuro
+    const colorHeaderText = [255, 255, 255] // Blanco
+    const colorFilaAlt = [236, 240, 241] // Gris muy claro
+
     // Función para agregar nueva página si es necesario
     const checkNewPage = (requiredSpace = 20) => {
       if (yPos + requiredSpace > pageHeight - margin) {
@@ -81,39 +88,36 @@ export async function GET(request) {
       return false
     }
 
-    // Función para agregar encabezado de sección
-    const addSectionHeader = (text, fontSize = 14) => {
-      checkNewPage(15)
+    // Función para agregar encabezado de sección con estilo
+    const addSectionHeader = (text, fontSize = 12) => {
+      checkNewPage(18)
+      // Fondo del encabezado de seccion
+      doc.setFillColor(...colorSecundario)
+      doc.rect(margin, yPos - 2, maxWidth, 10, 'F')
+      // Texto
       doc.setFontSize(fontSize)
       doc.setFont(undefined, 'bold')
-      doc.text(text, margin, yPos)
-      yPos += 8
+      doc.setTextColor(...colorHeaderText)
+      doc.text(text, margin + 3, yPos + 5)
+      doc.setTextColor(0, 0, 0) // Restaurar color negro
+      yPos += 12
       doc.setFont(undefined, 'normal')
     }
 
-    // Función para agregar tabla simple con mejor alineación
+    // Función para agregar tabla con estilo mejorado
     const addSimpleTable = (headers, rows, colWidths) => {
       checkNewPage(30)
       
-      const rowHeight = 7
-      // Altura del encabezado más grande para permitir texto en múltiples líneas
-      const headerHeight = 10
+      const rowHeight = 8
+      const headerHeight = 12
       
-      // Normalizar anchos de columna para que sumen exactamente el ancho disponible
+      // Normalizar anchos de columna
       const totalWidth = colWidths.reduce((sum, w) => sum + w, 0)
       const scaleFactor = maxWidth / totalWidth
       const normalizedWidths = colWidths.map(w => w * scaleFactor)
 
-      // Dibujar encabezado con bordes
-      doc.setFontSize(8) // Tamaño de fuente más pequeño para encabezados
-      doc.setFont(undefined, 'bold')
-      let xPos = margin
-      
-      // Configurar estilo de línea
-      doc.setDrawColor(0, 0, 0)
-      doc.setLineWidth(0.1)
-      
-      // Calcular altura necesaria para el encabezado (puede variar según el texto)
+      // Calcular altura del encabezado
+      doc.setFontSize(8)
       let maxHeaderLines = 1
       headers.forEach((header, i) => {
         const lines = doc.splitTextToSize(header, normalizedWidths[i] - 4)
@@ -121,26 +125,22 @@ export async function GET(request) {
           maxHeaderLines = lines.length
         }
       })
-      const actualHeaderHeight = Math.max(headerHeight, maxHeaderLines * 4 + 2)
+      const actualHeaderHeight = Math.max(headerHeight, maxHeaderLines * 4 + 4)
       
-      // Dibujar líneas horizontales del encabezado
-      doc.line(margin, yPos, margin + maxWidth, yPos) // Línea superior
-      doc.line(margin, yPos + actualHeaderHeight, margin + maxWidth, yPos + actualHeaderHeight) // Línea inferior
+      // Dibujar fondo del encabezado
+      doc.setFillColor(...colorHeaderBg)
+      doc.rect(margin, yPos, maxWidth, actualHeaderHeight, 'F')
       
-      // Dibujar línea vertical del borde izquierdo
-      doc.line(margin, yPos, margin, yPos + actualHeaderHeight)
+      // Dibujar texto del encabezado
+      doc.setFont(undefined, 'bold')
+      doc.setTextColor(...colorHeaderText)
+      let xPos = margin
       
-      // Dibujar líneas verticales entre columnas del encabezado y texto
       headers.forEach((header, i) => {
-        // Dibujar línea vertical antes de cada columna (excepto la primera)
-        if (i > 0) {
-          doc.line(xPos, yPos, xPos, yPos + actualHeaderHeight)
-        }
-        // Texto centrado en la celda con soporte para múltiples líneas
         const cellCenterX = xPos + normalizedWidths[i] / 2
         const textLines = doc.splitTextToSize(header, normalizedWidths[i] - 4)
         const lineHeight = 4
-        const startY = yPos + (actualHeaderHeight - (textLines.length - 1) * lineHeight) / 2 + 3
+        const startY = yPos + (actualHeaderHeight - (textLines.length - 1) * lineHeight) / 2 + 1
         
         textLines.forEach((line, lineIdx) => {
           doc.text(line, cellCenterX, startY + (lineIdx * lineHeight), { 
@@ -151,66 +151,73 @@ export async function GET(request) {
         xPos += normalizedWidths[i]
       })
       
-      // Dibujar línea vertical del borde derecho
-      doc.line(margin + maxWidth, yPos, margin + maxWidth, yPos + actualHeaderHeight)
-      
+      doc.setTextColor(0, 0, 0) // Restaurar color negro
       yPos += actualHeaderHeight
 
       // Filas de datos
       doc.setFont(undefined, 'normal')
-      doc.setFontSize(8)
+      doc.setFontSize(9)
+      
       rows.forEach((row, rowIdx) => {
         checkNewPage(rowHeight)
         xPos = margin
         
-        // Dibujar líneas verticales entre columnas y rectángulo de la fila
+        // Fondo alternado para filas
+        if (rowIdx % 2 === 1) {
+          doc.setFillColor(...colorFilaAlt)
+          doc.rect(margin, yPos, maxWidth, rowHeight, 'F')
+        }
+        
+        // Borde de la fila
+        doc.setDrawColor(189, 195, 199)
+        doc.setLineWidth(0.2)
+        doc.rect(margin, yPos, maxWidth, rowHeight, 'S')
+        
+        // Dibujar lineas verticales y texto
         row.forEach((cell, i) => {
-          // Dibujar línea vertical antes de cada columna (excepto la primera)
           if (i > 0) {
+            doc.setDrawColor(189, 195, 199)
             doc.line(xPos, yPos, xPos, yPos + rowHeight)
           }
           
-          // Texto centrado en la celda (excepto primera columna que puede ser texto largo)
           const cellCenterX = xPos + normalizedWidths[i] / 2
           const cellValue = String(cell !== null && cell !== undefined ? cell : '-')
-          const align = i === 0 ? 'left' : 'center' // Primera columna alineada a la izquierda, resto centrado
-          const textX = i === 0 ? xPos + 2 : cellCenterX
+          const align = i === 0 ? 'left' : 'center'
+          const textX = i === 0 ? xPos + 3 : cellCenterX
           
-          doc.text(cellValue, textX, yPos + 5, { 
+          doc.text(cellValue, textX, yPos + 5.5, { 
             maxWidth: normalizedWidths[i] - 4, 
             align: align 
           })
           xPos += normalizedWidths[i]
         })
         
-        // Dibujar líneas horizontales: superior e inferior de la fila
-        doc.line(margin, yPos, margin + maxWidth, yPos) // Línea superior
-        doc.line(margin, yPos + rowHeight, margin + maxWidth, yPos + rowHeight) // Línea inferior
-        
-        // Dibujar líneas verticales de los bordes
-        doc.line(margin, yPos, margin, yPos + rowHeight) // Borde izquierdo
-        doc.line(margin + maxWidth, yPos, margin + maxWidth, yPos + rowHeight) // Borde derecho
-        
         yPos += rowHeight
       })
 
-      yPos += 5
+      yPos += 8
     }
 
-    // Encabezado del documento
-    doc.setFontSize(16)
+    // Encabezado del documento con estilo
+    // Barra superior decorativa
+    doc.setFillColor(...colorPrimario)
+    doc.rect(0, 0, pageWidth, 25, 'F')
+    
+    doc.setFontSize(18)
     doc.setFont(undefined, 'bold')
-    doc.text('REPORTE REM - REGISTRO ESTADÍSTICO MENSUAL', pageWidth / 2, yPos, { align: 'center' })
-    yPos += 8
+    doc.setTextColor(...colorHeaderText)
+    doc.text('REPORTE REM - REGISTRO ESTADISTICO MENSUAL', pageWidth / 2, 12, { align: 'center' })
 
     const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
     doc.setFontSize(12)
     doc.setFont(undefined, 'normal')
-    doc.text(`Período: ${meses[mes - 1]} ${anio}`, pageWidth / 2, yPos, { align: 'center' })
-    yPos += 10
+    doc.text(`Periodo: ${meses[mes - 1]} ${anio}`, pageWidth / 2, 20, { align: 'center' })
+    
+    doc.setTextColor(0, 0, 0) // Restaurar color negro
+    yPos = 32
 
-    // SECCIÓN D.1: INFORMACIÓN GENERAL DE RECIÉN NACIDOS VIVOS
-    addSectionHeader('SECCIÓN D.1: INFORMACIÓN GENERAL DE RECIÉN NACIDOS VIVOS', 12)
+    // SECCION D.1: INFORMACION GENERAL DE RECIEN NACIDOS VIVOS
+    addSectionHeader('SECCION D.1: INFORMACION GENERAL DE RECIEN NACIDOS VIVOS', 12)
     
     const headersD1 = ['TIPO', 'TOTAL', '<500', '500-999', '1000-1499', '1500-1999', '2000-2499', '2500-2999', '3000-3999', '>=4000', 'Anomalia', 'REM A24']
     const colWidthsD1 = [35, 14, 12, 13, 15, 15, 15, 15, 15, 13, 14, 12]
@@ -232,8 +239,8 @@ export async function GET(request) {
     ]
     addSimpleTable(headersD1, rowsD1, colWidthsD1)
 
-    // SECCIÓN D.2: ATENCIÓN INMEDIATA DEL RECIÉN NACIDO
-    addSectionHeader('SECCIÓN D.2: ATENCIÓN INMEDIATA DEL RECIÉN NACIDO', 12)
+    // SECCION D.2: ATENCION INMEDIATA DEL RECIEN NACIDO
+    addSectionHeader('SECCION D.2: ATENCION INMEDIATA DEL RECIEN NACIDO', 12)
     
     const headersD2 = ['TIPO', 'PROFIL. H.B', 'PROFIL. OCULAR', 'VAGINAL', 'INSTRUM.', 'CESAREA', 'EXTRAH.', 'APGAR <=3 1min', 'APGAR <=6 5min', 'REAN. BASICA', 'REAN. AVANZ.', 'EHI II-III', 'REM A24']
     const colWidthsD2 = [30, 18, 18, 14, 16, 14, 16, 18, 18, 16, 16, 14, 12]
@@ -256,25 +263,28 @@ export async function GET(request) {
     ]
     addSimpleTable(headersD2, rowsD2, colWidthsD2)
 
-    // Desglose instrumental y cesáreas
-    checkNewPage(20)
+    // Desglose instrumental y cesáreas con estilo
+    checkNewPage(25)
+    doc.setFillColor(245, 245, 245)
+    doc.roundedRect(margin, yPos, 120, 22, 2, 2, 'F')
+    doc.setDrawColor(...colorSecundario)
+    doc.roundedRect(margin, yPos, 120, 22, 2, 2, 'S')
+    
     doc.setFontSize(10)
     doc.setFont(undefined, 'bold')
-    doc.text('Desglose:', margin, yPos)
-    yPos += 6
+    doc.setTextColor(...colorPrimario)
+    doc.text('Desglose:', margin + 3, yPos + 5)
     doc.setFont(undefined, 'normal')
+    doc.setTextColor(0, 0, 0)
     doc.setFontSize(9)
-    doc.text(`Instrumental - Distócico: ${reporteData.seccionD2.instrumental.distocico}`, margin + 10, yPos)
-    yPos += 5
-    doc.text(`Instrumental - Vacuum: ${reporteData.seccionD2.instrumental.vacuum}`, margin + 10, yPos)
-    yPos += 5
-    doc.text(`Cesárea Urgencia: ${reporteData.seccionD2.cesareas.urgencia}`, margin + 10, yPos)
-    yPos += 5
-    doc.text(`Cesárea Electiva: ${reporteData.seccionD2.cesareas.electiva}`, margin + 10, yPos)
-    yPos += 8
+    doc.text(`Instrumental - Distocico: ${reporteData.seccionD2.instrumental.distocico}`, margin + 5, yPos + 10)
+    doc.text(`Instrumental - Vacuum: ${reporteData.seccionD2.instrumental.vacuum}`, margin + 5, yPos + 15)
+    doc.text(`Cesarea Urgencia: ${reporteData.seccionD2.cesareas.urgencia}`, margin + 65, yPos + 10)
+    doc.text(`Cesarea Electiva: ${reporteData.seccionD2.cesareas.electiva}`, margin + 65, yPos + 15)
+    yPos += 28
 
-    // SECCIÓN D: PROFILAXIS OCULAR
-    addSectionHeader('SECCIÓN D: APLICACIÓN DE PROFILAXIS OCULAR PARA GONORREA EN RECIÉN NACIDOS', 11)
+    // SECCION D: PROFILAXIS OCULAR
+    addSectionHeader('SECCION D: APLICACION DE PROFILAXIS OCULAR PARA GONORREA EN RECIEN NACIDOS', 11)
     
     const headersDOcular = ['Concepto', 'Total', 'Pueblos Originarios', 'Migrantes', 'REM A11']
     const colWidthsDOcular = [80, 20, 30, 20, 20]
@@ -287,7 +297,7 @@ export async function GET(request) {
         reporteData.seccionDProfilaxisOcular.remA11 || '-',
       ],
       [
-        'Recién nacidos vivos',
+        'Recien nacidos vivos',
         reporteData.seccionDProfilaxisOcular.totalRNVivos,
         0,
         0,
@@ -296,8 +306,8 @@ export async function GET(request) {
     ]
     addSimpleTable(headersDOcular, rowsDOcular, colWidthsDOcular)
 
-    // SECCIÓN J: PROFILAXIS HEPATITIS B
-    addSectionHeader('SECCIÓN J: PROFILAXIS DE TRANSMISIÓN VERTICAL APLICADA AL RECIÉN NACIDO', 11)
+    // SECCION J: PROFILAXIS HEPATITIS B
+    addSectionHeader('SECCION J: PROFILAXIS DE TRANSMISION VERTICAL APLICADA AL RECIEN NACIDO', 11)
     
     const headersJ = ['Concepto', 'Total', 'Pueblos Originarios', 'Migrantes', 'REM A11']
     const colWidthsJ = [80, 20, 30, 20, 20]
@@ -310,7 +320,7 @@ export async function GET(request) {
         reporteData.seccionJ.hijosHepatitisBPositiva.remA11 || '-',
       ],
       [
-        'RN con profilaxis completa según normativa',
+        'RN con profilaxis completa segun normativa',
         reporteData.seccionJ.profilaxisCompleta.total,
         reporteData.seccionJ.profilaxisCompleta.pueblosOriginarios,
         reporteData.seccionJ.profilaxisCompleta.migrantes,
@@ -319,8 +329,8 @@ export async function GET(request) {
     ]
     addSimpleTable(headersJ, rowsJ, colWidthsJ)
 
-    // CARACTERÍSTICAS DEL PARTO (simplificada para PDF)
-    addSectionHeader('CARACTERÍSTICAS DEL PARTO', 12)
+    // CARACTERISTICAS DEL PARTO (simplificada para PDF)
+    addSectionHeader('CARACTERISTICAS DEL PARTO', 12)
     
     const carParto = reporteData.caracteristicasParto.total
     const headersCarParto = ['Tipo Parto', 'Total', '<15 anios', '15-19 anios', '20-34 anios', '>=35 anios', 'Premat. <24', 'Premat. 24-28', 'Premat. 29-32', 'Premat. 33-36']
@@ -351,8 +361,8 @@ export async function GET(request) {
       addSimpleTable(headersCarParto, rowsCarParto, colWidthsCarParto)
     })
 
-    // SECCIÓN G: ESTERILIZACIONES QUIRÚRGICAS
-    addSectionHeader('SECCIÓN G: ESTERILIZACIONES QUIRÚRGICAS', 12)
+    // SECCION G: ESTERILIZACIONES QUIRURGICAS
+    addSectionHeader('SECCION G: ESTERILIZACIONES QUIRURGICAS', 12)
     
     const headersG = ['SEXO', 'TOTAL', '<20 anios', '20-34 anios', '>=35 anios', 'Trans', 'REM A21']
     const colWidthsG = [30, 15, 15, 15, 15, 12, 15]
@@ -378,8 +388,8 @@ export async function GET(request) {
     ]
     addSimpleTable(headersG, rowsG, colWidthsG)
 
-    // COMPLICACIONES OBSTÉTRICAS (simplificada)
-    addSectionHeader('COMPLICACIONES OBSTÉTRICAS', 12)
+    // COMPLICACIONES OBSTETRICAS (simplificada)
+    addSectionHeader('COMPLICACIONES OBSTETRICAS', 12)
     
     const headersComp = ['Tipo Complicacion', 'Parto Espontaneo', 'Parto Inducido', 'Cesarea Urgencia', 'Cesarea Electiva']
     const colWidthsComp = [50, 25, 25, 25, 25]
@@ -403,12 +413,20 @@ export async function GET(request) {
       addSimpleTable(headersComp, rowsComp, colWidthsComp)
     })
 
-    // Pie de página en todas las páginas
+    // Pie de página en todas las páginas con estilo
     const totalPages = doc.internal.pages.length - 1
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i)
+      
+      // Linea decorativa
+      doc.setDrawColor(...colorSecundario)
+      doc.setLineWidth(0.5)
+      doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15)
+      
       doc.setFontSize(8)
       doc.setFont(undefined, 'normal')
+      doc.setTextColor(100, 100, 100)
+      
       const fechaGen = new Date().toLocaleDateString('es-CL', {
         year: 'numeric',
         month: '2-digit',
@@ -416,17 +434,25 @@ export async function GET(request) {
         hour: '2-digit',
         minute: '2-digit',
       })
+      
       doc.text(
-        `Generado el ${fechaGen} por ${user.nombre || user.email || 'Usuario'}`,
+        `Generado: ${fechaGen} por ${user.nombre || user.email || 'Usuario'}`,
+        margin,
+        pageHeight - 8
+      )
+      
+      doc.text(
+        'Sistema de Registro Obstetrico de Recien Nacidos (SRORN)',
         pageWidth / 2,
-        pageHeight - 10,
+        pageHeight - 8,
         { align: 'center' }
       )
+      
       doc.text(
-        `Página ${i} de ${totalPages}`,
-        pageWidth / 2,
-        pageHeight - 5,
-        { align: 'center' }
+        `Pagina ${i} de ${totalPages}`,
+        pageWidth - margin,
+        pageHeight - 8,
+        { align: 'right' }
       )
     }
 
