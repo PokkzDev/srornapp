@@ -41,3 +41,10 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# SonarQube
+.scannerwork/
+sonar-project.properties
+
+# VS Code
+.vscode/
