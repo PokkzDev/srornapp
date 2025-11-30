@@ -1,75 +1,38 @@
-import { getCurrentUser, getUserPermissions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { verificarAuth, errorResponse, successResponse } from '@/lib/api-helpers'
 
-// GET - Obtener profesionales por rol para el módulo de partos
+const ROLES_VALIDOS = ['matrona', 'medico', 'enfermera']
+
 export async function GET(request) {
   try {
-    // Verificar autenticación
-    const user = await getCurrentUser()
-    if (!user) {
-      return Response.json(
-        { error: 'No autenticado' },
-        { status: 401 }
-      )
-    }
+    const auth = await verificarAuth(
+      request,
+      ['parto:create', 'parto:update'],
+      'Profesional',
+      { requireAll: false }
+    )
+    if (auth.error) return auth.error
 
-    // Verificar permisos de parto (create o update)
-    const permissions = await getUserPermissions()
-    const tienePermisoParto = permissions.includes('parto:create') || permissions.includes('parto:update')
-    
-    if (!tienePermisoParto) {
-      return Response.json(
-        { error: 'No tiene permisos para acceder a esta información' },
-        { status: 403 }
-      )
-    }
-
-    // Obtener parámetro de rol
     const { searchParams } = new URL(request.url)
-    const role = searchParams.get('role') // 'matrona', 'medico', 'enfermera'
+    const role = searchParams.get('role')
 
-    // Validar que el rol sea válido
-    const rolesValidos = ['matrona', 'medico', 'enfermera']
-    if (!role || !rolesValidos.includes(role)) {
-      return Response.json(
-        { error: 'Rol inválido. Debe ser: matrona, medico o enfermera' },
-        { status: 400 }
-      )
+    if (!role || !ROLES_VALIDOS.includes(role)) {
+      return errorResponse('Rol inválido. Debe ser: matrona, medico o enfermera', 400)
     }
 
-    // Obtener usuarios con el rol especificado (solo activos)
     const users = await prisma.user.findMany({
       where: {
         activo: true,
-        roles: {
-          some: {
-            role: {
-              name: role,
-            },
-          },
-        },
+        roles: { some: { role: { name: role } } },
       },
-      select: {
-        id: true,
-        nombre: true,
-        email: true,
-        rut: true,
-      },
-      orderBy: {
-        nombre: 'asc',
-      },
+      select: { id: true, nombre: true, email: true, rut: true },
+      orderBy: { nombre: 'asc' },
     })
 
-    return Response.json({
-      success: true,
-      data: users,
-    })
+    return successResponse(users)
   } catch (error) {
     console.error('Error al obtener profesionales:', error)
-    return Response.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return errorResponse('Error interno del servidor', 500)
   }
 }
 

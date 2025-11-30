@@ -1,58 +1,21 @@
-import { getCurrentUser, getUserPermissions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { verificarAuth, errorResponse } from '@/lib/api-helpers'
 
 export async function GET(request) {
   try {
-    // Verificar autenticación
-    const user = await getCurrentUser()
-    if (!user) {
-      return Response.json(
-        { error: 'No autenticado' },
-        { status: 401 }
-      )
-    }
+    const auth = await verificarAuth(request, 'reporte_rem:generate', 'ReporteREM')
+    if (auth.error) return auth.error
 
-    // Verificar permisos
-    const permissions = await getUserPermissions()
-    if (!permissions.includes('reporte_rem:generate')) {
-      // Registrar intento de acceso sin permisos
-      try {
-        await prisma.auditoria.create({
-          data: {
-            usuarioId: user.id,
-            rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
-            entidad: 'ReporteREM',
-            accion: 'PERMISSION_DENIED',
-            ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || null,
-            userAgent: request.headers.get('user-agent') || null,
-          },
-        })
-      } catch (auditError) {
-        console.error('Error al registrar auditoría:', auditError)
-      }
-
-      return Response.json(
-        { error: 'No tiene permisos para generar reportes REM' },
-        { status: 403 }
-      )
-    }
-
-    // Obtener parámetros de consulta
     const { searchParams } = new URL(request.url)
     const mes = Number.parseInt(searchParams.get('mes'))
     const anio = Number.parseInt(searchParams.get('anio'))
 
-    // Validar parámetros
     if (!mes || !anio || mes < 1 || mes > 12 || anio < 2000 || anio > 2100) {
-      return Response.json(
-        { error: 'Mes y año son requeridos y deben ser válidos' },
-        { status: 400 }
-      )
+      return errorResponse('Mes y año son requeridos y deben ser válidos', 400)
     }
 
-    // Construir rango de fechas para el mes/año especificado
     const fechaInicio = new Date(anio, mes - 1, 1, 0, 0, 0, 0)
-    const fechaFin = new Date(anio, mes, 0, 23, 59, 59, 999) // Último día del mes
+    const fechaFin = new Date(anio, mes, 0, 23, 59, 59, 999)
 
     // ============================================
     // QUERY: Obtener todos los partos del período con TODOS los campos necesarios
@@ -858,13 +821,12 @@ export async function GET(request) {
       await prisma.reporteREM.create({
         data: {
           periodo,
-          jsonFuente: partos, // Datos fuente completos
-          totales: reporteData, // Totales agregados
-          generadoPorId: user.id,
+          jsonFuente: partos,
+          totales: reporteData,
+          generadoPorId: auth.user.id,
         },
       })
     } catch (saveError) {
-      // No fallar si no se puede guardar, solo loggear
       console.error('Error al guardar reporte REM:', saveError)
     }
 
@@ -874,9 +836,6 @@ export async function GET(request) {
     })
   } catch (error) {
     console.error('Error al generar reporte REM:', error)
-    return Response.json(
-      { error: 'Error al generar reporte REM', details: error.message },
-      { status: 500 }
-    )
+    return errorResponse('Error al generar reporte REM', 500)
   }
 }

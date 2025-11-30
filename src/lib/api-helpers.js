@@ -4,31 +4,56 @@ import { prisma } from '@/lib/prisma'
 /**
  * Verifica autenticación y permisos del usuario
  * @param {Request} request - Request object
- * @param {string} permiso - Permiso requerido (ej: 'control_neonatal:view')
+ * @param {string|string[]} permiso - Permiso(s) requerido(s) (ej: 'control_neonatal:view' o ['perm1', 'perm2'])
  * @param {string} entidad - Nombre de la entidad para auditoría
- * @returns {Promise<{success: boolean, user?: object, error?: Response}>}
+ * @param {object} opciones - Opciones adicionales
+ * @param {boolean} opciones.requireAll - Si true, requiere todos los permisos; si false, cualquiera (default: true para array, ignorado para string)
+ * @param {boolean} opciones.skipPermissionCheck - Si true, solo verifica autenticación
+ * @returns {Promise<{success: boolean, user?: object, dbUser?: object, error?: Response, errorStatus?: number}>}
  */
-export async function verificarAuth(request, permiso, entidad) {
+export async function verificarAuth(request, permiso, entidad, opciones = {}) {
   const user = await getCurrentUser()
   
   if (!user) {
     return {
       success: false,
-      error: Response.json({ error: 'No autenticado' }, { status: 401 })
+      error: Response.json({ error: 'No autenticado' }, { status: 401 }),
+      errorStatus: 401
     }
+  }
+
+  // Obtener usuario de la base de datos si es necesario
+  const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
+
+  // Si se solicita saltar verificación de permisos, retornar éxito
+  if (opciones.skipPermissionCheck) {
+    return { success: true, user, dbUser, permissions: [] }
   }
 
   const permissions = await getUserPermissions()
   
-  if (!permissions.includes(permiso)) {
+  // Verificar permisos
+  const permisos = Array.isArray(permiso) ? permiso : [permiso]
+  const requireAll = opciones.requireAll !== false && !Array.isArray(permiso) // default true para string, configurable para array
+  
+  let tienePermiso
+  if (requireAll || permisos.length === 1) {
+    tienePermiso = permisos.every(p => permissions.includes(p))
+  } else {
+    tienePermiso = permisos.some(p => permissions.includes(p))
+  }
+  
+  if (!tienePermiso) {
     await registrarAuditoriaPermisoDenegado(request, user, entidad)
     
-    const accion = permiso.split(':')[1]
+    const accion = permisos[0].split(':')[1]
     const mensajeAccion = {
       view: 'visualizar',
       create: 'crear',
       update: 'editar',
-      delete: 'eliminar'
+      delete: 'eliminar',
+      alta: 'procesar alta de',
+      manage: 'gestionar'
     }[accion] || accion
 
     return {
@@ -36,11 +61,12 @@ export async function verificarAuth(request, permiso, entidad) {
       error: Response.json(
         { error: `No tiene permisos para ${mensajeAccion} ${entidad.toLowerCase()}` },
         { status: 403 }
-      )
+      ),
+      errorStatus: 403
     }
   }
 
-  return { success: true, user, permissions }
+  return { success: true, user, dbUser, permissions }
 }
 
 /**
@@ -224,10 +250,12 @@ export function manejarErrorPrisma(error, mensajeDefault = 'Error interno del se
 
 /**
  * Extrae parámetros de paginación del request
+ * @param {URLSearchParams} searchParams - Los parámetros de búsqueda
+ * @param {number} defaultLimit - Límite por defecto (20 si no se especifica)
  */
-export function getPaginationParams(searchParams) {
+export function getPaginationParams(searchParams, defaultLimit = 20) {
   const page = Number.parseInt(searchParams.get('page') || '1')
-  const limit = Number.parseInt(searchParams.get('limit') || '20')
+  const limit = Number.parseInt(searchParams.get('limit') || String(defaultLimit))
   const skip = (page - 1) * limit
   
   return { page, limit, skip }
