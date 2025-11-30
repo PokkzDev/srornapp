@@ -6,42 +6,6 @@ import Image from 'next/image'
 import styles from './page.module.css'
 import { validarRUT, formatearRUT, esEmail } from '@/lib/rut'
 
-// Test users from seed.js
-const TEST_USERS = [
-  {
-    email: 'matrona@srorn.cl',
-    nombre: 'María González',
-    role: 'Matrona',
-  },
-  {
-    email: 'medico@srorn.cl',
-    nombre: 'Dr. Carlos Pérez',
-    role: 'Médico',
-  },
-  {
-    email: 'enfermera@srorn.cl',
-    nombre: 'Ana Martínez',
-    role: 'Enfermera',
-  },
-  {
-    email: 'administrativo@srorn.cl',
-    nombre: 'Roberto Silva',
-    role: 'Administrativo',
-  },
-  {
-    email: 'jefatura@srorn.cl',
-    nombre: 'Dra. Patricia López',
-    role: 'Jefatura',
-  },
-  {
-    email: 'ti@srorn.cl',
-    nombre: 'Departamento TI',
-    role: 'Administrador TI',
-  },
-]
-
-const DEFAULT_PASSWORD = 'Asdf1234' // Password from seed.js
-
 export default function LoginPage() {
   const router = useRouter()
   const [identifier, setIdentifier] = useState('')
@@ -50,12 +14,31 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isDev, setIsDev] = useState(false)
   const [rutError, setRutError] = useState('')
+  const [testUsers, setTestUsers] = useState([])
 
   useEffect(() => {
     // Check if we're in development mode based on NEXT_PUBLIC_ENVIRONMENT from .env
     const isDevelopment = process.env.NEXT_PUBLIC_ENVIRONMENT === 'development'
     setIsDev(isDevelopment)
+    
+    // Cargar usuarios de prueba solo en modo desarrollo
+    if (isDevelopment) {
+      fetchTestUsers()
+    }
   }, [])
+
+  const fetchTestUsers = async () => {
+    try {
+      const response = await fetch('/api/auth/dev-users')
+      if (response.ok) {
+        const data = await response.json()
+        setTestUsers(data.users || [])
+      }
+    } catch {
+      // Silenciar errores en producción
+      console.error('Error al cargar usuarios de prueba')
+    }
+  }
 
   const handleIdentifierChange = (value) => {
     setRutError('')
@@ -134,8 +117,34 @@ export default function LoginPage() {
     await handleLogin(identifier, password)
   }
 
-  const handleDevLogin = async (userEmail) => {
-    await handleLogin(userEmail, DEFAULT_PASSWORD)
+  const handleDevLogin = async (user) => {
+    // El servidor manejará la autenticación de desarrollo
+    setError('')
+    setIsLoading(true)
+    
+    try {
+      const response = await fetch('/api/auth/dev-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: user.email }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Error al iniciar sesión')
+        setIsLoading(false)
+        return
+      }
+
+      router.push('/dashboard')
+      router.refresh()
+    } catch {
+      setError('Error de conexión. Por favor intenta nuevamente.')
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -203,7 +212,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {isDev && (
+        {isDev && testUsers.length > 0 && (
           <div className={styles.devSection}>
             <div className={styles.devDivider}>
               <span>Desarrollo</span>
@@ -212,11 +221,11 @@ export default function LoginPage() {
               Acceso rápido con cuentas de prueba
             </p>
             <div className={styles.devButtons}>
-              {TEST_USERS.map((user) => (
+              {testUsers.map((user) => (
                 <button
                   key={user.email}
                   type="button"
-                  onClick={() => handleDevLogin(user.email)}
+                  onClick={() => handleDevLogin(user)}
                   className={`btn btn-secondary ${styles.devButton}`}
                   disabled={isLoading}
                 >

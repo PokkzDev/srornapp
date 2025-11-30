@@ -39,8 +39,8 @@ export async function GET(request) {
 
     // Obtener parámetros de consulta
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const page = Number.parseInt(searchParams.get('page') || '1')
+    const limit = Number.parseInt(searchParams.get('limit') || '50')
     const usuarioId = searchParams.get('usuarioId')
     const entidad = searchParams.get('entidad')
     const accion = searchParams.get('accion')

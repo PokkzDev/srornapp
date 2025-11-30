@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import crypto from 'node:crypto'
 import { validarRUT, esEmail, formatearRUT } from '@/lib/rut'
 
 export async function POST(request) {
@@ -89,8 +90,9 @@ export async function POST(request) {
       )
     }
 
-    // Create session token (simple implementation - in production use proper session management)
-    const sessionToken = `${user.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    // Create session token using cryptographically secure random bytes
+    const randomBytes = crypto.randomBytes(32).toString('hex')
+    const sessionToken = `${user.id}-${Date.now()}-${randomBytes}`
     
     // Set cookie with user info
     const cookieStore = await cookies()

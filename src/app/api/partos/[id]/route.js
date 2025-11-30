@@ -173,7 +173,7 @@ export async function PUT(request, { params }) {
 
     // Validar fechaHora
     const fechaHora = new Date(data.fechaHora)
-    if (isNaN(fechaHora.getTime())) {
+    if (Number.isNaN(fechaHora.getTime())) {
       return Response.json(
         { error: 'Fecha y hora inválida' },
         { status: 400 }
@@ -327,7 +327,7 @@ export async function PUT(request, { params }) {
     if (data.fechaParto !== undefined) {
       if (data.fechaParto) {
         const fechaParto = new Date(data.fechaParto)
-        if (!isNaN(fechaParto.getTime())) {
+        if (!Number.isNaN(fechaParto.getTime())) {
           partoData.fechaParto = fechaParto
         } else {
           partoData.fechaParto = null
@@ -343,8 +343,8 @@ export async function PUT(request, { params }) {
 
     if (data.edadGestacionalSemanas !== undefined) {
       if (data.edadGestacionalSemanas !== null && data.edadGestacionalSemanas !== '') {
-        const edadGestacional = parseInt(data.edadGestacionalSemanas)
-        if (!isNaN(edadGestacional) && edadGestacional >= 0) {
+        const edadGestacional = Number.parseInt(data.edadGestacionalSemanas)
+        if (!Number.isNaN(edadGestacional) && edadGestacional >= 0) {
           partoData.edadGestacionalSemanas = edadGestacional
         } else {
           partoData.edadGestacionalSemanas = null

@@ -39,8 +39,8 @@ export async function GET(request) {
 
     // Obtener parámetros de consulta
     const { searchParams } = new URL(request.url)
-    const mes = parseInt(searchParams.get('mes'))
-    const anio = parseInt(searchParams.get('anio'))
+    const mes = Number.parseInt(searchParams.get('mes'))
+    const anio = Number.parseInt(searchParams.get('anio'))
 
     // Validar parámetros
     if (!mes || !anio || mes < 1 || mes > 12 || anio < 2000 || anio > 2100) {

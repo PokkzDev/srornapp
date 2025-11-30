@@ -609,7 +609,7 @@ export default function AuditoriaClient() {
           <select
             value={itemsPerPage}
             onChange={(e) => {
-              const newLimit = parseInt(e.target.value)
+              const newLimit = Number.parseInt(e.target.value)
               setItemsPerPage(newLimit)
               setCurrentPage(1)
             }}

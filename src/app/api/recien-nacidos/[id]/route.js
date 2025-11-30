@@ -136,8 +136,8 @@ export async function PUT(request, { params }) {
 
     // Validar valores numéricos si están presentes
     if (pesoNacimientoGramos !== undefined && pesoNacimientoGramos !== null && pesoNacimientoGramos !== '') {
-      const peso = parseInt(pesoNacimientoGramos)
-      if (isNaN(peso) || peso < 0) {
+      const peso = Number.parseInt(pesoNacimientoGramos)
+      if (Number.isNaN(peso) || peso < 0) {
         return Response.json(
           { error: 'El peso debe ser un número válido (gramos)' },
           { status: 400 }
@@ -146,8 +146,8 @@ export async function PUT(request, { params }) {
     }
 
     if (data.tallaCm !== undefined && data.tallaCm !== null && data.tallaCm !== '') {
-      const tallaCm = parseInt(data.tallaCm)
-      if (isNaN(tallaCm) || tallaCm < 0) {
+      const tallaCm = Number.parseInt(data.tallaCm)
+      if (Number.isNaN(tallaCm) || tallaCm < 0) {
         return Response.json(
           { error: 'La talla debe ser un número válido (centímetros)' },
           { status: 400 }
@@ -156,8 +156,8 @@ export async function PUT(request, { params }) {
     }
 
     if (apgar1Min !== undefined && apgar1Min !== null && apgar1Min !== '') {
-      const apgar1 = parseInt(apgar1Min)
-      if (isNaN(apgar1) || apgar1 < 0 || apgar1 > 10) {
+      const apgar1 = Number.parseInt(apgar1Min)
+      if (Number.isNaN(apgar1) || apgar1 < 0 || apgar1 > 10) {
         return Response.json(
           { error: 'El Apgar 1\' debe ser un número entre 0 y 10' },
           { status: 400 }
@@ -166,8 +166,8 @@ export async function PUT(request, { params }) {
     }
 
     if (apgar5Min !== undefined && apgar5Min !== null && apgar5Min !== '') {
-      const apgar5 = parseInt(apgar5Min)
-      if (isNaN(apgar5) || apgar5 < 0 || apgar5 > 10) {
+      const apgar5 = Number.parseInt(apgar5Min)
+      if (Number.isNaN(apgar5) || apgar5 < 0 || apgar5 > 10) {
         return Response.json(
           { error: 'El Apgar 5\' debe ser un número entre 0 y 10' },
           { status: 400 }
@@ -208,25 +208,25 @@ export async function PUT(request, { params }) {
 
     // Agregar campos numéricos (usar nombres nuevos)
     if (pesoNacimientoGramos !== undefined && pesoNacimientoGramos !== null && pesoNacimientoGramos !== '') {
-      rnData.pesoNacimientoGramos = parseInt(pesoNacimientoGramos)
+      rnData.pesoNacimientoGramos = Number.parseInt(pesoNacimientoGramos)
     } else if (data.pesoNacimientoGramos === null || data.pesoGr === null) {
       rnData.pesoNacimientoGramos = null
     }
 
     if (data.tallaCm !== undefined && data.tallaCm !== null && data.tallaCm !== '') {
-      rnData.tallaCm = parseInt(data.tallaCm)
+      rnData.tallaCm = Number.parseInt(data.tallaCm)
     } else if (data.tallaCm === null) {
       rnData.tallaCm = null
     }
 
     if (apgar1Min !== undefined && apgar1Min !== null && apgar1Min !== '') {
-      rnData.apgar1Min = parseInt(apgar1Min)
+      rnData.apgar1Min = Number.parseInt(apgar1Min)
     } else if (data.apgar1Min === null || data.apgar1 === null) {
       rnData.apgar1Min = null
     }
 
     if (apgar5Min !== undefined && apgar5Min !== null && apgar5Min !== '') {
-      rnData.apgar5Min = parseInt(apgar5Min)
+      rnData.apgar5Min = Number.parseInt(apgar5Min)
     } else if (data.apgar5Min === null || data.apgar5 === null) {
       rnData.apgar5Min = null
     }

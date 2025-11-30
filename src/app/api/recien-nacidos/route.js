@@ -45,8 +45,8 @@ export async function GET(request) {
     // Obtener parámetros de búsqueda
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const page = Number.parseInt(searchParams.get('page') || '1')
+    const limit = Number.parseInt(searchParams.get('limit') || '20')
     const skip = (page - 1) * limit
 
     // Construir condiciones de búsqueda
@@ -202,8 +202,8 @@ export async function POST(request) {
 
     // Validar valores numéricos si están presentes
     if (pesoNacimientoGramos !== undefined && pesoNacimientoGramos !== null && pesoNacimientoGramos !== '') {
-      const peso = parseInt(pesoNacimientoGramos)
-      if (isNaN(peso) || peso < 0) {
+      const peso = Number.parseInt(pesoNacimientoGramos)
+      if (Number.isNaN(peso) || peso < 0) {
         return Response.json(
           { error: 'El peso debe ser un número válido (gramos)' },
           { status: 400 }
@@ -212,8 +212,8 @@ export async function POST(request) {
     }
 
     if (data.tallaCm !== undefined && data.tallaCm !== null && data.tallaCm !== '') {
-      const tallaCm = parseInt(data.tallaCm)
-      if (isNaN(tallaCm) || tallaCm < 0) {
+      const tallaCm = Number.parseInt(data.tallaCm)
+      if (Number.isNaN(tallaCm) || tallaCm < 0) {
         return Response.json(
           { error: 'La talla debe ser un número válido (centímetros)' },
           { status: 400 }
@@ -222,8 +222,8 @@ export async function POST(request) {
     }
 
     if (apgar1Min !== undefined && apgar1Min !== null && apgar1Min !== '') {
-      const apgar1 = parseInt(apgar1Min)
-      if (isNaN(apgar1) || apgar1 < 0 || apgar1 > 10) {
+      const apgar1 = Number.parseInt(apgar1Min)
+      if (Number.isNaN(apgar1) || apgar1 < 0 || apgar1 > 10) {
         return Response.json(
           { error: 'El Apgar 1\' debe ser un número entre 0 y 10' },
           { status: 400 }
@@ -232,8 +232,8 @@ export async function POST(request) {
     }
 
     if (apgar5Min !== undefined && apgar5Min !== null && apgar5Min !== '') {
-      const apgar5 = parseInt(apgar5Min)
-      if (isNaN(apgar5) || apgar5 < 0 || apgar5 > 10) {
+      const apgar5 = Number.parseInt(apgar5Min)
+      if (Number.isNaN(apgar5) || apgar5 < 0 || apgar5 > 10) {
         return Response.json(
           { error: 'El Apgar 5\' debe ser un número entre 0 y 10' },
           { status: 400 }
@@ -273,19 +273,19 @@ export async function POST(request) {
 
     // Agregar campos numéricos si están presentes (usar nombres nuevos)
     if (pesoNacimientoGramos !== undefined && pesoNacimientoGramos !== null && pesoNacimientoGramos !== '') {
-      rnData.pesoNacimientoGramos = parseInt(pesoNacimientoGramos)
+      rnData.pesoNacimientoGramos = Number.parseInt(pesoNacimientoGramos)
     }
 
     if (data.tallaCm !== undefined && data.tallaCm !== null && data.tallaCm !== '') {
-      rnData.tallaCm = parseInt(data.tallaCm)
+      rnData.tallaCm = Number.parseInt(data.tallaCm)
     }
 
     if (apgar1Min !== undefined && apgar1Min !== null && apgar1Min !== '') {
-      rnData.apgar1Min = parseInt(apgar1Min)
+      rnData.apgar1Min = Number.parseInt(apgar1Min)
     }
 
     if (apgar5Min !== undefined && apgar5Min !== null && apgar5Min !== '') {
-      rnData.apgar5Min = parseInt(apgar5Min)
+      rnData.apgar5Min = Number.parseInt(apgar5Min)
     }
 
     if (data.observaciones) {

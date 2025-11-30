@@ -97,7 +97,7 @@ export default function ReporteREMClient() {
           <select
             id="mes"
             value={mes}
-            onChange={(e) => setMes(parseInt(e.target.value))}
+            onChange={(e) => setMes(Number.parseInt(e.target.value))}
             className={styles.select}
           >
             {MESES.map(m => (
@@ -114,7 +114,7 @@ export default function ReporteREMClient() {
             type="number"
             id="anio"
             value={anio}
-            onChange={(e) => setAnio(parseInt(e.target.value))}
+            onChange={(e) => setAnio(Number.parseInt(e.target.value))}
             min="2000"
             max="2100"
             className={styles.input}

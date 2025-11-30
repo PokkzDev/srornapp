@@ -22,7 +22,7 @@ function validarRUT(rut) {
   let multiplicador = 2
 
   for (let i = numero.length - 1; i >= 0; i--) {
-    suma += parseInt(numero[i]) * multiplicador
+    suma += Number.parseInt(numero[i]) * multiplicador
     multiplicador = multiplicador === 7 ? 2 : multiplicador + 1
   }
 

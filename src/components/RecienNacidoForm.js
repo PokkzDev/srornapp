@@ -182,8 +182,8 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
 
     // Validar peso si está presente
     if (formData.pesoNacimientoGramos && formData.pesoNacimientoGramos !== '') {
-      const peso = parseInt(formData.pesoNacimientoGramos)
-      if (isNaN(peso) || peso <= 0) {
+      const peso = Number.parseInt(formData.pesoNacimientoGramos)
+      if (Number.isNaN(peso) || peso <= 0) {
         setError('El peso debe ser un número mayor a 0')
         setLoading(false)
         return
@@ -192,8 +192,8 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
 
     // Validar talla si está presente
     if (formData.tallaCm && formData.tallaCm !== '') {
-      const talla = parseInt(formData.tallaCm)
-      if (isNaN(talla) || talla <= 0) {
+      const talla = Number.parseInt(formData.tallaCm)
+      if (Number.isNaN(talla) || talla <= 0) {
         setError('La talla debe ser un número mayor a 0')
         setLoading(false)
         return
@@ -202,8 +202,8 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
 
     // Validar Apgar si están presentes
     if (formData.apgar1Min && formData.apgar1Min !== '') {
-      const apgar1 = parseInt(formData.apgar1Min)
-      if (isNaN(apgar1) || apgar1 < 0 || apgar1 > 10) {
+      const apgar1 = Number.parseInt(formData.apgar1Min)
+      if (Number.isNaN(apgar1) || apgar1 < 0 || apgar1 > 10) {
         setError('El Apgar 1\' debe ser un número entre 0 y 10')
         setLoading(false)
         return
@@ -211,8 +211,8 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
     }
 
     if (formData.apgar5Min && formData.apgar5Min !== '') {
-      const apgar5 = parseInt(formData.apgar5Min)
-      if (isNaN(apgar5) || apgar5 < 0 || apgar5 > 10) {
+      const apgar5 = Number.parseInt(formData.apgar5Min)
+      if (Number.isNaN(apgar5) || apgar5 < 0 || apgar5 > 10) {
         setError('El Apgar 5\' debe ser un número entre 0 y 10')
         setLoading(false)
         return
@@ -233,8 +233,8 @@ export default function RecienNacidoForm({ initialData = null, isEdit = false, r
       // Función helper para convertir strings vacíos a null y números
       const toIntOrNull = (value) => {
         if (!value || value === '') return null
-        const num = parseInt(value)
-        return isNaN(num) ? null : num
+        const num = Number.parseInt(value)
+        return Number.isNaN(num) ? null : num
       }
 
       // Preparar datos para enviar (usar nombres exactos del schema)

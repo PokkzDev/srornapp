@@ -225,7 +225,7 @@ export async function PUT(request, { params }) {
 
     if (data.fechaHoraIngreso !== undefined) {
       const fechaHoraIngreso = new Date(data.fechaHoraIngreso)
-      if (isNaN(fechaHoraIngreso.getTime())) {
+      if (Number.isNaN(fechaHoraIngreso.getTime())) {
         return Response.json(
           { error: 'Fecha/hora de ingreso inválida' },
           { status: 400 }

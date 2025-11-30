@@ -68,7 +68,7 @@ export default async function MadreDetailPage({ params }) {
   function formatearFechaParaInput(fecha) {
     if (!fecha) return ''
     const date = new Date(fecha)
-    if (isNaN(date.getTime())) return ''
+    if (Number.isNaN(date.getTime())) return ''
     return date.toISOString().split('T')[0]
   }
 

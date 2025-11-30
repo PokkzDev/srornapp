@@ -41,8 +41,8 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
     const estado = searchParams.get('estado') || ''
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const page = Number.parseInt(searchParams.get('page') || '1')
+    const limit = Number.parseInt(searchParams.get('limit') || '20')
     const skip = (page - 1) * limit
 
     // Construir condiciones de búsqueda
@@ -184,7 +184,7 @@ export async function POST(request) {
 
     // Validar fechaIngreso
     const fechaIngreso = new Date(data.fechaIngreso)
-    if (isNaN(fechaIngreso.getTime())) {
+    if (Number.isNaN(fechaIngreso.getTime())) {
       return Response.json(
         { error: 'Fecha de ingreso inválida' },
         { status: 400 }

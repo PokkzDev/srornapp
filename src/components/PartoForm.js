@@ -8,7 +8,7 @@ import styles from './PartoForm.module.css'
 function formatearFechaParaInput(fecha) {
   if (!fecha) return ''
   const date = new Date(fecha)
-  if (isNaN(date.getTime())) return ''
+  if (Number.isNaN(date.getTime())) return ''
   // Convertir a zona horaria local y formatear con segundos
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -23,7 +23,7 @@ function formatearFechaParaInput(fecha) {
 function formatearFechaDate(fecha) {
   if (!fecha) return ''
   const date = new Date(fecha)
-  if (isNaN(date.getTime())) return ''
+  if (Number.isNaN(date.getTime())) return ''
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -593,7 +593,7 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
         lugar: lugarFinal,
         lugarDetalle: lugarDetalleFinal,
         establecimientoId: formData.establecimientoId || null,
-        edadGestacionalSemanas: formData.edadGestacionalSemanas ? parseInt(formData.edadGestacionalSemanas) : null,
+        edadGestacionalSemanas: formData.edadGestacionalSemanas ? Number.parseInt(formData.edadGestacionalSemanas) : null,
         tipoCursoParto: formData.tipoCursoParto || null,
         inicioTrabajoParto: formData.inicioTrabajoParto || null,
         conduccionOxitocica: formData.conduccionOxitocica || null,
@@ -630,7 +630,7 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
         complicacionesTexto: formData.complicaciones || null,
         observaciones: formData.observaciones || null,
         // Campos para REM
-        semanasGestacion: formData.semanasGestacion ? parseInt(formData.semanasGestacion) : null,
+        semanasGestacion: formData.semanasGestacion ? Number.parseInt(formData.semanasGestacion) : null,
         presentacionFetal: formData.presentacionFetal || null,
         lactanciaMaterna60min: formData.lactanciaMaterna60min || false,
       }

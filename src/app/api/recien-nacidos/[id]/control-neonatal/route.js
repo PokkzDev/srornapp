@@ -110,7 +110,7 @@ export async function POST(request, { params }) {
     let fechaHora = new Date()
     if (data.fechaHora) {
       fechaHora = new Date(data.fechaHora)
-      if (isNaN(fechaHora.getTime())) {
+      if (Number.isNaN(fechaHora.getTime())) {
         return Response.json(
           { error: 'Fecha/hora inválida' },
           { status: 400 }

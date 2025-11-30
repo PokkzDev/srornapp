@@ -20,7 +20,7 @@ export function validarRUT(rut) {
 
   // Sumar desde el final
   for (let i = numero.length - 1; i >= 0; i--) {
-    suma += parseInt(numero[i]) * multiplicador
+    suma += Number.parseInt(numero[i]) * multiplicador
     multiplicador = multiplicador === 7 ? 2 : multiplicador + 1
   }
 
@@ -77,8 +77,16 @@ export function formatearRUT(valor) {
 // Función auxiliar para detectar si un string es un email o RUT
 export function esEmail(valor) {
   if (!valor || typeof valor !== 'string') return false
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(valor.trim())
+  const trimmed = valor.trim()
+  // Regex segura contra ReDoS: usa clases de caracteres atómicas con límites explícitos
+  // Verifica: caracteres válidos + @ + dominio + . + extensión (2-10 chars)
+  if (trimmed.length > 254) return false // Límite máximo de email según RFC
+  const atIndex = trimmed.indexOf('@')
+  if (atIndex < 1 || atIndex > 64) return false // Parte local máximo 64 chars
+  const dotIndex = trimmed.lastIndexOf('.')
+  if (dotIndex <= atIndex + 1 || dotIndex >= trimmed.length - 1) return false
+  // Verificación simple y segura
+  return /^[\w.+-]{1,64}@[\w.-]{1,255}\.[a-zA-Z]{2,10}$/.test(trimmed)
 }
 
 // Función auxiliar para detectar si un string parece ser un RUT

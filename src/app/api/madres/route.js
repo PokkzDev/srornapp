@@ -43,8 +43,8 @@ export async function GET(request) {
     // Obtener parámetros de búsqueda
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20') // Default 20 items per page
+    const page = Number.parseInt(searchParams.get('page') || '1')
+    const limit = Number.parseInt(searchParams.get('limit') || '20') // Default 20 items per page
     const skip = (page - 1) * limit
 
     // Construir condiciones de búsqueda
@@ -160,7 +160,7 @@ function validarRUT(rut) {
 
   // Sumar desde el final
   for (let i = numero.length - 1; i >= 0; i--) {
-    suma += parseInt(numero[i]) * multiplicador
+    suma += Number.parseInt(numero[i]) * multiplicador
     multiplicador = multiplicador === 7 ? 2 : multiplicador + 1
   }
 
@@ -301,8 +301,8 @@ export async function POST(request) {
 
     // Agregar campos opcionales si están presentes
     if (data.edad !== undefined && data.edad !== null && data.edad !== '') {
-      madreData.edad = parseInt(data.edad)
-      if (isNaN(madreData.edad) || madreData.edad < 0) {
+      madreData.edad = Number.parseInt(data.edad)
+      if (Number.isNaN(madreData.edad) || madreData.edad < 0) {
         return Response.json(
           { error: 'La edad debe ser un número válido' },
           { status: 400 }
@@ -311,8 +311,8 @@ export async function POST(request) {
     }
 
     if (data.edadAnos !== undefined && data.edadAnos !== null && data.edadAnos !== '') {
-      madreData.edadAnos = parseInt(data.edadAnos)
-      if (isNaN(madreData.edadAnos) || madreData.edadAnos < 0) {
+      madreData.edadAnos = Number.parseInt(data.edadAnos)
+      if (Number.isNaN(madreData.edadAnos) || madreData.edadAnos < 0) {
         return Response.json(
           { error: 'La edad en años debe ser un número válido' },
           { status: 400 }
@@ -322,7 +322,7 @@ export async function POST(request) {
 
     if (data.fechaNacimiento) {
       madreData.fechaNacimiento = new Date(data.fechaNacimiento)
-      if (isNaN(madreData.fechaNacimiento.getTime())) {
+      if (Number.isNaN(madreData.fechaNacimiento.getTime())) {
         return Response.json(
           { error: 'Fecha de nacimiento inválida' },
           { status: 400 }

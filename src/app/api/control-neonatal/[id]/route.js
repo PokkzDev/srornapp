@@ -165,7 +165,7 @@ export async function PUT(request, { params }) {
     let fechaHora = controlExistente.fechaHora
     if (data.fechaHora !== undefined) {
       fechaHora = new Date(data.fechaHora)
-      if (isNaN(fechaHora.getTime())) {
+      if (Number.isNaN(fechaHora.getTime())) {
         return Response.json(
           { error: 'Fecha/hora inválida' },
           { status: 400 }

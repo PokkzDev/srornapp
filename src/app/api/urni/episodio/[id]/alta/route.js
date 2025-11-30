@@ -91,7 +91,7 @@ export async function POST(request, { params }) {
     // Si se proporciona fechaHoraAlta específica, validarla
     if (data.fechaHoraAlta) {
       const fechaHoraAlta = new Date(data.fechaHoraAlta)
-      if (isNaN(fechaHoraAlta.getTime())) {
+      if (Number.isNaN(fechaHoraAlta.getTime())) {
         return Response.json(
           { error: 'Fecha/hora de alta inválida' },
           { status: 400 }

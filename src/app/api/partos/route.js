@@ -40,8 +40,8 @@ export async function GET(request) {
     // Obtener parámetros de búsqueda
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const page = Number.parseInt(searchParams.get('page') || '1')
+    const limit = Number.parseInt(searchParams.get('limit') || '20')
     const skip = (page - 1) * limit
 
     // Construir condiciones de búsqueda
@@ -229,7 +229,7 @@ export async function POST(request) {
 
     // Validar fechaHora
     const fechaHora = new Date(data.fechaHora)
-    if (isNaN(fechaHora.getTime())) {
+    if (Number.isNaN(fechaHora.getTime())) {
       return Response.json(
         { error: 'Fecha y hora inválida' },
         { status: 400 }
@@ -380,7 +380,7 @@ export async function POST(request) {
 
     if (data.fechaParto) {
       const fechaParto = new Date(data.fechaParto)
-      if (!isNaN(fechaParto.getTime())) {
+      if (!Number.isNaN(fechaParto.getTime())) {
         partoData.fechaParto = fechaParto
       }
     }
@@ -390,8 +390,8 @@ export async function POST(request) {
     }
 
     if (data.edadGestacionalSemanas !== undefined && data.edadGestacionalSemanas !== null) {
-      const edadGestacional = parseInt(data.edadGestacionalSemanas)
-      if (!isNaN(edadGestacional) && edadGestacional >= 0) {
+      const edadGestacional = Number.parseInt(data.edadGestacionalSemanas)
+      if (!Number.isNaN(edadGestacional) && edadGestacional >= 0) {
         partoData.edadGestacionalSemanas = edadGestacional
       }
     }

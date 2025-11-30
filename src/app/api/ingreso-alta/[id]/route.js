@@ -194,7 +194,7 @@ export async function PUT(request, { params }) {
     // Solo permitir actualizar ciertos campos antes del alta
     if (data.fechaIngreso) {
       const fechaIngreso = new Date(data.fechaIngreso)
-      if (isNaN(fechaIngreso.getTime())) {
+      if (Number.isNaN(fechaIngreso.getTime())) {
         return Response.json(
           { error: 'Fecha de ingreso inválida' },
           { status: 400 }

@@ -46,8 +46,8 @@ export async function GET(request) {
     const episodioId = searchParams.get('episodioId') || ''
     const rnId = searchParams.get('rnId') || ''
     const medicoId = searchParams.get('medicoId') || ''
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const page = Number.parseInt(searchParams.get('page') || '1')
+    const limit = Number.parseInt(searchParams.get('limit') || '20')
     const skip = (page - 1) * limit
 
     // Construir condiciones de búsqueda
@@ -238,7 +238,7 @@ export async function POST(request) {
     let fechaHora = new Date()
     if (data.fechaHora) {
       fechaHora = new Date(data.fechaHora)
-      if (isNaN(fechaHora.getTime())) {
+      if (Number.isNaN(fechaHora.getTime())) {
         return Response.json(
           { error: 'Fecha/hora inválida' },
           { status: 400 }

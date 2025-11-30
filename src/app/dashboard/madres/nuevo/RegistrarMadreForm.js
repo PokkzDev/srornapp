@@ -26,7 +26,7 @@ function validarRUT(rut) {
 
   // Sumar desde el final
   for (let i = numero.length - 1; i >= 0; i--) {
-    suma += parseInt(numero[i]) * multiplicador
+    suma += Number.parseInt(numero[i]) * multiplicador
     multiplicador = multiplicador === 7 ? 2 : multiplicador + 1
   }
 
@@ -262,8 +262,8 @@ export default function RegistrarMadreForm() {
     
     // Sincronizar edadAnos con edad (para REM) - siempre desde edad, ya sea calculada o manual
     if (datosParaEnviar.edad && datosParaEnviar.edad !== '') {
-      const edadNum = parseInt(datosParaEnviar.edad)
-      if (!isNaN(edadNum) && edadNum >= 0) {
+      const edadNum = Number.parseInt(datosParaEnviar.edad)
+      if (!Number.isNaN(edadNum) && edadNum >= 0) {
         datosParaEnviar.edadAnos = edadNum
       } else {
         datosParaEnviar.edadAnos = null
