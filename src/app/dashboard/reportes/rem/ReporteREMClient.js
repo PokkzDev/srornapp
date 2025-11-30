@@ -79,6 +79,35 @@ export default function ReporteREMClient() {
     }
   }
 
+  const exportarExcel = async () => {
+    if (!reporte) {
+      alert('Primero debe generar un reporte')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/reportes/rem/export-excel?mes=${mes}&anio=${anio}`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al exportar el Excel')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Reporte_REM_${anio}_${mes.toString().padStart(2, '0')}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      console.error('Error exporting Excel:', err)
+      alert('Error al exportar el Excel: ' + err.message)
+    }
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -153,6 +182,9 @@ export default function ReporteREMClient() {
           <div className={styles.exportButtons}>
             <button onClick={exportarPDF} className={styles.btnDanger}>
               <i className="fas fa-file-pdf"></i> Exportar a PDF
+            </button>
+            <button onClick={exportarExcel} className={styles.btnSuccess}>
+              <i className="fas fa-file-excel"></i> Exportar a Excel
             </button>
           </div>
 
