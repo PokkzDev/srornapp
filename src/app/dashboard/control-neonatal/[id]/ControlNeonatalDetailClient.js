@@ -191,7 +191,7 @@ export default function ControlNeonatalDetailClient({ controlId, permissions }) 
           // Para OTRO o tipos desconocidos, mostrar todos los campos genéricamente
           return Object.entries(datosObj).map(([key, value]) => (
             <div key={key} className={styles.infoItem}>
-              <label>{key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')}</label>
+              <label>{key.charAt(0).toUpperCase() + key.slice(1).replaceAll('_', ' ')}</label>
               <span>
                 {typeof value === 'object' ? JSON.stringify(value) : String(value)}
               </span>

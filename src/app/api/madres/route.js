@@ -1,440 +1,377 @@
 import { getCurrentUser, getUserPermissions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import {
+  getAuditData,
+  crearAuditoria,
+  errorResponse,
+  paginatedResponse,
+  getPaginationParams
+} from '@/lib/api-helpers'
 
-export async function GET(request) {
+// Constantes
+const ENTIDAD = 'Madre'
+const CAMPOS_PERMITIDOS_LIMITADOS = [
+  'rut', 'nombres', 'apellidos', 'edad', 'edadAnos', 'fechaNacimiento',
+  'direccion', 'telefono', 'fichaClinica', 'pertenenciaPuebloOriginario',
+  'condicionMigrante', 'condicionDiscapacidad', 'condicionPrivadaLibertad',
+  'identidadTrans', 'hepatitisBPositiva', 'controlPrenatal'
+]
+
+// Campos base para select
+const BASE_SELECT = {
+  id: true,
+  rut: true,
+  nombres: true,
+  apellidos: true,
+  edad: true,
+  edadAnos: true,
+  fechaNacimiento: true,
+  direccion: true,
+  telefono: true,
+  fichaClinica: true,
+  pertenenciaPuebloOriginario: true,
+  condicionMigrante: true,
+  condicionDiscapacidad: true,
+  condicionPrivadaLibertad: true,
+  identidadTrans: true,
+  hepatitisBPositiva: true,
+  controlPrenatal: true,
+  createdAt: true,
+  updatedAt: true,
+}
+
+const FULL_SELECT = {
+  ...BASE_SELECT,
+  createdById: true,
+  updatedById: true,
+  createdBy: { select: { id: true, nombre: true, email: true } },
+  updatedBy: { select: { id: true, nombre: true, email: true } },
+}
+
+/**
+ * Verifica permisos especiales con variantes limitadas
+ */
+async function verificarAuthMadre(request, accion) {
+  const user = await getCurrentUser()
+  if (!user) {
+    return { success: false, error: errorResponse('No autenticado', 401) }
+  }
+
+  const permissions = await getUserPermissions()
+  const permisoCompleto = `madre:${accion}`
+  const permisoLimitado = `madre:${accion}_limited`
+  
+  const hasPermission = permissions.includes(permisoCompleto) || permissions.includes(permisoLimitado)
+  
+  if (!hasPermission) {
+    await registrarPermisoDenegado(request, user)
+    const mensajes = { view: 'visualizar', create: 'registrar', update: 'editar', delete: 'eliminar' }
+    return { 
+      success: false, 
+      error: errorResponse(`No tiene permisos para ${mensajes[accion]} madres`, 403) 
+    }
+  }
+
+  const isLimited = permissions.includes(permisoLimitado) && !permissions.includes(permisoCompleto)
+  return { success: true, user, permissions, isLimited }
+}
+
+async function registrarPermisoDenegado(request, user) {
   try {
-    // Verificar autenticación
-    const user = await getCurrentUser()
-    if (!user) {
-      return Response.json(
-        { error: 'No autenticado' },
-        { status: 401 }
-      )
-    }
-
-    // Verificar permisos
-    const permissions = await getUserPermissions()
-    const hasViewPermission = permissions.includes('madre:view') || permissions.includes('madre:view_limited')
-    if (!hasViewPermission) {
-      // Registrar intento de acceso sin permisos
-      try {
-        await prisma.auditoria.create({
-          data: {
-            usuarioId: user.id,
-            rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
-            entidad: 'Madre',
-            accion: 'PERMISSION_DENIED',
-            ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || null,
-            userAgent: request.headers.get('user-agent') || null,
-          },
-        })
-      } catch (auditError) {
-        console.error('Error al registrar auditoría:', auditError)
-      }
-
-      return Response.json(
-        { error: 'No tiene permisos para visualizar madres' },
-        { status: 403 }
-      )
-    }
-
-    const isLimited = permissions.includes('madre:view_limited') && !permissions.includes('madre:view')
-
-    // Obtener parámetros de búsqueda
-    const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search') || ''
-    const page = Number.parseInt(searchParams.get('page') || '1')
-    const limit = Number.parseInt(searchParams.get('limit') || '20') // Default 20 items per page
-    const skip = (page - 1) * limit
-
-    // Construir condiciones de búsqueda
-    const where = {}
-    
-    if (search) {
-      where.OR = [
-        { rut: { contains: search } },
-        { nombres: { contains: search } },
-        { apellidos: { contains: search } },
-        { fichaClinica: { contains: search } },
-      ]
-    }
-
-    // Obtener madres con paginación
-    // Si tiene permisos limitados, solo mostrar campos básicos
-    const selectFields = isLimited ? {
-      id: true,
-      rut: true,
-      nombres: true,
-      apellidos: true,
-      edad: true,
-      edadAnos: true,
-      fechaNacimiento: true,
-      direccion: true,
-      telefono: true,
-      fichaClinica: true,
-      // Campos REM
-      pertenenciaPuebloOriginario: true,
-      condicionMigrante: true,
-      condicionDiscapacidad: true,
-      condicionPrivadaLibertad: true,
-      identidadTrans: true,
-      hepatitisBPositiva: true,
-      controlPrenatal: true,
-      createdAt: true,
-      updatedAt: true,
-    } : {
-      id: true,
-      rut: true,
-      nombres: true,
-      apellidos: true,
-      edad: true,
-      edadAnos: true,
-      fechaNacimiento: true,
-      direccion: true,
-      telefono: true,
-      fichaClinica: true,
-      // Campos REM
-      pertenenciaPuebloOriginario: true,
-      condicionMigrante: true,
-      condicionDiscapacidad: true,
-      condicionPrivadaLibertad: true,
-      identidadTrans: true,
-      hepatitisBPositiva: true,
-      controlPrenatal: true,
-      createdAt: true,
-      updatedAt: true,
-    }
-
-    const [madres, total] = await Promise.all([
-      prisma.madre.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: [
-          { apellidos: 'asc' },
-          { nombres: 'asc' },
-        ],
-        select: selectFields,
-      }),
-      prisma.madre.count({ where }),
-    ])
-
-    return Response.json({
-      success: true,
-      data: madres,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+    const { ip, userAgent } = getAuditData(request)
+    await prisma.auditoria.create({
+      data: {
+        usuarioId: user.id,
+        rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
+        entidad: ENTIDAD,
+        accion: 'PERMISSION_DENIED',
+        ip,
+        userAgent,
       },
     })
-  } catch (error) {
-    console.error('Error al listar madres:', error)
-    return Response.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+  } catch (auditError) {
+    console.error('Error al registrar auditoría:', auditError)
   }
 }
 
-// Función para validar RUT chileno (formato: sin puntos, con guion)
+/**
+ * Valida RUT chileno
+ */
 function validarRUT(rut) {
-  if (!rut || typeof rut !== 'string') {
-    return false
-  }
+  if (!rut || typeof rut !== 'string') return false
 
-  // Formato esperado: números seguidos de guion y dígito verificador
   const rutRegex = /^(\d{7,8})-(\d|k|K)$/
-  if (!rutRegex.test(rut)) {
-    return false
-  }
+  if (!rutRegex.test(rut)) return false
 
-  // Separar número y dígito verificador
   const [numero, dv] = rut.split('-')
   const dvUpper = dv.toUpperCase()
 
-  // Calcular dígito verificador
   let suma = 0
   let multiplicador = 2
 
-  // Sumar desde el final
   for (let i = numero.length - 1; i >= 0; i--) {
     suma += Number.parseInt(numero[i]) * multiplicador
     multiplicador = multiplicador === 7 ? 2 : multiplicador + 1
   }
 
   const resto = suma % 11
-  let dvCalculado = 11 - resto
-
-  if (dvCalculado === 11) {
-    dvCalculado = '0'
-  } else if (dvCalculado === 10) {
-    dvCalculado = 'K'
-  } else {
-    dvCalculado = dvCalculado.toString()
-  }
+  const dvNumero = 11 - resto
+  
+  let dvCalculado
+  if (dvNumero === 11) dvCalculado = '0'
+  else if (dvNumero === 10) dvCalculado = 'K'
+  else dvCalculado = dvNumero.toString()
 
   return dvUpper === dvCalculado
 }
 
+/**
+ * Construye where para búsqueda
+ */
+function construirWhere(search) {
+  if (!search) return {}
+  
+  return {
+    OR: [
+      { rut: { contains: search } },
+      { nombres: { contains: search } },
+      { apellidos: { contains: search } },
+      { fichaClinica: { contains: search } },
+    ]
+  }
+}
+
+export async function GET(request) {
+  try {
+    const auth = await verificarAuthMadre(request, 'view')
+    if (!auth.success) return auth.error
+
+    const { searchParams } = new URL(request.url)
+    const { page, limit, skip } = getPaginationParams(searchParams)
+    const search = searchParams.get('search') || ''
+    const where = construirWhere(search)
+    const selectFields = auth.isLimited ? BASE_SELECT : FULL_SELECT
+
+    const [madres, total] = await Promise.all([
+      prisma.madre.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: [{ apellidos: 'asc' }, { nombres: 'asc' }],
+        select: selectFields,
+      }),
+      prisma.madre.count({ where }),
+    ])
+
+    return paginatedResponse(madres, { page, limit, total })
+  } catch (error) {
+    console.error('Error al listar madres:', error)
+    return errorResponse('Error interno del servidor', 500)
+  }
+}
+
+/**
+ * Valida campos limitados
+ */
+function validarCamposLimitados(data) {
+  const providedFields = Object.keys(data)
+  const invalidFields = providedFields.filter(field => !CAMPOS_PERMITIDOS_LIMITADOS.includes(field))
+  
+  if (invalidFields.length > 0) {
+    return { valid: false, error: `No tiene permisos para establecer los siguientes campos: ${invalidFields.join(', ')}` }
+  }
+  return { valid: true }
+}
+
+/**
+ * Valida unicidad de RUT y ficha clínica
+ */
+async function validarUnicidad(rut, fichaClinica, excludeId = null) {
+  const whereRut = { rut }
+  if (excludeId) whereRut.id = { not: excludeId }
+  
+  const rutExistente = await prisma.madre.findFirst({ where: whereRut })
+  if (rutExistente) {
+    return { valid: false, error: 'Ya existe una madre registrada con este RUT' }
+  }
+
+  if (fichaClinica) {
+    const whereFicha = { fichaClinica }
+    if (excludeId) whereFicha.id = { not: excludeId }
+    
+    const fichaExistente = await prisma.madre.findFirst({ where: whereFicha })
+    if (fichaExistente) {
+      return { valid: false, error: 'Ya existe una madre registrada con esta ficha clínica' }
+    }
+  }
+
+  return { valid: true }
+}
+
+/**
+ * Valida y parsea un campo numérico entero
+ */
+function validarEntero(valor, nombreCampo) {
+  if (valor === undefined || valor === null || valor === '') {
+    return { valid: true, valor: undefined }
+  }
+  
+  const num = Number.parseInt(valor)
+  if (Number.isNaN(num) || num < 0) {
+    return { valid: false, error: `${nombreCampo} debe ser un número válido` }
+  }
+  return { valid: true, valor: num }
+}
+
+/**
+ * Prepara datos de madre para crear/actualizar
+ */
+function prepararDatosMadre(data, userId, isCreate = true) {
+  const madreData = {
+    rut: data.rut.toUpperCase(),
+    nombres: data.nombres.trim(),
+    apellidos: data.apellidos.trim(),
+  }
+
+  if (isCreate) {
+    madreData.createdById = userId
+  } else {
+    madreData.updatedById = userId
+  }
+
+  // Campos opcionales string
+  if (data.direccion) madreData.direccion = data.direccion.trim()
+  if (data.telefono) madreData.telefono = data.telefono.trim()
+  if (data.fichaClinica) madreData.fichaClinica = data.fichaClinica.trim()
+
+  // Fecha de nacimiento
+  if (data.fechaNacimiento) {
+    const fecha = new Date(data.fechaNacimiento)
+    if (!Number.isNaN(fecha.getTime())) {
+      madreData.fechaNacimiento = fecha
+    }
+  }
+
+  return madreData
+}
+
+/**
+ * Agrega campos numéricos validados
+ */
+function agregarCamposNumericos(madreData, data) {
+  const errores = []
+  
+  const edadResult = validarEntero(data.edad, 'La edad')
+  if (!edadResult.valid) errores.push(edadResult.error)
+  else if (edadResult.valor !== undefined) madreData.edad = edadResult.valor
+
+  const edadAnosResult = validarEntero(data.edadAnos, 'La edad en años')
+  if (!edadAnosResult.valid) errores.push(edadAnosResult.error)
+  else if (edadAnosResult.valor !== undefined) madreData.edadAnos = edadAnosResult.valor
+
+  return errores.length > 0 ? { valid: false, error: errores[0] } : { valid: true }
+}
+
+/**
+ * Agrega campos booleanos REM
+ */
+function agregarCamposREM(madreData, data) {
+  const camposREM = [
+    'pertenenciaPuebloOriginario', 'condicionMigrante', 'condicionDiscapacidad',
+    'condicionPrivadaLibertad', 'identidadTrans', 'hepatitisBPositiva', 'controlPrenatal'
+  ]
+  
+  for (const campo of camposREM) {
+    if (data[campo] !== undefined) {
+      madreData[campo] = data[campo] === null ? null : Boolean(data[campo])
+    }
+  }
+}
+
 export async function POST(request) {
   try {
-    // Verificar autenticación
-    const user = await getCurrentUser()
-    if (!user) {
-      return Response.json(
-        { error: 'No autenticado' },
-        { status: 401 }
-      )
-    }
+    const auth = await verificarAuthMadre(request, 'create')
+    if (!auth.success) return auth.error
 
-    // Verificar que el usuario existe en la base de datos
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-    })
-
+    // Verificar usuario en BD
+    const dbUser = await prisma.user.findUnique({ where: { id: auth.user.id } })
     if (!dbUser) {
-      return Response.json(
-        { error: 'Usuario no encontrado. Por favor, inicie sesión nuevamente.' },
-        { status: 401 }
-      )
+      return errorResponse('Usuario no encontrado. Por favor, inicie sesión nuevamente.', 401)
     }
 
-    // Verificar permisos
-    const permissions = await getUserPermissions()
-    const hasCreatePermission = permissions.includes('madre:create') || permissions.includes('madre:create_limited')
-    if (!hasCreatePermission) {
-      // Registrar intento de acceso sin permisos
-      try {
-        await prisma.auditoria.create({
-          data: {
-            usuarioId: user.id,
-            rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
-            entidad: 'Madre',
-            accion: 'PERMISSION_DENIED',
-            ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || null,
-            userAgent: request.headers.get('user-agent') || null,
-          },
-        })
-      } catch (auditError) {
-        console.error('Error al registrar auditoría:', auditError)
-      }
-
-      return Response.json(
-        { error: 'No tiene permisos para registrar madres' },
-        { status: 403 }
-      )
-    }
-
-    const isLimited = permissions.includes('madre:create_limited') && !permissions.includes('madre:create')
-
-    // Parsear datos del request
     const data = await request.json()
 
-    // Validaciones de campos requeridos
+    // Validar campos requeridos
     if (!data.rut || !data.nombres || !data.apellidos) {
-      return Response.json(
-        { error: 'RUT, nombres y apellidos son requeridos' },
-        { status: 400 }
-      )
+      return errorResponse('RUT, nombres y apellidos son requeridos')
     }
 
-    // Si tiene permisos limitados, validar que solo se envíen campos permitidos
-    if (isLimited) {
-      const allowedFields = ['rut', 'nombres', 'apellidos', 'edad', 'edadAnos', 'fechaNacimiento', 'direccion', 'telefono', 'fichaClinica', 'pertenenciaPuebloOriginario', 'condicionMigrante', 'condicionDiscapacidad', 'condicionPrivadaLibertad', 'identidadTrans', 'hepatitisBPositiva', 'controlPrenatal']
-      const providedFields = Object.keys(data)
-      const invalidFields = providedFields.filter(field => !allowedFields.includes(field))
-      
-      if (invalidFields.length > 0) {
-        return Response.json(
-          { error: `No tiene permisos para establecer los siguientes campos: ${invalidFields.join(', ')}` },
-          { status: 403 }
-        )
-      }
+    // Validar campos limitados si aplica
+    if (auth.isLimited) {
+      const camposValidation = validarCamposLimitados(data)
+      if (!camposValidation.valid) return errorResponse(camposValidation.error, 403)
     }
 
-    // Validar formato RUT
+    // Validar RUT
     if (!validarRUT(data.rut)) {
-      return Response.json(
-        { error: 'RUT inválido. Formato esperado: 12345678-9 (sin puntos, con guion)' },
-        { status: 400 }
-      )
+      return errorResponse('RUT inválido. Formato esperado: 12345678-9 (sin puntos, con guion)')
     }
 
-    // Normalizar RUT (mayúsculas en dígito verificador)
-    const rutNormalizado = data.rut.toUpperCase()
+    // Validar unicidad
+    const unicidadResult = await validarUnicidad(data.rut.toUpperCase(), data.fichaClinica)
+    if (!unicidadResult.valid) return errorResponse(unicidadResult.error, 409)
 
-    // Validar que el RUT no exista
-    const rutExistente = await prisma.madre.findUnique({
-      where: { rut: rutNormalizado },
-    })
+    // Preparar datos
+    const madreData = prepararDatosMadre(data, dbUser.id, true)
+    
+    // Agregar campos numéricos
+    const numericResult = agregarCamposNumericos(madreData, data)
+    if (!numericResult.valid) return errorResponse(numericResult.error)
+    
+    // Agregar campos REM
+    agregarCamposREM(madreData, data)
 
-    if (rutExistente) {
-      return Response.json(
-        { error: 'Ya existe una madre registrada con este RUT' },
-        { status: 409 }
-      )
-    }
+    const { ip, userAgent } = getAuditData(request)
 
-    // Si se proporciona ficha clínica, validar que sea única
-    if (data.fichaClinica) {
-      const fichaExistente = await prisma.madre.findUnique({
-        where: { fichaClinica: data.fichaClinica },
-      })
-
-      if (fichaExistente) {
-        return Response.json(
-          { error: 'Ya existe una madre registrada con esta ficha clínica' },
-          { status: 409 }
-        )
-      }
-    }
-
-    // Preparar datos para crear
-    const madreData = {
-      rut: rutNormalizado,
-      nombres: data.nombres.trim(),
-      apellidos: data.apellidos.trim(),
-      createdById: dbUser.id, // Usar el ID del usuario verificado en la BD
-    }
-
-    // Agregar campos opcionales si están presentes
-    if (data.edad !== undefined && data.edad !== null && data.edad !== '') {
-      madreData.edad = Number.parseInt(data.edad)
-      if (Number.isNaN(madreData.edad) || madreData.edad < 0) {
-        return Response.json(
-          { error: 'La edad debe ser un número válido' },
-          { status: 400 }
-        )
-      }
-    }
-
-    if (data.edadAnos !== undefined && data.edadAnos !== null && data.edadAnos !== '') {
-      madreData.edadAnos = Number.parseInt(data.edadAnos)
-      if (Number.isNaN(madreData.edadAnos) || madreData.edadAnos < 0) {
-        return Response.json(
-          { error: 'La edad en años debe ser un número válido' },
-          { status: 400 }
-        )
-      }
-    }
-
-    if (data.fechaNacimiento) {
-      madreData.fechaNacimiento = new Date(data.fechaNacimiento)
-      if (Number.isNaN(madreData.fechaNacimiento.getTime())) {
-        return Response.json(
-          { error: 'Fecha de nacimiento inválida' },
-          { status: 400 }
-        )
-      }
-    }
-
-    if (data.direccion) {
-      madreData.direccion = data.direccion.trim()
-    }
-
-    if (data.telefono) {
-      madreData.telefono = data.telefono.trim()
-    }
-
-    if (data.fichaClinica) {
-      madreData.fichaClinica = data.fichaClinica.trim()
-    }
-
-    // Campos REM - booleanos opcionales
-    if (data.pertenenciaPuebloOriginario !== undefined) {
-      madreData.pertenenciaPuebloOriginario = data.pertenenciaPuebloOriginario === null ? null : Boolean(data.pertenenciaPuebloOriginario)
-    }
-    if (data.condicionMigrante !== undefined) {
-      madreData.condicionMigrante = data.condicionMigrante === null ? null : Boolean(data.condicionMigrante)
-    }
-    if (data.condicionDiscapacidad !== undefined) {
-      madreData.condicionDiscapacidad = data.condicionDiscapacidad === null ? null : Boolean(data.condicionDiscapacidad)
-    }
-    if (data.condicionPrivadaLibertad !== undefined) {
-      madreData.condicionPrivadaLibertad = data.condicionPrivadaLibertad === null ? null : Boolean(data.condicionPrivadaLibertad)
-    }
-    if (data.identidadTrans !== undefined) {
-      madreData.identidadTrans = data.identidadTrans === null ? null : Boolean(data.identidadTrans)
-    }
-    if (data.hepatitisBPositiva !== undefined) {
-      madreData.hepatitisBPositiva = data.hepatitisBPositiva === null ? null : Boolean(data.hepatitisBPositiva)
-    }
-    if (data.controlPrenatal !== undefined) {
-      madreData.controlPrenatal = data.controlPrenatal === null ? null : Boolean(data.controlPrenatal)
-    }
-
-    // Obtener IP y User-Agent para auditoría
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || null
-    const userAgent = request.headers.get('user-agent') || null
-
-    // Crear madre en transacción con auditoría
+    // Crear en transacción
     const madre = await prisma.$transaction(async (tx) => {
-      // Crear madre
-      const nuevaMadre = await tx.madre.create({
-        data: madreData,
-      })
+      const nuevaMadre = await tx.madre.create({ data: madreData })
 
-      // Registrar auditoría
-      await tx.auditoria.create({
-        data: {
-          usuarioId: dbUser.id, // Usar el ID del usuario verificado en la BD
-          rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
-          entidad: 'Madre',
-          entidadId: nuevaMadre.id,
-          accion: 'CREATE',
-          detalleAfter: nuevaMadre,
-          ip,
-          userAgent,
-        },
+      await crearAuditoria(tx, {
+        user: { ...auth.user, id: dbUser.id },
+        entidad: ENTIDAD,
+        entidadId: nuevaMadre.id,
+        accion: 'CREATE',
+        detalleAfter: nuevaMadre,
+        ip,
+        userAgent,
       })
 
       return nuevaMadre
     })
 
-    return Response.json(
-      {
-        success: true,
-        message: 'Madre registrada exitosamente',
-        data: madre,
-      },
-      { status: 201 }
-    )
+    return Response.json({
+      success: true,
+      message: 'Madre registrada exitosamente',
+      data: madre,
+    }, { status: 201 })
   } catch (error) {
     console.error('Error al registrar madre:', error)
 
-    // Manejar errores de Prisma
     if (error.code === 'P2002') {
-      // Error de unique constraint
       if (error.meta?.target?.includes('rut')) {
-        return Response.json(
-          { error: 'Ya existe una madre registrada con este RUT' },
-          { status: 409 }
-        )
+        return errorResponse('Ya existe una madre registrada con este RUT', 409)
       }
       if (error.meta?.target?.includes('fichaClinica')) {
-        return Response.json(
-          { error: 'Ya existe una madre registrada con esta ficha clínica' },
-          { status: 409 }
-        )
+        return errorResponse('Ya existe una madre registrada con esta ficha clínica', 409)
       }
     }
 
-    if (error.code === 'P2003') {
-      // Error de foreign key constraint
-      if (error.meta?.field_name?.includes('createdById')) {
-        return Response.json(
-          { error: 'Usuario no válido. Por favor, inicie sesión nuevamente.' },
-          { status: 401 }
-        )
-      }
+    if (error.code === 'P2003' && error.meta?.field_name?.includes('createdById')) {
+      return errorResponse('Usuario no válido. Por favor, inicie sesión nuevamente.', 401)
     }
 
-    return Response.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return errorResponse('Error interno del servidor', 500)
   }
 }
 

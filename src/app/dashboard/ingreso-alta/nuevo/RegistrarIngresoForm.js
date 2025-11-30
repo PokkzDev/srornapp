@@ -199,6 +199,7 @@ export default function RegistrarIngresoForm() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className={styles.searchInput}
+                aria-label="Buscar madre"
               />
               {searchingMadre && <i className="fas fa-spinner fa-spin"></i>}
             </div>

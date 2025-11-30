@@ -249,6 +249,7 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className={styles.searchInput}
+                  aria-label="Buscar recién nacido"
                 />
                 {searchingRN && (
                   <i className="fas fa-spinner fa-spin"></i>

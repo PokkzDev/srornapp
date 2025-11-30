@@ -46,8 +46,8 @@ function formatearRUT(valor) {
   
   if (valor.includes('-')) {
     const partes = valor.split('-')
-    const numero = partes[0].replace(/[^0-9]/g, '').substring(0, 8)
-    const dv = partes[1] ? partes[1].replace(/[^0-9Kk]/g, '').substring(0, 1) : ''
+    const numero = partes[0].replaceAll(/[^0-9]/g, '').substring(0, 8)
+    const dv = partes[1] ? partes[1].replaceAll(/[^0-9Kk]/g, '').substring(0, 1) : ''
     
     if (numero.length === 0) return ''
     
@@ -57,7 +57,7 @@ function formatearRUT(valor) {
     return numero + '-'
   }
   
-  let rut = valor.replace(/[^0-9Kk]/g, '')
+  let rut = valor.replaceAll(/[^0-9Kk]/g, '')
   
   if (rut.length === 0) return ''
   

@@ -116,12 +116,14 @@ export default function ModuloAltaListClient() {
             placeholder="Buscar por RUT, nombre o apellido..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Buscar módulo de alta"
           />
         </div>
         <select
           className={styles.filterSelect}
           value={filterEstado}
           onChange={(e) => setFilterEstado(e.target.value)}
+          aria-label="Filtrar por estado"
         >
           <option value="all">Todos los estados</option>
           <option value="INGRESADO">Ingresados</option>

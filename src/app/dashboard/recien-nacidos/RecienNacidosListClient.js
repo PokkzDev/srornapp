@@ -193,6 +193,7 @@ export default function RecienNacidosListClient({ permissions }) {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className={styles.searchInput}
+            aria-label="Buscar recién nacidos"
           />
           {searchInput && (
             <button

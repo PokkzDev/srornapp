@@ -254,6 +254,7 @@ export default function RegistrarRecienNacidoClient() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className={styles.searchInput}
+            aria-label="Buscar madre"
             autoFocus
           />
           {searchInput && (

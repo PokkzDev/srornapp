@@ -1,444 +1,260 @@
-import { getCurrentUser, getUserPermissions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import {
+  verificarAuth,
+  getAuditData,
+  crearAuditoria,
+  parsearFecha,
+  validarEnum,
+  parsearJsonSeguro,
+  construirFiltroFecha,
+  esUUID,
+  errorResponse,
+  getPaginationParams,
+  paginatedResponse,
+  manejarErrorPrisma
+} from '@/lib/api-helpers'
+
+// Constantes
+const ENTIDAD = 'ControlNeonatal'
+const TIPOS_CONTROL = ['SIGNOS_VITALES', 'GLUCEMIA', 'ALIMENTACION', 'MEDICACION', 'OTRO']
+
+// Includes reutilizables
+const CONTROL_INCLUDE = {
+  rn: {
+    include: {
+      parto: {
+        include: {
+          madre: {
+            select: { id: true, rut: true, nombres: true, apellidos: true },
+          },
+        },
+      },
+    },
+  },
+  episodioUrni: {
+    select: { id: true, estado: true, fechaHoraIngreso: true, servicioUnidad: true },
+  },
+  enfermera: {
+    select: { id: true, nombre: true, email: true },
+  },
+}
+
+/**
+ * Construye condiciones de búsqueda para controles neonatales
+ */
+function construirWhere(searchParams) {
+  const where = {}
+  
+  // Filtros directos
+  const rnId = searchParams.get('rnId')
+  const episodioUrniId = searchParams.get('episodioUrniId')
+  const tipo = searchParams.get('tipo')
+  const enfermeraId = searchParams.get('enfermeraId')
+  
+  if (rnId) where.rnId = rnId
+  if (episodioUrniId) where.episodioUrniId = episodioUrniId
+  if (tipo) where.tipo = tipo
+  if (enfermeraId) where.enfermeraId = enfermeraId
+
+  // Filtros de fecha
+  const filtroFecha = construirFiltroFecha(
+    searchParams.get('fechaDesde'),
+    searchParams.get('fechaHasta')
+  )
+  if (filtroFecha) where.fechaHora = filtroFecha
+
+  // Búsqueda por texto
+  const search = searchParams.get('search')?.trim()
+  if (search) {
+    where.OR = construirCondicionesBusqueda(search)
+  }
+
+  return where
+}
+
+/**
+ * Construye condiciones de búsqueda por texto
+ */
+function construirCondicionesBusqueda(searchTerm) {
+  const condiciones = [
+    { rn: { parto: { madre: { rut: { contains: searchTerm } } } } },
+    { rn: { parto: { madre: { nombres: { contains: searchTerm } } } } },
+    { rn: { parto: { madre: { apellidos: { contains: searchTerm } } } } },
+    { enfermera: { nombre: { contains: searchTerm } } },
+    { observaciones: { contains: searchTerm } },
+  ]
+
+  if (esUUID(searchTerm)) {
+    condiciones.push({ rnId: searchTerm }, { id: searchTerm })
+  }
+
+  return condiciones
+}
 
 export async function GET(request) {
   try {
-    // Verificar autenticación
-    const user = await getCurrentUser()
-    if (!user) {
-      return Response.json(
-        { error: 'No autenticado' },
-        { status: 401 }
-      )
-    }
+    const auth = await verificarAuth(request, 'control_neonatal:view', ENTIDAD)
+    if (!auth.success) return auth.error
 
-    // Verificar permisos
-    const permissions = await getUserPermissions()
-    if (!permissions.includes('control_neonatal:view')) {
-      // Registrar intento de acceso sin permisos
-      try {
-        await prisma.auditoria.create({
-          data: {
-            usuarioId: user.id,
-            rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
-            entidad: 'ControlNeonatal',
-            accion: 'PERMISSION_DENIED',
-            ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || null,
-            userAgent: request.headers.get('user-agent') || null,
-          },
-        })
-      } catch (auditError) {
-        console.error('Error al registrar auditoría:', auditError)
-      }
-
-      return Response.json(
-        { error: 'No tiene permisos para visualizar controles neonatales' },
-        { status: 403 }
-      )
-    }
-
-    // Obtener parámetros de búsqueda
     const { searchParams } = new URL(request.url)
-    const rnId = searchParams.get('rnId') || ''
-    const episodioUrniId = searchParams.get('episodioUrniId') || ''
-    const tipo = searchParams.get('tipo') || ''
-    const enfermeraId = searchParams.get('enfermeraId') || ''
-    const fechaDesde = searchParams.get('fechaDesde') || ''
-    const fechaHasta = searchParams.get('fechaHasta') || ''
-    const search = searchParams.get('search') || ''
-    const page = Number.parseInt(searchParams.get('page') || '1')
-    const limit = Number.parseInt(searchParams.get('limit') || '20')
-    const skip = (page - 1) * limit
+    const { page, limit, skip } = getPaginationParams(searchParams)
+    const where = construirWhere(searchParams)
 
-    // Construir condiciones de búsqueda
-    const where = {}
-    
-    if (rnId) {
-      where.rnId = rnId
-    }
-    
-    if (episodioUrniId) {
-      where.episodioUrniId = episodioUrniId
-    }
-    
-    if (tipo) {
-      where.tipo = tipo
-    }
-    
-    if (enfermeraId) {
-      where.enfermeraId = enfermeraId
-    }
-
-    // Filtros de fecha
-    if (fechaDesde || fechaHasta) {
-      where.fechaHora = {}
-      if (fechaDesde) {
-        where.fechaHora.gte = new Date(fechaDesde)
-      }
-      if (fechaHasta) {
-        const fechaHastaDate = new Date(fechaHasta)
-        fechaHastaDate.setHours(23, 59, 59, 999) // Incluir todo el día
-        where.fechaHora.lte = fechaHastaDate
-      }
-    }
-
-    // Implementar búsqueda por texto
-    if (search) {
-      const searchTerm = search.trim()
-      
-      // Validar si es un UUID (ID de recién nacido o control)
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      const isUUID = uuidRegex.test(searchTerm)
-      
-      const searchConditions = [
-        // Buscar por RUT de la madre
-        {
-          rn: {
-            parto: {
-              madre: {
-                rut: {
-                  contains: searchTerm,
-                },
-              },
-            },
-          },
-        },
-        // Buscar por nombres de la madre
-        {
-          rn: {
-            parto: {
-              madre: {
-                nombres: {
-                  contains: searchTerm,
-                },
-              },
-            },
-          },
-        },
-        // Buscar por apellidos de la madre
-        {
-          rn: {
-            parto: {
-              madre: {
-                apellidos: {
-                  contains: searchTerm,
-                },
-              },
-            },
-          },
-        },
-        // Buscar por nombre de enfermera
-        {
-          enfermera: {
-            nombre: {
-              contains: searchTerm,
-            },
-          },
-        },
-        // Buscar por observaciones
-        {
-          observaciones: {
-            contains: searchTerm,
-          },
-        },
-      ]
-      
-      // Si es un UUID válido, también buscar por ID del recién nacido o control
-      if (isUUID) {
-        searchConditions.push({ rnId: searchTerm })
-        searchConditions.push({ id: searchTerm })
-      }
-      
-      where.OR = searchConditions
-    }
-
-    // Obtener controles con relaciones
     const [controles, total] = await Promise.all([
       prisma.controlNeonatal.findMany({
         where,
         skip,
         take: limit,
         orderBy: { fechaHora: 'desc' },
-        include: {
-          rn: {
-            include: {
-              parto: {
-                include: {
-                  madre: {
-                    select: {
-                      id: true,
-                      rut: true,
-                      nombres: true,
-                      apellidos: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          episodioUrni: {
-            select: {
-              id: true,
-              estado: true,
-              fechaHoraIngreso: true,
-              servicioUnidad: true,
-            },
-          },
-          enfermera: {
-            select: {
-              id: true,
-              nombre: true,
-              email: true,
-            },
-          },
-        },
+        include: CONTROL_INCLUDE,
       }),
       prisma.controlNeonatal.count({ where }),
     ])
 
-    return Response.json({
-      success: true,
-      data: controles,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    })
+    return paginatedResponse(controles, { page, limit, total })
   } catch (error) {
     console.error('Error al obtener controles neonatales:', error)
-    return Response.json(
-      { error: 'Error al obtener controles neonatales' },
-      { status: 500 }
-    )
+    return errorResponse('Error al obtener controles neonatales', 500)
   }
+}
+
+/**
+ * Valida que el RN existe
+ */
+async function validarRN(rnId) {
+  const rn = await prisma.recienNacido.findUnique({ where: { id: rnId } })
+  return rn ? { valid: true, rn } : { valid: false }
+}
+
+/**
+ * Busca episodio activo del RN o valida el proporcionado
+ */
+async function obtenerEpisodioUrni(rnId, episodioUrniIdProporcionado) {
+  if (episodioUrniIdProporcionado) {
+    const episodio = await prisma.episodioURNI.findUnique({
+      where: { id: episodioUrniIdProporcionado }
+    })
+    
+    if (!episodio) {
+      return { valid: false, error: 'El episodio URNI especificado no existe' }
+    }
+    
+    if (episodio.rnId !== rnId) {
+      return { valid: false, error: 'El episodio URNI no pertenece al recién nacido especificado' }
+    }
+    
+    return { valid: true, episodioUrniId: episodioUrniIdProporcionado, autoLinked: false }
+  }
+
+  // Buscar episodio activo
+  const episodioActivo = await prisma.episodioURNI.findFirst({
+    where: { rnId, estado: 'INGRESADO' }
+  })
+
+  return {
+    valid: true,
+    episodioUrniId: episodioActivo?.id || null,
+    autoLinked: !!episodioActivo
+  }
+}
+
+/**
+ * Prepara los datos del control neonatal
+ */
+function prepararDatosControl(data, userId, fechaHora, episodioUrniId, datosJson) {
+  const controlData = {
+    rnId: data.rnId,
+    episodioUrniId,
+    fechaHora,
+    tipo: data.tipo || 'SIGNOS_VITALES',
+    enfermeraId: userId,
+  }
+
+  if (datosJson) controlData.datos = datosJson
+  if (data.observaciones) {
+    controlData.observaciones = data.observaciones.trim().substring(0, 500)
+  }
+
+  return controlData
 }
 
 export async function POST(request) {
   try {
-    // Verificar autenticación
-    const user = await getCurrentUser()
-    if (!user) {
-      return Response.json(
-        { error: 'No autenticado' },
-        { status: 401 }
-      )
-    }
+    const auth = await verificarAuth(request, 'control_neonatal:create', ENTIDAD)
+    if (!auth.success) return auth.error
 
-    // Verificar permisos
-    const permissions = await getUserPermissions()
-    if (!permissions.includes('control_neonatal:create')) {
-      // Registrar intento de acceso sin permisos
-      try {
-        await prisma.auditoria.create({
-          data: {
-            usuarioId: user.id,
-            rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
-            entidad: 'ControlNeonatal',
-            accion: 'PERMISSION_DENIED',
-            ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || null,
-            userAgent: request.headers.get('user-agent') || null,
-          },
-        })
-      } catch (auditError) {
-        console.error('Error al registrar auditoría:', auditError)
-      }
-
-      return Response.json(
-        { error: 'No tiene permisos para crear controles neonatales' },
-        { status: 403 }
-      )
-    }
-
-    // Parsear datos del request
     const data = await request.json()
 
-    // Validaciones de campos requeridos
+    // Validar campo requerido
     if (!data.rnId) {
-      return Response.json(
-        { error: 'Recién nacido es requerido' },
-        { status: 400 }
-      )
+      return errorResponse('Recién nacido es requerido')
     }
 
-    // Validar que el RN existe
-    const rn = await prisma.recienNacido.findUnique({
-      where: { id: data.rnId },
-    })
-
-    if (!rn) {
-      return Response.json(
-        { error: 'El recién nacido especificado no existe' },
-        { status: 404 }
-      )
+    // Validar RN existe
+    const rnValidation = await validarRN(data.rnId)
+    if (!rnValidation.valid) {
+      return errorResponse('El recién nacido especificado no existe', 404)
     }
 
-    // Determinar episodioUrniId: usar el proporcionado o buscar el episodio activo
-    let episodioUrniId = data.episodioUrniId || null
-
-    if (!episodioUrniId) {
-      // Buscar episodio activo del RN para sugerir vinculación
-      const episodioActivo = await prisma.episodioURNI.findFirst({
-        where: {
-          rnId: data.rnId,
-          estado: 'INGRESADO',
-        },
-      })
-
-      if (episodioActivo) {
-        episodioUrniId = episodioActivo.id
-      }
-    }
-
-    // Si se proporciona episodioUrniId, validar que existe y pertenece al RN
-    if (episodioUrniId) {
-      const episodio = await prisma.episodioURNI.findUnique({
-        where: { id: episodioUrniId },
-      })
-
-      if (!episodio) {
-        return Response.json(
-          { error: 'El episodio URNI especificado no existe' },
-          { status: 404 }
-        )
-      }
-
-      // Validar que el episodio pertenece al RN
-      if (episodio.rnId !== data.rnId) {
-        return Response.json(
-          { error: 'El episodio URNI no pertenece al recién nacido especificado' },
-          { status: 400 }
-        )
-      }
+    // Validar/obtener episodio URNI
+    const episodioResult = await obtenerEpisodioUrni(data.rnId, data.episodioUrniId)
+    if (!episodioResult.valid) {
+      return errorResponse(episodioResult.error, 400)
     }
 
     // Validar tipo de control
-    const tiposValidos = ['SIGNOS_VITALES', 'GLUCEMIA', 'ALIMENTACION', 'MEDICACION', 'OTRO']
     const tipo = data.tipo || 'SIGNOS_VITALES'
-    
-    if (!tiposValidos.includes(tipo)) {
-      return Response.json(
-        { error: 'Tipo de control inválido' },
-        { status: 400 }
-      )
+    const tipoValidation = validarEnum(tipo, TIPOS_CONTROL, 'Tipo de control')
+    if (!tipoValidation.valid) {
+      return errorResponse(tipoValidation.error)
     }
 
-    // Validar fechaHora si se proporciona
-    let fechaHora = new Date()
-    if (data.fechaHora) {
-      fechaHora = new Date(data.fechaHora)
-      if (Number.isNaN(fechaHora.getTime())) {
-        return Response.json(
-          { error: 'Fecha/hora inválida' },
-          { status: 400 }
-        )
-      }
+    // Validar fecha
+    const fechaResult = parsearFecha(data.fechaHora, new Date())
+    if (!fechaResult.valid) {
+      return errorResponse(fechaResult.error)
     }
 
-    // Preparar datos para crear
-    const controlData = {
-      rnId: data.rnId,
-      episodioUrniId: episodioUrniId,
-      fechaHora: fechaHora,
-      tipo: tipo,
-      enfermeraId: user.id, // La enfermera que crea el control es el usuario autenticado
+    // Validar datos JSON
+    const datosResult = parsearJsonSeguro(data.datos)
+    if (!datosResult.valid) {
+      return errorResponse('El campo datos debe ser un JSON válido')
     }
 
-    // Agregar campos opcionales
-    if (data.datos) {
-      // Validar que datos es un objeto JSON válido
-      try {
-        const datosParsed = typeof data.datos === 'string' ? JSON.parse(data.datos) : data.datos
-        controlData.datos = datosParsed
-      } catch (error) {
-        return Response.json(
-          { error: 'El campo datos debe ser un JSON válido' },
-          { status: 400 }
-        )
-      }
-    }
+    const { ip, userAgent } = getAuditData(request)
+    const controlData = prepararDatosControl(
+      data, auth.user.id, fechaResult.date, episodioResult.episodioUrniId, datosResult.data
+    )
 
-    if (data.observaciones) {
-      controlData.observaciones = data.observaciones.trim().substring(0, 500)
-    }
-
-    // Obtener IP y User-Agent para auditoría
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || null
-    const userAgent = request.headers.get('user-agent') || null
-
-    // Crear control en transacción con auditoría
+    // Crear control en transacción
     const control = await prisma.$transaction(async (tx) => {
-      // Crear control
       const nuevoControl = await tx.controlNeonatal.create({
         data: controlData,
-        include: {
-          rn: {
-            include: {
-              parto: {
-                include: {
-                  madre: {
-                    select: {
-                      id: true,
-                      rut: true,
-                      nombres: true,
-                      apellidos: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          episodioUrni: {
-            select: {
-              id: true,
-              estado: true,
-              fechaHoraIngreso: true,
-            },
-          },
-          enfermera: {
-            select: {
-              id: true,
-              nombre: true,
-              email: true,
-            },
-          },
-        },
+        include: CONTROL_INCLUDE,
       })
 
-      // Registrar auditoría
-      await tx.auditoria.create({
-        data: {
-          usuarioId: user.id,
-          rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
-          entidad: 'ControlNeonatal',
-          entidadId: nuevoControl.id,
-          accion: 'CREATE',
-          detalleAfter: nuevoControl,
-          ip,
-          userAgent,
-        },
+      await crearAuditoria(tx, {
+        user: auth.user,
+        entidad: ENTIDAD,
+        entidadId: nuevoControl.id,
+        accion: 'CREATE',
+        detalleAfter: nuevoControl,
+        ip,
+        userAgent,
       })
 
       return nuevoControl
     })
 
-    return Response.json(
-      {
-        success: true,
-        message: 'Control neonatal registrado exitosamente',
-        data: control,
-        // Informar si se vinculó automáticamente a un episodio
-        autoLinked: episodioUrniId && !data.episodioUrniId,
-      },
-      { status: 201 }
-    )
+    return Response.json({
+      success: true,
+      message: 'Control neonatal registrado exitosamente',
+      data: control,
+      autoLinked: episodioResult.autoLinked,
+    }, { status: 201 })
   } catch (error) {
     console.error('Error al registrar control neonatal:', error)
-    return Response.json(
-      { error: 'Error al registrar control neonatal' },
-      { status: 500 }
-    )
+    return manejarErrorPrisma(error, 'Error al registrar control neonatal')
   }
 }
 

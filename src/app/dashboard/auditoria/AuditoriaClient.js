@@ -362,8 +362,9 @@ export default function AuditoriaClient() {
       <div className={styles.filters}>
         <div className={styles.filterRow}>
           <div className={styles.filterGroup}>
-            <label>Usuario</label>
+            <label htmlFor="filtro-usuario">Usuario</label>
             <select
+              id="filtro-usuario"
               className={styles.filterSelect}
               value={filtros.usuarioId}
               onChange={(e) => handleFilterChange('usuarioId', e.target.value)}
@@ -379,8 +380,9 @@ export default function AuditoriaClient() {
           </div>
 
           <div className={styles.filterGroup}>
-            <label>Entidad</label>
+            <label htmlFor="filtro-entidad">Entidad</label>
             <select
+              id="filtro-entidad"
               className={styles.filterSelect}
               value={filtros.entidad}
               onChange={(e) => handleFilterChange('entidad', e.target.value)}
@@ -394,8 +396,9 @@ export default function AuditoriaClient() {
           </div>
 
           <div className={styles.filterGroup}>
-            <label>Acción</label>
+            <label htmlFor="filtro-accion">Acción</label>
             <select
+              id="filtro-accion"
               className={styles.filterSelect}
               value={filtros.accion}
               onChange={(e) => handleFilterChange('accion', e.target.value)}
@@ -605,8 +608,9 @@ export default function AuditoriaClient() {
           </div>
         )}
         <div className={styles.paginationLimit}>
-          <label>Registros por página:</label>
+          <label htmlFor="registros-por-pagina">Registros por página:</label>
           <select
+            id="registros-por-pagina"
             value={itemsPerPage}
             onChange={(e) => {
               const newLimit = Number.parseInt(e.target.value)
@@ -625,10 +629,17 @@ export default function AuditoriaClient() {
 
       {/* Modal de detalles */}
       {modalDetalles.isOpen && (
-        <div className={styles.modalOverlay} onClick={closeDetalles}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+        <div 
+          className={styles.modalOverlay} 
+          onClick={closeDetalles}
+          onKeyDown={(e) => e.key === 'Escape' && closeDetalles()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-auditoria-title"
+        >
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>
+              <h2 id="modal-auditoria-title" className={styles.modalTitle}>
                 <i className="fas fa-info-circle" style={{ marginRight: '0.5rem', color: 'var(--color-primary)' }}></i>
                 Detalles del Registro de Auditoría
               </h2>

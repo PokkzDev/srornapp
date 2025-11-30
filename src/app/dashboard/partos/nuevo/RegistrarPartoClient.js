@@ -113,6 +113,7 @@ export default function RegistrarPartoClient() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className={styles.searchInput}
+            aria-label="Buscar madre"
             autoFocus
           />
           {searchInput && (

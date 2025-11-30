@@ -122,6 +122,7 @@ export default function URNIEpisodioListClient({ permissions }) {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className={styles.searchInput}
+            aria-label="Buscar episodios URNI"
           />
         </div>
         <select
@@ -131,6 +132,7 @@ export default function URNIEpisodioListClient({ permissions }) {
             setCurrentPage(1)
           }}
           className={styles.filterSelect}
+          aria-label="Filtrar por estado"
         >
           <option value="">Todos los estados</option>
           <option value="INGRESADO">Ingresado</option>

@@ -45,8 +45,8 @@ export function formatearRUT(valor) {
   // Si ya tiene guion, preservarlo y limpiar solo caracteres inválidos
   if (valor.includes('-')) {
     const partes = valor.split('-')
-    const numero = partes[0].replace(/[^0-9]/g, '').substring(0, 8) // máximo 8 dígitos
-    const dv = partes[1] ? partes[1].replace(/[^0-9Kk]/g, '').substring(0, 1) : ''
+    const numero = partes[0].replaceAll(/[^0-9]/g, '').substring(0, 8) // máximo 8 dígitos
+    const dv = partes[1] ? partes[1].replaceAll(/[^0-9Kk]/g, '').substring(0, 1) : ''
     
     if (numero.length === 0) return ''
     
@@ -57,7 +57,7 @@ export function formatearRUT(valor) {
   }
   
   // Si no tiene guion, remover caracteres inválidos
-  let rut = valor.replace(/[^0-9Kk]/g, '')
+  let rut = valor.replaceAll(/[^0-9Kk]/g, '')
   
   if (rut.length === 0) return ''
   

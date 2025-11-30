@@ -138,17 +138,17 @@ export default function RegistrarControlForm() {
     
     switch (tipo) {
       case 'SIGNOS_VITALES':
-        if (fields.temp !== '') datos.temp = parseFloat(fields.temp)
-        if (fields.fc !== '') datos.fc = parseFloat(fields.fc)
-        if (fields.fr !== '') datos.fr = parseFloat(fields.fr)
-        if (fields.spo2 !== '') datos.spo2 = parseFloat(fields.spo2)
+        if (fields.temp !== '') datos.temp = Number.parseFloat(fields.temp)
+        if (fields.fc !== '') datos.fc = Number.parseFloat(fields.fc)
+        if (fields.fr !== '') datos.fr = Number.parseFloat(fields.fr)
+        if (fields.spo2 !== '') datos.spo2 = Number.parseFloat(fields.spo2)
         break
       case 'GLUCEMIA':
-        if (fields.glucemia !== '') datos.glucemia = parseFloat(fields.glucemia)
+        if (fields.glucemia !== '') datos.glucemia = Number.parseFloat(fields.glucemia)
         break
       case 'ALIMENTACION':
         if (fields.tipoAlimentacion !== '') datos.tipo = fields.tipoAlimentacion
-        if (fields.cantidad !== '') datos.cantidad = parseFloat(fields.cantidad)
+        if (fields.cantidad !== '') datos.cantidad = Number.parseFloat(fields.cantidad)
         if (fields.unidad !== '') datos.unidad = fields.unidad
         break
       case 'MEDICACION':
@@ -331,6 +331,7 @@ export default function RegistrarControlForm() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className={styles.searchInput}
+              aria-label="Buscar recién nacido"
               autoFocus
             />
             {searchInput && (

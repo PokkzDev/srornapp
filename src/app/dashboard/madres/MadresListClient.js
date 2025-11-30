@@ -183,6 +183,7 @@ export default function MadresListClient({ permissions }) {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className={styles.searchInput}
+            aria-label="Buscar madres"
           />
           {searchInput && (
             <button

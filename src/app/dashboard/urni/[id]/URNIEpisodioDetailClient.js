@@ -192,7 +192,7 @@ export default function URNIEpisodioDetailClient({ episodioId, permissions }) {
         default:
           // Para OTRO, mostrar los primeros campos de forma compacta
           const otrosParts = Object.entries(datosObj).slice(0, 3).map(([key, value]) => {
-            const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
+            const label = key.charAt(0).toUpperCase() + key.slice(1).replaceAll('_', ' ')
             return `${label}: ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`
           })
           return otrosParts.length > 0 ? otrosParts.join(' | ') : null

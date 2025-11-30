@@ -217,6 +217,7 @@ export default function PartosListClient({ permissions }) {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className={styles.searchInput}
+            aria-label="Buscar partos"
           />
           {searchInput && (
             <button

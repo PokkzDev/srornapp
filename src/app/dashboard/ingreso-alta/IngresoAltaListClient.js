@@ -150,6 +150,7 @@ export default function IngresoAltaListClient({ permissions }) {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className={styles.searchInput}
+            aria-label="Buscar ingresos y altas"
           />
         </div>
 
@@ -160,6 +161,7 @@ export default function IngresoAltaListClient({ permissions }) {
             setCurrentPage(1)
           }}
           className={styles.filterSelect}
+          aria-label="Filtrar por estado"
         >
           <option value="">Todos los estados</option>
           <option value="INGRESADO">Ingresado</option>

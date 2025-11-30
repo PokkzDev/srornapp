@@ -1,14 +1,24 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import styles from './Modal.module.css'
 
 export default function Modal({ isOpen, onClose, title, message, type = 'info', onConfirm, confirmText = 'Aceptar', showCancel = false, cancelText = 'Cancelar' }) {
+  const dialogRef = useRef(null)
+
   useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+
     if (isOpen) {
-      // Prevenir scroll del body cuando el modal está abierto
+      if (!dialog.open) {
+        dialog.showModal()
+      }
       document.body.style.overflow = 'hidden'
     } else {
+      if (dialog.open) {
+        dialog.close()
+      }
       document.body.style.overflow = 'unset'
     }
 
@@ -18,25 +28,23 @@ export default function Modal({ isOpen, onClose, title, message, type = 'info', 
   }, [isOpen])
 
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose()
-      }
+    const dialog = dialogRef.current
+    if (!dialog) return
+
+    const handleCancel = (e) => {
+      e.preventDefault()
+      onClose()
     }
 
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape)
-    }
-
+    dialog.addEventListener('cancel', handleCancel)
     return () => {
-      document.removeEventListener('keydown', handleEscape)
+      dialog.removeEventListener('cancel', handleCancel)
     }
-  }, [isOpen, onClose])
-
-  if (!isOpen) return null
+  }, [onClose])
 
   const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
+    const dialog = dialogRef.current
+    if (e.target === dialog) {
       onClose()
     }
   }
@@ -64,14 +72,19 @@ export default function Modal({ isOpen, onClose, title, message, type = 'info', 
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={handleBackdropClick}>
+    <dialog 
+      ref={dialogRef}
+      className={styles.modalOverlay} 
+      onClick={handleBackdropClick}
+      aria-labelledby="modal-title"
+    >
       <div className={styles.modalContent}>
         <div className={`${styles.modalHeader} ${styles[`header${type.charAt(0).toUpperCase() + type.slice(1)}`]}`}>
           <div className={styles.modalIcon}>
             <i className={getIcon()}></i>
           </div>
-          <h2 className={styles.modalTitle}>{title}</h2>
-          <button className={styles.closeButton} onClick={onClose} aria-label="Cerrar">
+          <h2 id="modal-title" className={styles.modalTitle}>{title}</h2>
+          <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Cerrar">
             <i className="fas fa-times"></i>
           </button>
         </div>
@@ -80,16 +93,16 @@ export default function Modal({ isOpen, onClose, title, message, type = 'info', 
         </div>
         <div className={styles.modalFooter}>
           {showCancel && (
-            <button className={styles.btnCancel} onClick={onClose}>
+            <button type="button" className={styles.btnCancel} onClick={onClose}>
               {cancelText}
             </button>
           )}
-          <button className={`${styles.btnConfirm} ${styles[`btn${type.charAt(0).toUpperCase() + type.slice(1)}`]}`} onClick={handleConfirm}>
+          <button type="button" className={`${styles.btnConfirm} ${styles[`btn${type.charAt(0).toUpperCase() + type.slice(1)}`]}`} onClick={handleConfirm}>
             {confirmText}
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   )
 }
 

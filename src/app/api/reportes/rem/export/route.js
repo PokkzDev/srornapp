@@ -390,7 +390,7 @@ export async function GET(request) {
     primerosTipos.forEach(tipo => {
       checkNewPage(20)
       const comp = reporteData.complicacionesObstetricas.porTipo[tipo]
-      const nombreTipo = tipo.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+      const nombreTipo = tipo.replaceAll('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
       const rowsComp = [
         [
           nombreTipo,
