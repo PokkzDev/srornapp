@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import styles from './page.module.css'
+import DateTimePicker from '@/components/DateTimePicker'
 
 export default function AtencionURNClient() {
   const router = useRouter()
@@ -23,7 +24,7 @@ export default function AtencionURNClient() {
   const [formData, setFormData] = useState({
     rnId: rnIdParam || '',
     episodioId: episodioIdParam || '',
-    fechaHora: new Date().toISOString().slice(0, 16),
+    fechaHora: new Date(),
     diagnostico: '',
     indicaciones: '',
     evolucion: '',
@@ -158,7 +159,7 @@ export default function AtencionURNClient() {
         body: JSON.stringify({
           rnId: formData.rnId,
           episodioId: formData.episodioId || null,
-          fechaHora: formData.fechaHora,
+          fechaHora: formData.fechaHora ? formData.fechaHora.toISOString() : new Date().toISOString(),
           diagnostico: formData.diagnostico || null,
           indicaciones: formData.indicaciones || null,
           evolucion: formData.evolucion || null,
@@ -182,7 +183,7 @@ export default function AtencionURNClient() {
       setFormData({
         rnId: formData.rnId, // Mantener RN seleccionado
         episodioId: formData.episodioId, // Mantener episodio
-        fechaHora: new Date().toISOString().slice(0, 16),
+        fechaHora: getLocalDateTimeString(),
         diagnostico: '',
         indicaciones: '',
         evolucion: '',
@@ -349,14 +350,14 @@ export default function AtencionURNClient() {
           <label htmlFor="fechaHora">
             Fecha y Hora <span className={styles.required}>*</span>
           </label>
-          <input
-            type="datetime-local"
+          <DateTimePicker
             id="fechaHora"
             name="fechaHora"
-            value={formData.fechaHora}
-            onChange={handleChange}
+            selected={formData.fechaHora}
+            onChange={(date) => setFormData((prev) => ({ ...prev, fechaHora: date }))}
+            maxDate={new Date()}
             required
-            className={styles.input}
+            placeholderText="Seleccione fecha y hora"
           />
         </div>
 

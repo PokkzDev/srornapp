@@ -177,7 +177,7 @@ const CAMPOS_BOOLEANOS = [
   'manejoDolorNoFarmacologico', 'manejoDolorFarmacologico', 'episiotomia',
   'acompananteDuranteTrabajo', 'acompananteSoloExpulsivo', 'oxitocinaProfilactica',
   'ligaduraTardiaCordon', 'atencionPertinenciaCultural', 'contactoPielPielMadre30min',
-  'contactoPielPielAcomp30min', 'lactancia60minAlMenosUnRn'
+  'contactoPielPielAcomp30min'
 ]
 
 /**

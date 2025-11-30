@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
+import DateTimePicker from '@/components/DateTimePicker'
 
 export default function EditarEpisodioURNIForm({ episodioId }) {
   const router = useRouter()
@@ -15,7 +16,7 @@ export default function EditarEpisodioURNIForm({ episodioId }) {
   const [episodio, setEpisodio] = useState(null)
 
   const [formData, setFormData] = useState({
-    fechaHoraIngreso: '',
+    fechaHoraIngreso: null,
     motivoIngreso: '',
     servicioUnidad: '',
     responsableClinicoId: '',
@@ -45,10 +46,8 @@ export default function EditarEpisodioURNIForm({ episodioId }) {
 
         setEpisodio(episodioData)
 
-        // Formatear fechaHoraIngreso para el input datetime-local
-        const fechaHoraIngreso = episodioData.fechaHoraIngreso
-          ? new Date(episodioData.fechaHoraIngreso).toISOString().slice(0, 16)
-          : ''
+        // Convertir fechaHoraIngreso a Date object para DateTimePicker
+        const fechaHoraIngreso = episodioData.fechaHoraIngreso ? new Date(episodioData.fechaHoraIngreso) : null
 
         setFormData({
           fechaHoraIngreso: fechaHoraIngreso,
@@ -114,11 +113,8 @@ export default function EditarEpisodioURNIForm({ episodioId }) {
 
     setLoading(true)
     try {
-      // Asegurar que la fecha esté en formato ISO
-      let fechaHoraIngreso = formData.fechaHoraIngreso
-      if (fechaHoraIngreso && !fechaHoraIngreso.includes('T')) {
-        fechaHoraIngreso = fechaHoraIngreso.replace(' ', 'T')
-      }
+      // Convertir fecha a ISO para enviar al servidor
+      const fechaHoraIngreso = formData.fechaHoraIngreso ? formData.fechaHoraIngreso.toISOString() : null
 
       const response = await fetch(`/api/urni/episodio/${episodioId}`, {
         method: 'PUT',
@@ -253,14 +249,14 @@ export default function EditarEpisodioURNIForm({ episodioId }) {
           <label htmlFor="fechaHoraIngreso">
             Fecha y Hora de Ingreso <span className={styles.required}>*</span>
           </label>
-          <input
-            type="datetime-local"
+          <DateTimePicker
             id="fechaHoraIngreso"
             name="fechaHoraIngreso"
-            value={formData.fechaHoraIngreso}
-            onChange={handleChange}
+            selected={formData.fechaHoraIngreso}
+            onChange={(date) => setFormData((prev) => ({ ...prev, fechaHoraIngreso: date }))}
+            maxDate={new Date()}
             required
-            className={styles.input}
+            placeholderText="Seleccione fecha y hora de ingreso"
           />
         </div>
 

@@ -28,10 +28,16 @@ function construirWhereAuditoria(searchParams) {
 
   if (fechaInicio || fechaFin) {
     where.fechaHora = {}
-    if (fechaInicio) where.fechaHora.gte = new Date(fechaInicio)
+    if (fechaInicio) {
+      // Parsear fecha como fecha local (YYYY-MM-DD) a medianoche local
+      const [year, month, day] = fechaInicio.split('-').map(Number)
+      const fechaInicioDate = new Date(year, month - 1, day, 0, 0, 0, 0)
+      where.fechaHora.gte = fechaInicioDate
+    }
     if (fechaFin) {
-      const fechaFinDate = new Date(fechaFin)
-      fechaFinDate.setHours(23, 59, 59, 999)
+      // Parsear fecha como fecha local (YYYY-MM-DD) a fin del día local
+      const [year, month, day] = fechaFin.split('-').map(Number)
+      const fechaFinDate = new Date(year, month - 1, day, 23, 59, 59, 999)
       where.fechaHora.lte = fechaFinDate
     }
   }

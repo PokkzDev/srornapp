@@ -346,7 +346,7 @@ export default async function PartoDetailPage({ params }) {
           {/* Buenas Prácticas */}
           {(parto.oxitocinaProfilactica !== null || parto.ligaduraTardiaCordon !== null ||
             parto.atencionPertinenciaCultural !== null || parto.contactoPielPielMadre30min !== null ||
-            parto.contactoPielPielAcomp30min !== null || parto.lactancia60minAlMenosUnRn !== null) && (
+            parto.contactoPielPielAcomp30min !== null) && (
             <div className={styles.section}>
               <h2 className={styles.sectionTitle}>
                 <i className="fas fa-check-circle"></i>
@@ -361,7 +361,6 @@ export default async function PartoDetailPage({ params }) {
                     {parto.atencionPertinenciaCultural && <span className={styles.badge}>Atención Pertinencia Cultural</span>}
                     {parto.contactoPielPielMadre30min && <span className={styles.badge}>Contacto Piel-Piel Madre (30 min)</span>}
                     {parto.contactoPielPielAcomp30min && <span className={styles.badge}>Contacto Piel-Piel Acompañante (30 min)</span>}
-                    {parto.lactancia60minAlMenosUnRn && <span className={styles.badge}>Lactancia 60 min</span>}
                   </div>
                 </div>
               </div>

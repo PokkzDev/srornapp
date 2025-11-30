@@ -73,8 +73,11 @@ export async function PUT(request, { params }) {
     const data = await request.json()
 
     // Validar fecha si se proporciona
-    if (data.fechaIngreso && !parsearFecha(data.fechaIngreso)) {
-      return errorResponse('Fecha de ingreso inválida', 400)
+    if (data.fechaIngreso) {
+      const fechaResult = parsearFecha(data.fechaIngreso)
+      if (!fechaResult || !fechaResult.valid) {
+        return errorResponse('Fecha de ingreso inválida', 400)
+      }
     }
 
     const updateData = construirEpisodioDataUpdate(data, user.id)
@@ -90,8 +93,7 @@ export async function PUT(request, { params }) {
       })
 
       await crearAuditoria(tx, {
-        usuarioId: user.id,
-        rol: user.roles,
+        user: { id: user.id, roles: user.roles },
         entidad: 'EpisodioMadre',
         entidadId: actualizado.id,
         accion: 'UPDATE',

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
+import DateTimePicker from '@/components/DateTimePicker'
 
 export default function RegistrarControlForm() {
   const router = useRouter()
@@ -22,7 +23,7 @@ export default function RegistrarControlForm() {
   const [formData, setFormData] = useState({
     rnId: '',
     episodioUrniId: '',
-    fechaHora: new Date().toISOString().slice(0, 16),
+    fechaHora: new Date(),
     tipo: 'SIGNOS_VITALES',
     datos: '',
     observaciones: '',
@@ -278,7 +279,7 @@ export default function RegistrarControlForm() {
       const submitData = {
         rnId: formData.rnId,
         episodioUrniId: formData.episodioUrniId || null,
-        fechaHora: formData.fechaHora ? new Date(formData.fechaHora).toISOString() : new Date().toISOString(),
+        fechaHora: formData.fechaHora ? formData.fechaHora.toISOString() : new Date().toISOString(),
         tipo: formData.tipo,
         datos: datosParsed,
         observaciones: formData.observaciones || null,
@@ -433,7 +434,7 @@ export default function RegistrarControlForm() {
                 setFormData({
                   rnId: '',
                   episodioUrniId: '',
-                  fechaHora: new Date().toISOString().slice(0, 16),
+                  fechaHora: getLocalDateTimeString(),
                   tipo: 'SIGNOS_VITALES',
                   datos: '',
                   observaciones: '',
@@ -481,14 +482,14 @@ export default function RegistrarControlForm() {
           <label htmlFor="fechaHora">
             Fecha y Hora <span className={styles.required}>*</span>
           </label>
-          <input
-            type="datetime-local"
+          <DateTimePicker
             id="fechaHora"
             name="fechaHora"
-            value={formData.fechaHora}
-            onChange={handleChange}
+            selected={formData.fechaHora}
+            onChange={(date) => setFormData((prev) => ({ ...prev, fechaHora: date }))}
+            maxDate={new Date()}
             required
-            className={styles.input}
+            placeholderText="Seleccione fecha y hora"
           />
         </div>
 

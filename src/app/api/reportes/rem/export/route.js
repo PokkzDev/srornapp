@@ -212,7 +212,7 @@ export async function GET(request) {
     // SECCIÓN D.1: INFORMACIÓN GENERAL DE RECIÉN NACIDOS VIVOS
     addSectionHeader('SECCIÓN D.1: INFORMACIÓN GENERAL DE RECIÉN NACIDOS VIVOS', 12)
     
-    const headersD1 = ['TIPO', 'TOTAL', '<500', '500-999', '1000-1499', '1500-1999', '2000-2499', '2500-2999', '3000-3999', '≥4000', 'Anomalía', 'REM A24']
+    const headersD1 = ['TIPO', 'TOTAL', '<500', '500-999', '1000-1499', '1500-1999', '2000-2499', '2500-2999', '3000-3999', '>=4000', 'Anomalia', 'REM A24']
     const colWidthsD1 = [35, 14, 12, 13, 15, 15, 15, 15, 15, 13, 14, 12]
     const rowsD1 = [
       [
@@ -235,7 +235,7 @@ export async function GET(request) {
     // SECCIÓN D.2: ATENCIÓN INMEDIATA DEL RECIÉN NACIDO
     addSectionHeader('SECCIÓN D.2: ATENCIÓN INMEDIATA DEL RECIÉN NACIDO', 12)
     
-    const headersD2 = ['TIPO', 'PROFILAXIS H.B', 'PROFILAXIS OCULAR', 'VAGINAL', 'INSTRUMENTAL', 'CESÁREA', 'EXTRAHOSP.', 'APGAR ≤3 1min', 'APGAR ≤6 5min', 'REAN. BÁSICA', 'REAN. AVANZADA', 'EHI II-III', 'REM A24']
+    const headersD2 = ['TIPO', 'PROFIL. H.B', 'PROFIL. OCULAR', 'VAGINAL', 'INSTRUM.', 'CESAREA', 'EXTRAH.', 'APGAR <=3 1min', 'APGAR <=6 5min', 'REAN. BASICA', 'REAN. AVANZ.', 'EHI II-III', 'REM A24']
     const colWidthsD2 = [30, 18, 18, 14, 16, 14, 16, 18, 18, 16, 16, 14, 12]
     const rowsD2 = [
       [
@@ -323,11 +323,11 @@ export async function GET(request) {
     addSectionHeader('CARACTERÍSTICAS DEL PARTO', 12)
     
     const carParto = reporteData.caracteristicasParto.total
-    const headersCarParto = ['Tipo Parto', 'Total', '<15 años', '15-19 años', '20-34 años', '≥35 años', 'Prematuros <24', 'Prematuros 24-28', 'Prematuros 29-32', 'Prematuros 33-36']
+    const headersCarParto = ['Tipo Parto', 'Total', '<15 anios', '15-19 anios', '20-34 anios', '>=35 anios', 'Premat. <24', 'Premat. 24-28', 'Premat. 29-32', 'Premat. 33-36']
     const colWidthsCarParto = [32, 13, 13, 13, 13, 13, 16, 16, 16, 16]
     
     const tiposParto = ['total', 'vaginal', 'instrumental', 'cesareaElectiva', 'cesareaUrgencia']
-    const nombresTipos = ['TOTAL PARTOS', 'VAGINAL', 'INSTRUMENTAL', 'CESÁREA ELECTIVA', 'CESÁREA URGENCIA']
+    const nombresTipos = ['TOTAL PARTOS', 'VAGINAL', 'INSTRUMENTAL', 'CESAREA ELECTIVA', 'CESAREA URGENCIA']
     
     tiposParto.forEach((tipo, idx) => {
       checkNewPage(25)
@@ -354,7 +354,7 @@ export async function GET(request) {
     // SECCIÓN G: ESTERILIZACIONES QUIRÚRGICAS
     addSectionHeader('SECCIÓN G: ESTERILIZACIONES QUIRÚRGICAS', 12)
     
-    const headersG = ['SEXO', 'TOTAL', '<20 años', '20-34 años', '≥35 años', 'Trans', 'REM A21']
+    const headersG = ['SEXO', 'TOTAL', '<20 anios', '20-34 anios', '>=35 anios', 'Trans', 'REM A21']
     const colWidthsG = [30, 15, 15, 15, 15, 12, 15]
     const rowsG = [
       [
@@ -381,7 +381,7 @@ export async function GET(request) {
     // COMPLICACIONES OBSTÉTRICAS (simplificada)
     addSectionHeader('COMPLICACIONES OBSTÉTRICAS', 12)
     
-    const headersComp = ['Tipo Complicación', 'Parto Espontáneo', 'Parto Inducido', 'Cesárea Urgencia', 'Cesárea Electiva']
+    const headersComp = ['Tipo Complicacion', 'Parto Espontaneo', 'Parto Inducido', 'Cesarea Urgencia', 'Cesarea Electiva']
     const colWidthsComp = [50, 25, 25, 25, 25]
     
     const tiposComp = Object.keys(reporteData.complicacionesObstetricas.porTipo)
@@ -390,7 +390,7 @@ export async function GET(request) {
     primerosTipos.forEach(tipo => {
       checkNewPage(20)
       const comp = reporteData.complicacionesObstetricas.porTipo[tipo]
-      const nombreTipo = tipo.replaceAll('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+      const nombreTipo = tipo.replaceAll('_', ' ').toUpperCase()
       const rowsComp = [
         [
           nombreTipo,

@@ -64,12 +64,15 @@ export default async function MadreDetailPage({ params }) {
 
   const canUpdate = permissions.includes('madre:update') || permissions.includes('madre:update_limited')
 
-  // Función para formatear fecha para input date (YYYY-MM-DD)
-  function formatearFechaParaInput(fecha) {
+  // Función para formatear fecha para mostrar (DD/MM/YYYY)
+  function formatearFechaParaMostrar(fecha) {
     if (!fecha) return ''
     const date = new Date(fecha)
     if (Number.isNaN(date.getTime())) return ''
-    return date.toISOString().split('T')[0]
+    const dia = String(date.getDate()).padStart(2, '0')
+    const mes = String(date.getMonth() + 1).padStart(2, '0')
+    const anio = date.getFullYear()
+    return `${dia}/${mes}/${anio}`
   }
 
   return (
@@ -176,10 +179,10 @@ export default async function MadreDetailPage({ params }) {
               <div className={formStyles.formGroup}>
                 <label htmlFor="fechaNacimiento">Fecha de Nacimiento</label>
                 <input
-                  type="date"
+                  type="text"
                   id="fechaNacimiento"
                   name="fechaNacimiento"
-                  value={formatearFechaParaInput(madre.fechaNacimiento)}
+                  value={formatearFechaParaMostrar(madre.fechaNacimiento)}
                   disabled
                 />
               </div>

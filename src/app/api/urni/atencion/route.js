@@ -90,9 +90,13 @@ export async function POST(request) {
       }
     }
 
-    const fechaHora = data.fechaHora ? parsearFecha(data.fechaHora) : new Date()
-    if (data.fechaHora && !fechaHora) {
-      return errorResponse('Fecha/hora inválida', 400)
+    let fechaHora = new Date()
+    if (data.fechaHora) {
+      const fechaResult = parsearFecha(data.fechaHora)
+      if (!fechaResult || !fechaResult.valid) {
+        return errorResponse('Fecha/hora inválida', 400)
+      }
+      fechaHora = fechaResult.date
     }
 
     // Validar que el usuario existe en la base de datos
@@ -119,8 +123,7 @@ export async function POST(request) {
       })
 
       await crearAuditoria(tx, {
-        usuarioId: medicoId,
-        rol: user.roles,
+        user: { id: medicoId, roles: user.roles },
         entidad: 'AtencionURNI',
         entidadId: nuevaAtencion.id,
         accion: 'CREATE',

@@ -166,6 +166,10 @@ async function main() {
       'informe_alta:generate',
       'urni:episodio:create',
       'urni:read',
+      // Permisos de ingreso/alta de madre
+      'ingreso_alta:view',
+      'ingreso_alta:create',
+      'ingreso_alta:update',
     ],
     medico: [
       'registro_clinico:edit',

@@ -38,14 +38,14 @@ export async function POST(request, { params }) {
 
     // Si se proporciona fechaHoraAlta específica, validarla
     if (data.fechaHoraAlta) {
-      const fechaHoraAlta = parsearFecha(data.fechaHoraAlta)
-      if (!fechaHoraAlta) {
+      const fechaResult = parsearFecha(data.fechaHoraAlta)
+      if (!fechaResult || !fechaResult.valid) {
         return errorResponse('Fecha/hora de alta inválida', 400)
       }
-      if (fechaHoraAlta < episodio.fechaHoraIngreso) {
+      if (fechaResult.date < episodio.fechaHoraIngreso) {
         return errorResponse('La fecha/hora de alta no puede ser anterior a la fecha/hora de ingreso', 400)
       }
-      updateData.fechaHoraAlta = fechaHoraAlta
+      updateData.fechaHoraAlta = fechaResult.date
     }
 
     const auditData = getAuditData(request)
@@ -63,8 +63,7 @@ export async function POST(request, { params }) {
       })
 
       await crearAuditoria(tx, {
-        usuarioId: user.id,
-        rol: user.roles,
+        user: { id: user.id, roles: user.roles },
         entidad: 'EpisodioURNI',
         entidadId: actualizado.id,
         accion: 'UPDATE',

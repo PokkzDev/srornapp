@@ -20,16 +20,19 @@ export function agruparPorFecha(date, agrupacion) {
 
 /**
  * Construye el filtro de fecha para queries
+ * Las fechas se reciben como strings YYYY-MM-DD y se convierten considerando zona horaria Chile (UTC-3)
  */
 export function construirFiltroFecha(fechaInicio, fechaFin) {
   const fechaFilter = {}
   if (fechaInicio) {
-    fechaFilter.gte = new Date(fechaInicio)
+    // Fecha inicio 00:00 hora Chile = +3 horas en UTC
+    const [year, month, day] = fechaInicio.split('-').map(Number)
+    fechaFilter.gte = new Date(Date.UTC(year, month - 1, day, 3, 0, 0, 0))
   }
   if (fechaFin) {
-    const fechaFinDate = new Date(fechaFin)
-    fechaFinDate.setHours(23, 59, 59, 999)
-    fechaFilter.lte = fechaFinDate
+    // Fecha fin 23:59 hora Chile = +3 horas en UTC = 02:59 del día siguiente
+    const [year, month, day] = fechaFin.split('-').map(Number)
+    fechaFilter.lte = new Date(Date.UTC(year, month - 1, day + 1, 2, 59, 59, 999))
   }
   return Object.keys(fechaFilter).length > 0 ? fechaFilter : null
 }

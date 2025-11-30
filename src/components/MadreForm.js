@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './MadreForm.module.css'
+import DateTimePicker from './DateTimePicker'
+import { getLocalDateString } from '@/lib/date-utils'
 
 // Función para validar RUT chileno (formato: sin puntos, con guion)
 function validarRUT(rut) {
@@ -80,35 +82,15 @@ function formatearRUT(valor) {
   return rut.toUpperCase()
 }
 
-// Función para formatear fecha para input date (YYYY-MM-DD)
-function formatearFechaParaInput(fecha) {
-  if (!fecha) return ''
-  const date = new Date(fecha)
-  if (Number.isNaN(date.getTime())) return ''
-  return date.toISOString().split('T')[0]
-}
-
-// Función para obtener la fecha actual en formato YYYY-MM-DD en zona horaria America/Santiago
-function obtenerFechaActualSantiago() {
-  const ahora = new Date()
-  // Obtener la fecha en zona horaria de Santiago usando Intl.DateTimeFormat
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Santiago',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  })
-  return formatter.format(ahora)
-}
-
 // Función para validar que la fecha de nacimiento no sea superior a la fecha actual
 function validarFechaNacimiento(fechaNacimiento) {
   if (!fechaNacimiento) return { valida: true, error: '' }
   
-  const fechaActual = obtenerFechaActualSantiago()
+  const fechaNac = fechaNacimiento instanceof Date ? fechaNacimiento : new Date(fechaNacimiento)
+  const hoy = new Date()
   
-  // Comparar directamente las cadenas YYYY-MM-DD (comparación lexicográfica funciona correctamente)
-  if (fechaNacimiento > fechaActual) {
+  // Comparar fechas
+  if (fechaNac > hoy) {
     return { valida: false, error: 'La fecha de nacimiento no puede ser superior a la fecha actual' }
   }
   
@@ -184,15 +166,17 @@ function calcularEdad(fechaNacimiento) {
   if (!fechaNacimiento) return ''
   
   try {
-    // Obtener fecha actual en zona horaria de Santiago
-    const fechaActual = obtenerFechaActualSantiago()
-    const [añoActual, mesActual, diaActual] = fechaActual.split('-').map(Number)
-    const [añoNac, mesNac, diaNac] = fechaNacimiento.split('-').map(Number)
+    // Si es un Date object
+    const fechaNac = fechaNacimiento instanceof Date ? fechaNacimiento : new Date(fechaNacimiento)
+    if (Number.isNaN(fechaNac.getTime())) return ''
     
-    let edad = añoActual - añoNac
+    const hoy = new Date()
+    let edad = hoy.getFullYear() - fechaNac.getFullYear()
     
     // Ajustar si aún no ha cumplido años este año
-    if (mesActual < mesNac || (mesActual === mesNac && diaActual < diaNac)) {
+    const mesActual = hoy.getMonth()
+    const mesNac = fechaNac.getMonth()
+    if (mesActual < mesNac || (mesActual === mesNac && hoy.getDate() < fechaNac.getDate())) {
       edad--
     }
     
@@ -226,7 +210,7 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
     apellidos: '',
     edad: '',
     edadAnos: '',
-    fechaNacimiento: '',
+    fechaNacimiento: null,
     direccion: '',
     telefono: '',
     fichaClinica: '',
@@ -248,7 +232,7 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
         nombres: initialData.nombres || '',
         apellidos: initialData.apellidos || '',
         edad: initialData.edad?.toString() || '',
-        fechaNacimiento: formatearFechaParaInput(initialData.fechaNacimiento),
+        fechaNacimiento: initialData.fechaNacimiento ? new Date(initialData.fechaNacimiento) : null,
         direccion: initialData.direccion || '',
         telefono: initialData.telefono || '',
         fichaClinica: initialData.fichaClinica || '',
@@ -452,6 +436,10 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
     if (datosParaEnviar.fechaNacimiento) {
       const edadCalculada = calcularEdad(datosParaEnviar.fechaNacimiento)
       datosParaEnviar.edad = edadCalculada || ''
+      // Convertir Date a ISO string para la API
+      if (datosParaEnviar.fechaNacimiento instanceof Date) {
+        datosParaEnviar.fechaNacimiento = datosParaEnviar.fechaNacimiento.toISOString()
+      }
     }
     
     // Sincronizar edadAnos con edad (para REM) - siempre desde edad, ya sea calculada o manual
@@ -618,15 +606,31 @@ export default function MadreForm({ initialData = null, isEdit = false, madreId 
               <label htmlFor="fechaNacimiento">
                 Fecha de Nacimiento <span className={styles.required}>*</span>
               </label>
-              <input
-                type="date"
+              <DateTimePicker
                 id="fechaNacimiento"
                 name="fechaNacimiento"
-                value={formData.fechaNacimiento}
-                onChange={handleChange}
-                max={obtenerFechaActualSantiago()}
+                selected={formData.fechaNacimiento}
+                onChange={(date) => {
+                  setFormData(prev => ({ ...prev, fechaNacimiento: date }))
+                  // Validar fecha
+                  const validacion = validarFechaNacimiento(date)
+                  if (!validacion.valida) {
+                    setFechaNacimientoError(validacion.error)
+                  } else {
+                    setFechaNacimientoError('')
+                  }
+                  // Calcular edad
+                  if (date) {
+                    const edadCalculada = calcularEdad(date)
+                    if (edadCalculada) {
+                      setFormData(prev => ({ ...prev, fechaNacimiento: date, edad: edadCalculada }))
+                    }
+                  }
+                }}
+                maxDate={new Date()}
+                dateOnly={true}
                 required
-                className={fechaNacimientoError ? styles.inputError : ''}
+                placeholderText="Seleccione fecha de nacimiento"
               />
               {fechaNacimientoError && (
                 <span className={styles.errorText}>{fechaNacimientoError}</span>

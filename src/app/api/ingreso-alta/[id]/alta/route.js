@@ -59,8 +59,7 @@ export async function POST(request, { params }) {
       })
 
       await crearAuditoria(tx, {
-        usuarioId: user.id,
-        rol: user.roles,
+        user: { id: user.id, roles: user.roles },
         entidad: 'EpisodioMadre',
         entidadId: actualizado.id,
         accion: 'UPDATE',

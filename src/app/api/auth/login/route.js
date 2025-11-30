@@ -3,10 +3,12 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
 import { validarRUT, esEmail, formatearRUT } from '@/lib/rut'
+import { getAuditData, crearAuditoria } from '@/lib/api-helpers'
 
 export async function POST(request) {
   try {
     const { email, rut, password } = await request.json()
+    const auditData = getAuditData(request)
 
     // Aceptar email o rut (puede venir como 'email' o 'rut' en el body)
     const identifier = email || rut
@@ -67,6 +69,19 @@ export async function POST(request) {
 
     // Si no se encontró usuario, retornar error genérico (por seguridad)
     if (!user) {
+      // Registrar intento fallido (usuario no existe)
+      await crearAuditoria(prisma, {
+        usuarioId: null,
+        rol: null,
+        entidad: 'Session',
+        accion: 'LOGIN',
+        detalleAfter: { 
+          success: false, 
+          reason: 'Usuario no encontrado',
+          identifier: identifierTrimmed.includes('@') ? identifierTrimmed : '[RUT oculto]'
+        },
+        ...auditData,
+      })
       return Response.json(
         { error: 'Credenciales inválidas' },
         { status: 401 }
@@ -74,6 +89,15 @@ export async function POST(request) {
     }
 
     if (!user.activo) {
+      // Registrar intento de login con cuenta desactivada
+      await crearAuditoria(prisma, {
+        usuarioId: user.id,
+        rol: user.roles.map(ur => ur.role.name).join(', '),
+        entidad: 'Session',
+        accion: 'LOGIN',
+        detalleAfter: { success: false, reason: 'Cuenta desactivada' },
+        ...auditData,
+      })
       return Response.json(
         { error: 'Cuenta desactivada. Contacte al administrador.' },
         { status: 403 }
@@ -84,6 +108,15 @@ export async function POST(request) {
     const isValidPassword = await bcrypt.compare(password, user.passwordHash)
 
     if (!isValidPassword) {
+      // Registrar intento fallido (contraseña incorrecta)
+      await crearAuditoria(prisma, {
+        usuarioId: user.id,
+        rol: user.roles.map(ur => ur.role.name).join(', '),
+        entidad: 'Session',
+        accion: 'LOGIN',
+        detalleAfter: { success: false, reason: 'Contraseña incorrecta' },
+        ...auditData,
+      })
       return Response.json(
         { error: 'Credenciales inválidas' },
         { status: 401 }
@@ -115,6 +148,16 @@ export async function POST(request) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
+    })
+
+    // Registrar login exitoso
+    await crearAuditoria(prisma, {
+      usuarioId: user.id,
+      rol: user.roles.map(ur => ur.role.name).join(', '),
+      entidad: 'Session',
+      accion: 'LOGIN',
+      detalleAfter: { success: true },
+      ...auditData,
     })
 
     return Response.json({

@@ -82,10 +82,11 @@ export async function POST(request) {
       return errorResponse('El recién nacido ya tiene un episodio URNI activo', 400)
     }
 
-    const fechaHoraIngreso = parsearFecha(data.fechaHoraIngreso)
-    if (!fechaHoraIngreso) {
+    const fechaResult = parsearFecha(data.fechaHoraIngreso)
+    if (!fechaResult.valid || !fechaResult.date) {
       return errorResponse('Fecha/hora de ingreso inválida', 400)
     }
+    const fechaHoraIngreso = fechaResult.date
 
     if (data.responsableClinicoId) {
       const responsable = await prisma.user.findUnique({ where: { id: data.responsableClinicoId } })
@@ -112,8 +113,7 @@ export async function POST(request) {
       })
 
       await crearAuditoria(tx, {
-        usuarioId: dbUser.id,
-        rol: user.roles,
+        user: { id: dbUser.id, roles: user.roles },
         entidad: 'EpisodioURNI',
         entidadId: nuevoEpisodio.id,
         accion: 'CREATE',

@@ -17,6 +17,8 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import styles from './page.module.css'
+import DateTimePicker from '../../../components/DateTimePicker'
+import { getLocalDateString } from '@/lib/date-utils'
 
 const COLORS = ['#0066A4', '#28A745', '#FFC107', '#DC3545', '#17A2B8', '#6F42C1', '#E83E8C']
 
@@ -36,8 +38,8 @@ export default function IndicadoresClient() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [data, setData] = useState(null)
-  const [fechaInicio, setFechaInicio] = useState('')
-  const [fechaFin, setFechaFin] = useState('')
+  const [fechaInicio, setFechaInicio] = useState(null)
+  const [fechaFin, setFechaFin] = useState(null)
   const [agrupacion, setAgrupacion] = useState('mes')
   const [activeSection, setActiveSection] = useState('resumen')
 
@@ -50,8 +52,8 @@ export default function IndicadoresClient() {
     setError('')
     try {
       const params = new URLSearchParams()
-      if (fechaInicio) params.append('fechaInicio', fechaInicio)
-      if (fechaFin) params.append('fechaFin', fechaFin)
+      if (fechaInicio) params.append('fechaInicio', getLocalDateString(fechaInicio))
+      if (fechaFin) params.append('fechaFin', getLocalDateString(fechaFin))
       params.append('agrupacion', agrupacion)
 
       const response = await fetch(`/api/indicadores?${params.toString()}`)
@@ -74,24 +76,24 @@ export default function IndicadoresClient() {
     const end = new Date()
     const start = new Date()
     start.setDate(start.getDate() - days)
-    setFechaInicio(start.toISOString().split('T')[0])
-    setFechaFin(end.toISOString().split('T')[0])
+    setFechaInicio(start)
+    setFechaFin(end)
   }
 
   const setCurrentMonth = () => {
     const now = new Date()
     const start = new Date(now.getFullYear(), now.getMonth(), 1)
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-    setFechaInicio(start.toISOString().split('T')[0])
-    setFechaFin(end.toISOString().split('T')[0])
+    setFechaInicio(start)
+    setFechaFin(end)
   }
 
   const setCurrentYear = () => {
     const now = new Date()
     const start = new Date(now.getFullYear(), 0, 1)
     const end = new Date(now.getFullYear(), 11, 31)
-    setFechaInicio(start.toISOString().split('T')[0])
-    setFechaFin(end.toISOString().split('T')[0])
+    setFechaInicio(start)
+    setFechaFin(end)
   }
 
   const clearFilters = () => {
@@ -672,20 +674,20 @@ export default function IndicadoresClient() {
       <div className={styles.filters}>
         <div className={styles.filterGroup}>
           <label>Fecha Inicio</label>
-          <input
-            type="date"
+          <DateTimePicker
+            selected={fechaInicio}
+            onChange={(date) => setFechaInicio(date)}
+            dateOnly
             className={styles.filterInput}
-            value={fechaInicio}
-            onChange={(e) => setFechaInicio(e.target.value)}
           />
         </div>
         <div className={styles.filterGroup}>
           <label>Fecha Fin</label>
-          <input
-            type="date"
+          <DateTimePicker
+            selected={fechaFin}
+            onChange={(date) => setFechaFin(date)}
+            dateOnly
             className={styles.filterInput}
-            value={fechaFin}
-            onChange={(e) => setFechaFin(e.target.value)}
           />
         </div>
         <div className={styles.filterGroup}>

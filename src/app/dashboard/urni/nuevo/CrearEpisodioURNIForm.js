@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
+import DateTimePicker from '@/components/DateTimePicker'
 
 export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
   const router = useRouter()
@@ -18,7 +19,7 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
 
   const [formData, setFormData] = useState({
     rnId: rnIdPreseleccionado || '',
-    fechaHoraIngreso: new Date().toISOString().slice(0, 16),
+    fechaHoraIngreso: new Date(),
     motivoIngreso: '',
     servicioUnidad: '',
     responsableClinicoId: '',
@@ -127,12 +128,8 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
 
     setLoading(true)
     try {
-      // Asegurar que la fecha esté en formato ISO
-      let fechaHoraIngreso = formData.fechaHoraIngreso
-      if (fechaHoraIngreso && !fechaHoraIngreso.includes('T')) {
-        // Si viene sin T, agregarlo
-        fechaHoraIngreso = fechaHoraIngreso.replace(' ', 'T')
-      }
+      // Convertir fecha a ISO para enviar al servidor
+      const fechaHoraIngreso = formData.fechaHoraIngreso ? formData.fechaHoraIngreso.toISOString() : null
       
       const response = await fetch('/api/urni/episodio', {
         method: 'POST',
@@ -287,14 +284,14 @@ export default function CrearEpisodioURNIForm({ rnIdPreseleccionado }) {
           <label htmlFor="fechaHoraIngreso">
             Fecha y Hora de Ingreso <span className={styles.required}>*</span>
           </label>
-          <input
-            type="datetime-local"
+          <DateTimePicker
             id="fechaHoraIngreso"
             name="fechaHoraIngreso"
-            value={formData.fechaHoraIngreso}
-            onChange={handleChange}
+            selected={formData.fechaHoraIngreso}
+            onChange={(date) => setFormData((prev) => ({ ...prev, fechaHoraIngreso: date }))}
+            maxDate={new Date()}
             required
-            className={styles.input}
+            placeholderText="Seleccione fecha y hora de ingreso"
           />
         </div>
 

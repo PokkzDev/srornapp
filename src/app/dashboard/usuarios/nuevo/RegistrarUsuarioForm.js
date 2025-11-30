@@ -163,13 +163,13 @@ export default function RegistrarUsuarioForm() {
     setLoading(true)
 
     // Validaciones
-    if (!formData.nombre || !formData.email || !formData.password) {
-      setError('Nombre, email y contraseña son requeridos')
+    if (!formData.nombre || !formData.email || !formData.password || !formData.rut) {
+      setError('RUT, nombre, email y contraseña son requeridos')
       setLoading(false)
       return
     }
 
-    if (formData.rut && !validarRUT(formData.rut)) {
+    if (!validarRUT(formData.rut)) {
       setError('Por favor ingrese un RUT válido')
       setRutError('RUT inválido')
       setLoading(false)
@@ -180,6 +180,12 @@ export default function RegistrarUsuarioForm() {
     if (!validacionPassword.valida) {
       setError('La contraseña no cumple con los requisitos de complejidad')
       setPasswordError('La contraseña no cumple con los requisitos')
+      setLoading(false)
+      return
+    }
+
+    if (formData.roles.length === 0) {
+      setError('Debe seleccionar al menos un rol')
       setLoading(false)
       return
     }
@@ -228,7 +234,7 @@ export default function RegistrarUsuarioForm() {
       <div className={styles.formGrid}>
         <div className={styles.formGroup}>
           <label htmlFor="rut">
-            RUT <span className={styles.optional}>(opcional)</span>
+            RUT <span className={styles.required}>*</span>
           </label>
           <input
             id="rut"
@@ -239,6 +245,7 @@ export default function RegistrarUsuarioForm() {
             placeholder="12345678-9"
             className={rutError ? styles.inputError : ''}
             disabled={loading}
+            required
           />
           {rutError && <span className={styles.errorText}>{rutError}</span>}
         </div>
@@ -316,7 +323,7 @@ export default function RegistrarUsuarioForm() {
 
         <div className={styles.formGroup}>
           <label htmlFor="roles">
-            Roles <span className={styles.optional}>(opcional)</span>
+            Roles <span className={styles.required}>*</span>
           </label>
           <select
             id="roles"
@@ -327,6 +334,7 @@ export default function RegistrarUsuarioForm() {
             disabled={loading}
             className={styles.selectMultiple}
             size="5"
+            required
           >
             {roles.map((role) => (
               <option key={role.id} value={role.name}>

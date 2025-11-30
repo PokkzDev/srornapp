@@ -14,8 +14,12 @@ export async function GET(request) {
       return errorResponse('Mes y año son requeridos y deben ser válidos', 400)
     }
 
-    const fechaInicio = new Date(anio, mes - 1, 1, 0, 0, 0, 0)
-    const fechaFin = new Date(anio, mes, 0, 23, 59, 59, 999)
+    // Construir fechas considerando zona horaria de Chile (UTC-3 en verano, UTC-4 en invierno)
+    // Chile está en UTC-3 la mayor parte del año
+    // 1 de noviembre 00:00 Chile = 1 nov 03:00 UTC
+    // 30 de noviembre 23:59 Chile = 1 dic 02:59 UTC
+    const fechaInicio = new Date(Date.UTC(anio, mes - 1, 1, 3, 0, 0, 0)) // 00:00 Chile
+    const fechaFin = new Date(Date.UTC(anio, mes, 1, 2, 59, 59, 999))    // 23:59 Chile del último día
 
     // ============================================
     // QUERY: Obtener todos los partos del período con TODOS los campos necesarios
@@ -309,21 +313,6 @@ export async function GET(request) {
     // ============================================
     // CARACTERÍSTICAS DEL PARTO (tabla completa)
     // ============================================
-    
-    // Función auxiliar para obtener peso RN de un parto
-    const obtenerPesoRN = (parto) => {
-      const rn = parto.recienNacidos.find(r => r.esNacidoVivo === true)
-      if (!rn) return null
-      if (rn.categoriaPeso) {
-        const categoriasMenores = ['MENOR_500', 'RANGO_500_999', 'RANGO_1000_1499', 'RANGO_1500_1999', 'RANGO_2000_2499']
-        if (categoriasMenores.includes(rn.categoriaPeso)) return 'menor2499'
-        return 'mayor2500'
-      }
-      if (rn.pesoNacimientoGramos !== null && rn.pesoNacimientoGramos !== undefined) {
-        return rn.pesoNacimientoGramos <= 2499 ? 'menor2499' : 'mayor2500'
-      }
-      return null
-    }
 
     // Función auxiliar para obtener semanas gestación
     const obtenerSemanasGestacion = (parto) => {
@@ -350,7 +339,7 @@ export async function GET(request) {
     // Inicializar estructura de características del parto
     const caracteristicasParto = {
       total: {
-        total: totalPartos,
+        total: 0,
         edadMadre: { menor15: 0, entre15y19: 0, entre20y34: 0, mayor35: 0 },
         prematuros: { menor24: 0, entre24y28: 0, entre29y32: 0, entre33y36: 0 },
         oxitocinaProfilactica: 0,
@@ -439,30 +428,43 @@ export async function GET(request) {
     partos.forEach(parto => {
       const semanasGest = obtenerSemanasGestacion(parto)
       const edadMadre = obtenerEdadMadre(parto)
-      const pesoRN = obtenerPesoRN(parto)
-      const tieneRNVivo = parto.recienNacidos.some(rn => rn.esNacidoVivo === true)
-      const rnVivo = parto.recienNacidos.find(rn => rn.esNacidoVivo === true)
+      const rnVivos = parto.recienNacidos.filter(rn => rn.esNacidoVivo === true)
+      const tieneRNVivo = rnVivos.length > 0
 
-      // Función para actualizar una fila
-      const actualizarFila = (fila) => {
+      // Función auxiliar para obtener categoría de peso de un RN específico
+      const obtenerPesoRNIndividual = (rn) => {
+        if (!rn) return null
+        if (rn.categoriaPeso) {
+          const categoriasMenores = ['MENOR_500', 'RANGO_500_999', 'RANGO_1000_1499', 'RANGO_1500_1999', 'RANGO_2000_2499']
+          if (categoriasMenores.includes(rn.categoriaPeso)) return 'menor2499'
+          return 'mayor2500'
+        }
+        if (rn.pesoNacimientoGramos !== null && rn.pesoNacimientoGramos !== undefined) {
+          return rn.pesoNacimientoGramos <= 2499 ? 'menor2499' : 'mayor2500'
+        }
+        return null
+      }
+
+      // Función para actualizar una fila - contadores a nivel de parto
+      const actualizarFilaParto = (fila) => {
         fila.total++
         
-        // Edad madre
+        // Edad madre (1 por parto)
         if (edadMadre === 'menor15') fila.edadMadre.menor15++
         else if (edadMadre === '15a19') fila.edadMadre.entre15y19++
         else if (edadMadre === '20a34') fila.edadMadre.entre20y34++
         else if (edadMadre === 'mayor35') fila.edadMadre.mayor35++
 
-        // Prematuros
+        // Prematuros (1 por parto)
         if (semanasGest === 'menor24') fila.prematuros.menor24++
         else if (semanasGest === '24a28') fila.prematuros.entre24y28++
         else if (semanasGest === '29a32') fila.prematuros.entre29y32++
         else if (semanasGest === '33a36') fila.prematuros.entre33y36++
 
-        // Oxitocina profiláctica
+        // Oxitocina profiláctica (1 por parto)
         if (parto.oxitocinaProfilactica === true) fila.oxitocinaProfilactica++
 
-        // Anestesia
+        // Anestesia (1 por parto)
         if (parto.anestesiaNeuroaxial === true) fila.anestesia.neuroaxial++
         if (parto.oxidoNitroso === true) fila.anestesia.oxidoNitroso++
         if (parto.analgesiaEndovenosa === true) fila.anestesia.endovenosa++
@@ -470,73 +472,76 @@ export async function GET(request) {
         if (parto.anestesiaLocal === true) fila.anestesia.local++
         if (parto.medidasNoFarmacologicasAnestesia === true) fila.anestesia.noFarmacologica++
 
-        // Ligadura tardía
+        // Ligadura tardía (1 por parto)
         if (parto.ligaduraTardiaCordon === true) fila.ligaduraTardiaCordon++
 
-        // Contacto piel a piel
-        if (tieneRNVivo && rnVivo) {
-          if (parto.contactoPielPielMadre30min === true) {
-            if (pesoRN === 'menor2499') fila.contactoPielPiel.conMadre.menor2499++
-            else if (pesoRN === 'mayor2500') fila.contactoPielPiel.conMadre.mayor2500++
-          }
-          if (parto.contactoPielPielAcomp30min === true) {
-            if (pesoRN === 'menor2499') fila.contactoPielPiel.conPadre.menor2499++
-            else if (pesoRN === 'mayor2500') fila.contactoPielPiel.conPadre.mayor2500++
-          }
-          // También verificar en RN
-          if (rnVivo.contactoPielPielInmediato === true) {
-            if (pesoRN === 'menor2499') fila.contactoPielPiel.conMadre.menor2499++
-            else if (pesoRN === 'mayor2500') fila.contactoPielPiel.conMadre.mayor2500++
-          }
-        }
-
-        // Lactancia 60min
-        if (tieneRNVivo && rnVivo) {
-          const tieneLactancia = parto.lactancia60minAlMenosUnRn === true || rnVivo.lactancia60Min === true
-          if (tieneLactancia) {
-            if (pesoRN === 'menor2499') fila.lactancia60min.menor2499++
-            else if (pesoRN === 'mayor2500') fila.lactancia60min.mayor2500++
-          }
-        }
-
-        // Alojamiento conjunto
-        if (tieneRNVivo && rnVivo && rnVivo.alojamientoConjuntoInmediato === true) {
-          fila.alojamientoConjunto++
-        }
-
-        // Pertinencia cultural
+        // Pertinencia cultural (1 por parto)
         if (parto.atencionPertinenciaCultural === true) fila.pertinenciaCultural++
 
-        // Condiciones especiales
-        if (parto.madre.pertenenciaPuebloOriginario === true) {
-          if (tieneRNVivo && rnVivo) {
-            if (rnVivo.sexo === 'M') fila.condicionesEspeciales.pueblosOriginarios.masculino++
-            else if (rnVivo.sexo === 'F') fila.condicionesEspeciales.pueblosOriginarios.femenino++
-          }
-        }
+        // Condiciones especiales de la madre (1 por parto)
         if (parto.madre.condicionMigrante === true) fila.condicionesEspeciales.migrantes++
         if (parto.madre.condicionDiscapacidad === true) fila.condicionesEspeciales.discapacidad++
         if (parto.madre.condicionPrivadaLibertad === true) fila.condicionesEspeciales.privadaLibertad++
         if (parto.madre.identidadTrans === true) fila.condicionesEspeciales.trans++
+
+        // ===== Contadores por cada RN vivo =====
+        rnVivos.forEach(rn => {
+          const pesoRN = obtenerPesoRNIndividual(rn)
+
+          // Contacto piel a piel - desde el parto (se aplica a todos los RN)
+          if (parto.contactoPielPielMadre30min === true && pesoRN) {
+            if (pesoRN === 'menor2499') fila.contactoPielPiel.conMadre.menor2499++
+            else if (pesoRN === 'mayor2500') fila.contactoPielPiel.conMadre.mayor2500++
+          }
+          if (parto.contactoPielPielAcomp30min === true && pesoRN) {
+            if (pesoRN === 'menor2499') fila.contactoPielPiel.conPadre.menor2499++
+            else if (pesoRN === 'mayor2500') fila.contactoPielPiel.conPadre.mayor2500++
+          }
+          // Contacto piel a piel - desde el RN individual
+          if (rn.contactoPielPielInmediato === true && pesoRN) {
+            // Solo contar si no se contó ya desde el parto para evitar duplicados
+            if (parto.contactoPielPielMadre30min !== true) {
+              if (pesoRN === 'menor2499') fila.contactoPielPiel.conMadre.menor2499++
+              else if (pesoRN === 'mayor2500') fila.contactoPielPiel.conMadre.mayor2500++
+            }
+          }
+
+          // Lactancia 60min (por cada RN)
+          if (rn.lactancia60Min === true && pesoRN) {
+            if (pesoRN === 'menor2499') fila.lactancia60min.menor2499++
+            else if (pesoRN === 'mayor2500') fila.lactancia60min.mayor2500++
+          }
+
+          // Alojamiento conjunto (por cada RN)
+          if (rn.alojamientoConjuntoInmediato === true) {
+            fila.alojamientoConjunto++
+          }
+
+          // Pueblos originarios por sexo del RN
+          if (parto.madre.pertenenciaPuebloOriginario === true) {
+            if (rn.sexo === 'M') fila.condicionesEspeciales.pueblosOriginarios.masculino++
+            else if (rn.sexo === 'F') fila.condicionesEspeciales.pueblosOriginarios.femenino++
+          }
+        })
       }
 
       // Actualizar total
-      actualizarFila(caracteristicasParto.total)
+      actualizarFilaParto(caracteristicasParto.total)
 
       // Actualizar según tipo de parto
-      if (parto.tipo === 'VAGINAL') actualizarFila(caracteristicasParto.vaginal)
-      else if (parto.tipo === 'INSTRUMENTAL') actualizarFila(caracteristicasParto.instrumental)
-      else if (parto.tipo === 'CESAREA_ELECTIVA') actualizarFila(caracteristicasParto.cesareaElectiva)
-      else if (parto.tipo === 'CESAREA_URGENCIA') actualizarFila(caracteristicasParto.cesareaUrgencia)
-      else if (parto.tipo === 'PREHOSPITALARIO') actualizarFila(caracteristicasParto.prehospitalario)
-      else if (parto.tipo === 'DOMICILIO_PROFESIONAL') actualizarFila(caracteristicasParto.domicilioConProfesional)
-      else if (parto.tipo === 'DOMICILIO_SIN_PROFESIONAL') actualizarFila(caracteristicasParto.domicilioSinProfesional)
-      else if (parto.tipo === 'FUERA_RED') actualizarFila(caracteristicasParto.fueraRed)
+      if (parto.tipo === 'VAGINAL') actualizarFilaParto(caracteristicasParto.vaginal)
+      else if (parto.tipo === 'INSTRUMENTAL') actualizarFilaParto(caracteristicasParto.instrumental)
+      else if (parto.tipo === 'CESAREA_ELECTIVA') actualizarFilaParto(caracteristicasParto.cesareaElectiva)
+      else if (parto.tipo === 'CESAREA_URGENCIA') actualizarFilaParto(caracteristicasParto.cesareaUrgencia)
+      else if (parto.tipo === 'PREHOSPITALARIO') actualizarFilaParto(caracteristicasParto.prehospitalario)
+      else if (parto.tipo === 'DOMICILIO_PROFESIONAL') actualizarFilaParto(caracteristicasParto.domicilioConProfesional)
+      else if (parto.tipo === 'DOMICILIO_SIN_PROFESIONAL') actualizarFilaParto(caracteristicasParto.domicilioSinProfesional)
+      else if (parto.tipo === 'FUERA_RED') actualizarFilaParto(caracteristicasParto.fueraRed)
 
       // Campos booleanos específicos
-      if (parto.planDeParto === true) actualizarFila(caracteristicasParto.planDeParto)
-      if (parto.entregaPlacentaSolicitud === true) actualizarFila(caracteristicasParto.entregaPlacenta)
-      if (parto.embarazoNoControlado === true) actualizarFila(caracteristicasParto.embarazoNoControlado)
+      if (parto.planDeParto === true) actualizarFilaParto(caracteristicasParto.planDeParto)
+      if (parto.entregaPlacentaSolicitud === true) actualizarFilaParto(caracteristicasParto.entregaPlacenta)
+      if (parto.embarazoNoControlado === true) actualizarFilaParto(caracteristicasParto.embarazoNoControlado)
     })
 
     // ============================================

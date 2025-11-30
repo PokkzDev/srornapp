@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
+import DateTimePicker from '@/components/DateTimePicker'
 
 export default function RegistrarIngresoForm() {
   const router = useRouter()
@@ -16,7 +17,7 @@ export default function RegistrarIngresoForm() {
 
   const [formData, setFormData] = useState({
     madreId: '',
-    fechaIngreso: new Date().toISOString().slice(0, 16),
+    fechaIngreso: new Date(),
     motivoIngreso: '',
     hospitalAnterior: '',
     tratadaEnOtroHospital: false,
@@ -132,7 +133,7 @@ export default function RegistrarIngresoForm() {
         },
         body: JSON.stringify({
           madreId: formData.madreId,
-          fechaIngreso: formData.fechaIngreso,
+          fechaIngreso: formData.fechaIngreso ? formData.fechaIngreso.toISOString() : null,
           motivoIngreso: formData.motivoIngreso || null,
           hospitalAnterior: formData.tratadaEnOtroHospital ? formData.hospitalAnterior || null : null,
         }),
@@ -341,12 +342,13 @@ export default function RegistrarIngresoForm() {
             <div className={styles.formGrid}>
               <div className={styles.formGroup}>
                 <label htmlFor="fechaIngreso">Fecha y Hora de Ingreso *</label>
-                <input
+                <DateTimePicker
                   id="fechaIngreso"
-                  type="datetime-local"
-                  value={formData.fechaIngreso}
-                  onChange={(e) => setFormData({ ...formData, fechaIngreso: e.target.value })}
+                  selected={formData.fechaIngreso}
+                  onChange={(date) => setFormData({ ...formData, fechaIngreso: date })}
+                  maxDate={new Date()}
                   required
+                  placeholderText="Seleccione fecha y hora de ingreso"
                 />
               </div>
 

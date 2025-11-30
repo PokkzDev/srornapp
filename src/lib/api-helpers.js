@@ -113,11 +113,14 @@ export function getAuditData(request) {
  * @param {object} tx - Transacción de Prisma o cliente prisma
  * @param {object} params - Parámetros de auditoría
  */
-export async function crearAuditoria(tx, { user, entidad, entidadId, accion, detalleBefore, detalleAfter, ip, userAgent }) {
+export async function crearAuditoria(tx, { usuarioId, rol, entidad, entidadId, accion, detalleBefore, detalleAfter, ip, userAgent }) {
+  // Convertir rol a string si es un array
+  const rolString = Array.isArray(rol) ? rol.join(', ') : (rol || null)
+  
   await tx.auditoria.create({
     data: {
-      usuarioId: user.id,
-      rol: Array.isArray(user.roles) ? user.roles.join(', ') : null,
+      usuarioId,
+      rol: rolString,
       entidad,
       entidadId: entidadId || null,
       accion,

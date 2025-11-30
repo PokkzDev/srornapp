@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import styles from './page.module.css'
+import DateTimePicker from '../../../components/DateTimePicker'
+import { getLocalDateString } from '../../../lib/date-utils'
 
 const ACCIONES = [
   { value: '', label: 'Todas las acciones' },
@@ -9,12 +11,15 @@ const ACCIONES = [
   { value: 'UPDATE', label: 'Actualizar' },
   { value: 'DELETE', label: 'Eliminar' },
   { value: 'LOGIN', label: 'Inicio de sesión' },
+  { value: 'LOGOUT', label: 'Cierre de sesión' },
   { value: 'EXPORT', label: 'Exportar' },
   { value: 'PERMISSION_DENIED', label: 'Acceso denegado' },
 ]
 
 const ENTIDADES = [
   { value: '', label: 'Todas las entidades' },
+  { value: 'Session', label: 'Sesión' },
+  { value: 'User', label: 'Usuario' },
   { value: 'Madre', label: 'Madre' },
   { value: 'Parto', label: 'Parto' },
   { value: 'RecienNacido', label: 'Recién Nacido' },
@@ -23,6 +28,7 @@ const ENTIDADES = [
   { value: 'AtencionURNI', label: 'Atención URNI' },
   { value: 'ControlNeonatal', label: 'Control Neonatal' },
   { value: 'InformeAlta', label: 'Informe de Alta' },
+  { value: 'ReporteREM', label: 'Reporte REM' },
   { value: 'Auditoria', label: 'Auditoría' },
 ]
 
@@ -44,8 +50,8 @@ export default function AuditoriaClient() {
     usuarioId: '',
     entidad: '',
     accion: '',
-    fechaInicio: '',
-    fechaFin: '',
+    fechaInicio: null,
+    fechaFin: null,
   })
 
   // Usuarios para el filtro
@@ -96,10 +102,10 @@ export default function AuditoriaClient() {
         params.append('accion', filtros.accion)
       }
       if (filtros.fechaInicio) {
-        params.append('fechaInicio', filtros.fechaInicio)
+        params.append('fechaInicio', getLocalDateString(filtros.fechaInicio))
       }
       if (filtros.fechaFin) {
-        params.append('fechaFin', filtros.fechaFin)
+        params.append('fechaFin', getLocalDateString(filtros.fechaFin))
       }
 
       const response = await fetch(`/api/auditoria?${params.toString()}`)
@@ -150,8 +156,8 @@ export default function AuditoriaClient() {
     start.setDate(start.getDate() - days)
     setFiltros((prev) => ({
       ...prev,
-      fechaInicio: start.toISOString().split('T')[0],
-      fechaFin: end.toISOString().split('T')[0],
+      fechaInicio: start,
+      fechaFin: end,
     }))
     setCurrentPage(1)
   }
@@ -160,8 +166,8 @@ export default function AuditoriaClient() {
     const today = new Date()
     setFiltros((prev) => ({
       ...prev,
-      fechaInicio: today.toISOString().split('T')[0],
-      fechaFin: today.toISOString().split('T')[0],
+      fechaInicio: today,
+      fechaFin: today,
     }))
     setCurrentPage(1)
   }
@@ -172,8 +178,8 @@ export default function AuditoriaClient() {
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
     setFiltros((prev) => ({
       ...prev,
-      fechaInicio: start.toISOString().split('T')[0],
-      fechaFin: end.toISOString().split('T')[0],
+      fechaInicio: start,
+      fechaFin: end,
     }))
     setCurrentPage(1)
   }
@@ -191,8 +197,8 @@ export default function AuditoriaClient() {
       usuarioId: '',
       entidad: '',
       accion: '',
-      fechaInicio: '',
-      fechaFin: '',
+      fechaInicio: null,
+      fechaFin: null,
     })
     setCurrentPage(1)
   }
@@ -216,6 +222,7 @@ export default function AuditoriaClient() {
       UPDATE: 'Actualizar',
       DELETE: 'Eliminar',
       LOGIN: 'Inicio de sesión',
+      LOGOUT: 'Cierre de sesión',
       EXPORT: 'Exportar',
       PERMISSION_DENIED: 'Acceso denegado',
     }
@@ -228,6 +235,7 @@ export default function AuditoriaClient() {
       UPDATE: styles.badgeUpdate,
       DELETE: styles.badgeDelete,
       LOGIN: styles.badgeLogin,
+      LOGOUT: styles.badgeLogout,
       EXPORT: styles.badgeExport,
       PERMISSION_DENIED: styles.badgeDenied,
     }
@@ -447,6 +455,12 @@ export default function AuditoriaClient() {
                 Inicio de sesión
               </button>
               <button 
+                className={`${styles.quickFilterBtn} ${filtros.accion === 'LOGOUT' ? styles.quickFilterBtnActive : ''}`}
+                onClick={() => setQuickAction('LOGOUT')}
+              >
+                Cierre de sesión
+              </button>
+              <button 
                 className={`${styles.quickFilterBtn} ${filtros.accion === 'EXPORT' ? styles.quickFilterBtnActive : ''}`}
                 onClick={() => setQuickAction('EXPORT')}
               >
@@ -465,21 +479,21 @@ export default function AuditoriaClient() {
         <div className={styles.filterRow}>
           <div className={styles.filterGroup}>
             <label>Fecha Inicio</label>
-            <input
-              type="date"
+            <DateTimePicker
+              selected={filtros.fechaInicio}
+              onChange={(date) => handleFilterChange('fechaInicio', date)}
+              dateOnly
               className={styles.filterInput}
-              value={filtros.fechaInicio}
-              onChange={(e) => handleFilterChange('fechaInicio', e.target.value)}
             />
           </div>
 
           <div className={styles.filterGroup}>
             <label>Fecha Fin</label>
-            <input
-              type="date"
+            <DateTimePicker
+              selected={filtros.fechaFin}
+              onChange={(date) => handleFilterChange('fechaFin', date)}
+              dateOnly
               className={styles.filterInput}
-              value={filtros.fechaFin}
-              onChange={(e) => handleFilterChange('fechaFin', e.target.value)}
             />
           </div>
 

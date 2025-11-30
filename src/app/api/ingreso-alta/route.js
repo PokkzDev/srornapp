@@ -77,12 +77,12 @@ export async function POST(request) {
       return errorResponse('La madre especificada no existe', 404)
     }
 
-    const fechaIngreso = parsearFecha(data.fechaIngreso)
-    if (!fechaIngreso) {
+    const fechaIngresoResult = parsearFecha(data.fechaIngreso)
+    if (!fechaIngresoResult || !fechaIngresoResult.valid) {
       return errorResponse('Fecha de ingreso inválida', 400)
     }
 
-    const episodioData = construirEpisodioDataCreate(data, dbUser.id, fechaIngreso)
+    const episodioData = construirEpisodioDataCreate(data, dbUser.id, fechaIngresoResult.date)
     const auditData = getAuditData(request)
 
     const episodio = await prisma.$transaction(async (tx) => {
@@ -92,8 +92,7 @@ export async function POST(request) {
       })
 
       await crearAuditoria(tx, {
-        usuarioId: dbUser.id,
-        rol: user.roles,
+        user: { id: dbUser.id, roles: user.roles },
         entidad: 'EpisodioMadre',
         entidadId: nuevoEpisodio.id,
         accion: 'CREATE',

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
+import DateTimePicker from '../../../../components/DateTimePicker'
 
 // Función para validar RUT chileno (formato: sin puntos, con guion)
 function validarRUT(rut) {
@@ -142,7 +143,7 @@ export default function RegistrarMadreForm() {
     nombres: '',
     apellidos: '',
     edad: '',
-    fechaNacimiento: '',
+    fechaNacimiento: null,
     direccion: '',
     telefono: '',
     fichaClinica: '',
@@ -259,6 +260,11 @@ export default function RegistrarMadreForm() {
 
     // Preparar datos para enviar
     const datosParaEnviar = { ...formData }
+    
+    // Convertir Date a ISO string para la API
+    if (datosParaEnviar.fechaNacimiento instanceof Date) {
+      datosParaEnviar.fechaNacimiento = datosParaEnviar.fechaNacimiento.toISOString()
+    }
     
     // Sincronizar edadAnos con edad (para REM) - siempre desde edad, ya sea calculada o manual
     if (datosParaEnviar.edad && datosParaEnviar.edad !== '') {
@@ -413,12 +419,12 @@ export default function RegistrarMadreForm() {
             {/* Fecha de Nacimiento */}
             <div className={styles.formGroup}>
               <label htmlFor="fechaNacimiento">Fecha de Nacimiento</label>
-              <input
-                type="date"
+              <DateTimePicker
                 id="fechaNacimiento"
-                name="fechaNacimiento"
-                value={formData.fechaNacimiento}
-                onChange={handleChange}
+                selected={formData.fechaNacimiento}
+                onChange={(date) => setFormData(prev => ({ ...prev, fechaNacimiento: date }))}
+                dateOnly
+                maxDate={new Date()}
               />
             </div>
           </div>

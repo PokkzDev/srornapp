@@ -79,8 +79,7 @@ export async function PUT(request, { params }) {
       })
 
       await crearAuditoria(tx, {
-        usuarioId: user.id,
-        rol: user.roles,
+        user: { id: user.id, roles: user.roles },
         entidad: 'RecienNacido',
         entidadId: rn.id,
         accion: 'UPDATE',
@@ -138,8 +137,7 @@ export async function DELETE(request, { params }) {
 
     await prisma.$transaction(async (tx) => {
       await crearAuditoria(tx, {
-        usuarioId: user.id,
-        rol: user.roles,
+        user: { id: user.id, roles: user.roles },
         entidad: 'RecienNacido',
         entidadId: rnExistente.id,
         accion: 'DELETE',

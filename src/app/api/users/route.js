@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { verificarAuth, errorResponse, successResponse } from '@/lib/api-helpers'
+import { verificarAuth, errorResponse, successResponse, getAuditData, crearAuditoria } from '@/lib/api-helpers'
 import {
   validarComplejidadPassword,
   hashPassword,
@@ -109,6 +109,24 @@ export async function POST(request) {
       include: USER_INCLUDE,
     })
 
+    // Registrar auditoría
+    const auditData = getAuditData(request)
+    await crearAuditoria(prisma, {
+      usuarioId: auth.dbUser.id,
+      rol: auth.user?.roles ? (Array.isArray(auth.user.roles) ? auth.user.roles.join(', ') : auth.user.roles) : null,
+      entidad: 'User',
+      entidadId: nuevoUsuario.id,
+      accion: 'CREATE',
+      detalleAfter: {
+        id: nuevoUsuario.id,
+        nombre: nuevoUsuario.nombre,
+        email: nuevoUsuario.email,
+        rut: nuevoUsuario.rut,
+        roles: roles || [],
+      },
+      ...auditData,
+    })
+
     return Response.json({
       success: true,
       data: formatearUsuario(usuarioCompleto),
@@ -135,6 +153,13 @@ export async function PUT(request) {
       return errorResponse('Usuario no encontrado', 404)
     }
 
+    // Guardar estado anterior para auditoría
+    const usuarioAnterior = await prisma.user.findUnique({
+      where: { id },
+      include: USER_INCLUDE,
+    })
+    const estadoAnterior = usuarioAnterior ? formatearUsuario(usuarioAnterior) : null
+
     const actualizacion = await prepararActualizacion(data, id, prisma)
     if (actualizacion.error) {
       return errorResponse(actualizacion.error, 400)
@@ -150,6 +175,19 @@ export async function PUT(request) {
     const usuarioCompleto = await prisma.user.findUnique({
       where: { id },
       include: USER_INCLUDE,
+    })
+
+    // Registrar auditoría
+    const auditData = getAuditData(request)
+    await crearAuditoria(prisma, {
+      usuarioId: auth.dbUser.id,
+      rol: auth.user?.roles ? (Array.isArray(auth.user.roles) ? auth.user.roles.join(', ') : auth.user.roles) : null,
+      entidad: 'User',
+      entidadId: id,
+      accion: 'UPDATE',
+      detalleBefore: estadoAnterior,
+      detalleAfter: formatearUsuario(usuarioCompleto),
+      ...auditData,
     })
 
     return successResponse(formatearUsuario(usuarioCompleto))
@@ -176,12 +214,30 @@ export async function DELETE(request) {
       return errorResponse('No puede eliminar su propia cuenta', 400)
     }
 
-    const usuarioExistente = await prisma.user.findUnique({ where: { id } })
+    const usuarioExistente = await prisma.user.findUnique({ 
+      where: { id },
+      include: USER_INCLUDE,
+    })
     if (!usuarioExistente) {
       return errorResponse('Usuario no encontrado', 404)
     }
 
+    // Guardar datos para auditoría antes de eliminar
+    const usuarioEliminado = formatearUsuario(usuarioExistente)
+
     await prisma.user.delete({ where: { id } })
+
+    // Registrar auditoría
+    const auditData = getAuditData(request)
+    await crearAuditoria(prisma, {
+      usuarioId: auth.dbUser.id,
+      rol: auth.user?.roles ? (Array.isArray(auth.user.roles) ? auth.user.roles.join(', ') : auth.user.roles) : null,
+      entidad: 'User',
+      entidadId: id,
+      accion: 'DELETE',
+      detalleBefore: usuarioEliminado,
+      ...auditData,
+    })
 
     return successResponse(null, 'Usuario eliminado correctamente')
   } catch (error) {

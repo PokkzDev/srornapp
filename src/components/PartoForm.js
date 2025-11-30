@@ -3,44 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './PartoForm.module.css'
-
-// Función para formatear fecha para input datetime-local (YYYY-MM-DDTHH:mm:ss)
-function formatearFechaParaInput(fecha) {
-  if (!fecha) return ''
-  const date = new Date(fecha)
-  if (Number.isNaN(date.getTime())) return ''
-  // Convertir a zona horaria local y formatear con segundos
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
-}
-
-// Función para formatear fecha para input date (YYYY-MM-DD)
-function formatearFechaDate(fecha) {
-  if (!fecha) return ''
-  const date = new Date(fecha)
-  if (Number.isNaN(date.getTime())) return ''
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-// Función para obtener la fecha y hora actual en formato datetime-local con segundos
-function obtenerFechaHoraActual() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  const seconds = String(now.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
-}
+import DateTimePicker from './DateTimePicker'
 
 // Función para derivar el lugar del tipo de parto
 function derivarLugarDeTipo(tipo) {
@@ -154,14 +117,15 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
 
   const [formData, setFormData] = useState({
     madreId: preselectedMadreId || '',
-    fechaHora: '',
-    fechaParto: '',
+    fechaHora: null, // Date object para DateTimePicker
+    fechaParto: null, // Date object para DateTimePicker
     tipo: '',
     lugar: '',
     lugarDetalle: '',
     contextoEspecial: '',
     establecimientoId: '',
     edadGestacionalSemanas: '',
+    presentacionFetal: '',
     tipoCursoParto: '',
     inicioTrabajoParto: '',
     conduccionOxitocica: false,
@@ -187,7 +151,6 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
     atencionPertinenciaCultural: false,
     contactoPielPielMadre30min: false,
     contactoPielPielAcomp30min: false,
-    lactancia60minAlMenosUnRn: false,
     // Campos adicionales REM
     planDeParto: false,
     entregaPlacentaSolicitud: false,
@@ -199,11 +162,20 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
     // Observaciones
     complicaciones: '',
     observaciones: '',
-    // Campos para REM
-    semanasGestacion: '',
-    presentacionFetal: '',
-    lactanciaMaterna60min: false,
+    // Campos para REM - presentacionFetal está en su sección correspondiente
   })
+
+  // Inicializar fecha/hora automáticamente cuando es nuevo registro (no edición)
+  useEffect(() => {
+    if (!isEdit && !initialData) {
+      // Solo inicializar si está vacío para no sobrescribir cambios del usuario
+      setFormData((prev) => ({
+        ...prev,
+        fechaHora: prev.fechaHora || new Date(),
+        fechaParto: prev.fechaParto || new Date(),
+      }))
+    }
+  }, [isEdit, initialData])
 
   // Cargar madre preseleccionada si existe
   useEffect(() => {
@@ -325,14 +297,15 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
       
       setFormData({
         madreId: initialData.madreId || '',
-        fechaHora: formatearFechaParaInput(initialData.fechaHora),
-        fechaParto: formatearFechaDate(initialData.fechaParto),
+        fechaHora: initialData.fechaHora ? new Date(initialData.fechaHora) : null,
+        fechaParto: initialData.fechaParto ? new Date(initialData.fechaParto) : null,
         tipo: tipoPuro || '',
         lugar: initialData.lugar || lugar || '',
         lugarDetalle: initialData.lugarDetalle || lugarDetalle || '',
         contextoEspecial: contextoEspecial || '',
         establecimientoId: initialData.establecimientoId || '',
         edadGestacionalSemanas: initialData.edadGestacionalSemanas || '',
+        presentacionFetal: initialData.presentacionFetal || '',
         tipoCursoParto: initialData.tipoCursoParto || '',
         inicioTrabajoParto: initialData.inicioTrabajoParto || '',
         conduccionOxitocica: initialData.conduccionOxitocica || false,
@@ -358,7 +331,6 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
         atencionPertinenciaCultural: initialData.atencionPertinenciaCultural || false,
         contactoPielPielMadre30min: initialData.contactoPielPielMadre30min || false,
         contactoPielPielAcomp30min: initialData.contactoPielPielAcomp30min || false,
-        lactancia60minAlMenosUnRn: initialData.lactancia60minAlMenosUnRn || false,
         // Campos adicionales REM
         planDeParto: initialData.planDeParto || false,
         entregaPlacentaSolicitud: initialData.entregaPlacentaSolicitud || false,
@@ -370,10 +342,6 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
         // Observaciones
         complicaciones: initialData.complicacionesTexto || '',
         observaciones: initialData.observaciones || '',
-        // Campos para REM
-        semanasGestacion: initialData.semanasGestacion?.toString() || '',
-        presentacionFetal: initialData.presentacionFetal || '',
-        lactanciaMaterna60min: initialData.lactanciaMaterna60min || false,
       })
     }
   }, [isEdit, initialData])
@@ -587,8 +555,8 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
       // Preparar datos para enviar
       const submitData = {
         madreId: formData.madreId,
-        fechaHora: formData.fechaHora,
-        fechaParto: formData.fechaParto || null,
+        fechaHora: formData.fechaHora ? formData.fechaHora.toISOString() : null,
+        fechaParto: formData.fechaParto ? formData.fechaParto.toISOString().split('T')[0] : null,
         tipo: tipoFinal,
         lugar: lugarFinal,
         lugarDetalle: lugarDetalleFinal,
@@ -619,7 +587,6 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
         atencionPertinenciaCultural: formData.atencionPertinenciaCultural || null,
         contactoPielPielMadre30min: formData.contactoPielPielMadre30min || null,
         contactoPielPielAcomp30min: formData.contactoPielPielAcomp30min || null,
-        lactancia60minAlMenosUnRn: formData.lactancia60minAlMenosUnRn || null,
         // Campos adicionales REM
         planDeParto: formData.planDeParto || null,
         entregaPlacentaSolicitud: formData.entregaPlacentaSolicitud || null,
@@ -629,10 +596,9 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
         enfermerasIds: formData.enfermerasIds || [],
         complicacionesTexto: formData.complicaciones || null,
         observaciones: formData.observaciones || null,
-        // Campos para REM
-        semanasGestacion: formData.semanasGestacion ? Number.parseInt(formData.semanasGestacion) : null,
+        // Campos para REM - usar edadGestacionalSemanas como semanasGestacion
+        semanasGestacion: formData.edadGestacionalSemanas ? Number.parseInt(formData.edadGestacionalSemanas) : null,
         presentacionFetal: formData.presentacionFetal || null,
-        lactanciaMaterna60min: formData.lactanciaMaterna60min || false,
       }
 
       const response = await fetch(url, {
@@ -731,31 +697,32 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
               <label htmlFor="fechaHora">
                 Fecha y Hora <span className={styles.required}>*</span>
               </label>
-              <input
-                type="datetime-local"
+              <DateTimePicker
                 id="fechaHora"
                 name="fechaHora"
-                value={formData.fechaHora}
-                onChange={handleChange}
-                max={obtenerFechaHoraActual()}
-                step="1"
+                selected={formData.fechaHora}
+                onChange={(date) => setFormData((prev) => ({ ...prev, fechaHora: date }))}
+                showSeconds={true}
+                maxDate={new Date()}
                 required
+                placeholderText="Seleccione fecha y hora"
               />
               <small className={styles.helpText}>
-                Incluye minutos y segundos para mayor precisión
+                Se autocompleta con la hora actual. Puede modificarla si el parto ocurrió antes.
               </small>
             </div>
 
             {/* Fecha del Parto */}
             <div className={styles.formGroup}>
               <label htmlFor="fechaParto">Fecha del Parto</label>
-              <input
-                type="date"
+              <DateTimePicker
                 id="fechaParto"
                 name="fechaParto"
-                value={formData.fechaParto}
-                onChange={handleChange}
-                max={obtenerFechaHoraActual().split('T')[0]}
+                selected={formData.fechaParto}
+                onChange={(date) => setFormData((prev) => ({ ...prev, fechaParto: date }))}
+                maxDate={new Date()}
+                dateOnly={true}
+                placeholderText="Seleccione fecha"
               />
               <small className={styles.helpText}>
                 Fecha específica del parto (opcional, diferente de fecha y hora)
@@ -890,6 +857,9 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
                   max="50"
                   placeholder="Semanas"
                 />
+                <small className={styles.helpText}>
+                  Para reportes REM (clasificación &lt;20, 20-36, ≥37 semanas)
+                </small>
               </div>
 
               {/* Curso del Parto */}
@@ -906,6 +876,28 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
                   <option value="EUTOCICO">Eutócico</option>
                   <option value="DISTOCICO">Distócico</option>
                 </select>
+              </div>
+
+              {/* Presentación Fetal */}
+              <div className={styles.formGroup}>
+                <label htmlFor="presentacionFetal">Presentación Fetal</label>
+                <select
+                  id="presentacionFetal"
+                  name="presentacionFetal"
+                  value={formData.presentacionFetal}
+                  onChange={handleChange}
+                  className={styles.select}
+                >
+                  <option value="">Seleccione...</option>
+                  <option value="Cefálica">Cefálica</option>
+                  <option value="Podálica/Nalgas">Podálica/Nalgas</option>
+                  <option value="Cara">Cara</option>
+                  <option value="Transversa">Transversa</option>
+                  <option value="Otra">Otra</option>
+                </select>
+                <small className={styles.helpText}>
+                  Para reportes REM
+                </small>
               </div>
             </div>
           </div>
@@ -1208,17 +1200,6 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
                 </label>
               </div>
 
-              <div className={styles.checkboxGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    name="lactancia60minAlMenosUnRn"
-                    checked={formData.lactancia60minAlMenosUnRn}
-                    onChange={handleChange}
-                  />
-                  <span>Lactancia 60 min (al menos 1 RN)</span>
-                </label>
-              </div>
             </div>
           </div>
 
@@ -1465,64 +1446,6 @@ export default function PartoForm({ initialData = null, isEdit = false, partoId 
                 />
                 <small className={styles.helpText}>
                   {formData.observaciones.length}/500 caracteres
-                </small>
-              </div>
-              
-              {/* Semanas de Gestación (para REM) */}
-              <div className={styles.formGroup}>
-                <label htmlFor="semanasGestacion">Semanas de Gestación</label>
-                <input
-                  type="number"
-                  id="semanasGestacion"
-                  name="semanasGestacion"
-                  value={formData.semanasGestacion}
-                  onChange={handleChange}
-                  min="0"
-                  max="45"
-                  className={styles.input}
-                  placeholder="Ej: 38"
-                />
-                <small className={styles.helpText}>
-                  Para reportes REM (clasificación &lt;20, 20-36, ≥37 semanas)
-                </small>
-              </div>
-              
-              {/* Presentación Fetal (para REM) */}
-              <div className={styles.formGroup}>
-                <label htmlFor="presentacionFetal">Presentación Fetal</label>
-                <select
-                  id="presentacionFetal"
-                  name="presentacionFetal"
-                  value={formData.presentacionFetal}
-                  onChange={handleChange}
-                  className={styles.select}
-                >
-                  <option value="">Seleccione...</option>
-                  <option value="Cefálica">Cefálica</option>
-                  <option value="Podálica/Nalgas">Podálica/Nalgas</option>
-                  <option value="Cara">Cara</option>
-                  <option value="Transversa">Transversa</option>
-                  <option value="Otra">Otra</option>
-                </select>
-                <small className={styles.helpText}>
-                  Para reportes REM
-                </small>
-              </div>
-              
-              {/* Lactancia Materna 60 min (para REM) */}
-              <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-                <label className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    name="lactanciaMaterna60min"
-                    checked={formData.lactanciaMaterna60min}
-                    onChange={(e) => setFormData({...formData, lactanciaMaterna60min: e.target.checked})}
-                    className={styles.checkbox}
-                  />
-                  <span>Lactancia materna en primeros 60 minutos (para RN ≥ 2,500g)</span>
-                </label>
-                <small className={styles.helpText}>
-                  Marcar si el recién nacido con peso ≥ 2,500g tuvo lactancia materna en los primeros 60 minutos de vida
                 </small>
               </div>
             </div>

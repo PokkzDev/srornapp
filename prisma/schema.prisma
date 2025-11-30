@@ -121,6 +121,7 @@ enum AuditAction {
   UPDATE
   DELETE
   LOGIN
+  LOGOUT
   EXPORT
   PERMISSION_DENIED
 }

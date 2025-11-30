@@ -278,6 +278,7 @@
 .badgeUpdate,
 .badgeDelete,
 .badgeLogin,
+.badgeLogout,
 .badgeExport,
 .badgeDenied,
 .badgeDefault {
@@ -307,6 +308,11 @@
 .badgeLogin {
   background: rgba(23, 162, 184, 0.15);
   color: #17a2b8;
+}
+
+.badgeLogout {
+  background: rgba(253, 126, 20, 0.15);
+  color: #fd7e14;
 }
 
 .badgeExport {

@@ -75,14 +75,14 @@ export async function PUT(request, { params }) {
 
     // Validar fecha de ingreso si se proporciona
     if (data.fechaHoraIngreso !== undefined) {
-      const fechaHoraIngreso = parsearFecha(data.fechaHoraIngreso)
-      if (!fechaHoraIngreso) {
+      const fechaResult = parsearFecha(data.fechaHoraIngreso)
+      if (!fechaResult || !fechaResult.valid) {
         return errorResponse('Fecha/hora de ingreso inválida', 400)
       }
-      if (episodioActual.fechaHoraAlta && fechaHoraIngreso > episodioActual.fechaHoraAlta) {
+      if (episodioActual.fechaHoraAlta && fechaResult.date > episodioActual.fechaHoraAlta) {
         return errorResponse('La fecha/hora de ingreso no puede ser posterior a la fecha/hora de alta', 400)
       }
-      data.fechaHoraIngreso = fechaHoraIngreso
+      data.fechaHoraIngreso = fechaResult.date
     }
 
     const updateData = construirEpisodioUrniUpdateData(data, user.id)
@@ -101,8 +101,7 @@ export async function PUT(request, { params }) {
       })
 
       await crearAuditoria(tx, {
-        usuarioId: user.id,
-        rol: user.roles,
+        user: { id: user.id, roles: user.roles },
         entidad: 'EpisodioURNI',
         entidadId: episodioActualizado.id,
         accion: 'UPDATE',

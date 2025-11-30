@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { verificarAuth, errorResponse, successResponse } from '@/lib/api-helpers'
+import { verificarAuth, errorResponse, successResponse, getAuditData, crearAuditoria } from '@/lib/api-helpers'
 import {
   formatearUsuario,
   USER_INCLUDE,
@@ -38,10 +38,16 @@ export async function PUT(request, { params }) {
     const { id } = await params
     const { roles, ...data } = await request.json()
 
-    const usuarioExistente = await prisma.user.findUnique({ where: { id } })
+    const usuarioExistente = await prisma.user.findUnique({ 
+      where: { id },
+      include: USER_INCLUDE,
+    })
     if (!usuarioExistente) {
       return errorResponse('Usuario no encontrado', 404)
     }
+
+    // Guardar estado anterior para auditoría
+    const estadoAnterior = formatearUsuario(usuarioExistente)
 
     const actualizacion = await prepararActualizacion(data, id, prisma)
     if (actualizacion.error) {
@@ -58,6 +64,19 @@ export async function PUT(request, { params }) {
     const usuarioCompleto = await prisma.user.findUnique({
       where: { id },
       include: USER_INCLUDE,
+    })
+
+    // Registrar auditoría
+    const auditData = getAuditData(request)
+    await crearAuditoria(prisma, {
+      usuarioId: auth.dbUser.id,
+      rol: auth.user?.roles ? (Array.isArray(auth.user.roles) ? auth.user.roles.join(', ') : auth.user.roles) : null,
+      entidad: 'User',
+      entidadId: id,
+      accion: 'UPDATE',
+      detalleBefore: estadoAnterior,
+      detalleAfter: formatearUsuario(usuarioCompleto),
+      ...auditData,
     })
 
     return successResponse(formatearUsuario(usuarioCompleto))
@@ -79,12 +98,30 @@ export async function DELETE(request, { params }) {
       return errorResponse('No puede eliminar su propia cuenta', 400)
     }
 
-    const usuarioExistente = await prisma.user.findUnique({ where: { id } })
+    const usuarioExistente = await prisma.user.findUnique({ 
+      where: { id },
+      include: USER_INCLUDE,
+    })
     if (!usuarioExistente) {
       return errorResponse('Usuario no encontrado', 404)
     }
 
+    // Guardar datos para auditoría antes de eliminar
+    const usuarioEliminado = formatearUsuario(usuarioExistente)
+
     await prisma.user.delete({ where: { id } })
+
+    // Registrar auditoría
+    const auditData = getAuditData(request)
+    await crearAuditoria(prisma, {
+      usuarioId: auth.dbUser.id,
+      rol: auth.user?.roles ? (Array.isArray(auth.user.roles) ? auth.user.roles.join(', ') : auth.user.roles) : null,
+      entidad: 'User',
+      entidadId: id,
+      accion: 'DELETE',
+      detalleBefore: usuarioEliminado,
+      ...auditData,
+    })
 
     return successResponse(null, 'Usuario eliminado correctamente')
   } catch (error) {
@@ -106,14 +143,42 @@ export async function PATCH(request, { params }) {
       return errorResponse('No puede desactivar su propia cuenta', 400)
     }
 
-    const usuarioExistente = await prisma.user.findUnique({ where: { id } })
+    const usuarioExistente = await prisma.user.findUnique({ 
+      where: { id },
+      include: USER_INCLUDE,
+    })
     if (!usuarioExistente) {
       return errorResponse('Usuario no encontrado', 404)
+    }
+
+    // Guardar estado anterior para auditoría
+    const estadoAnterior = {
+      id: usuarioExistente.id,
+      nombre: usuarioExistente.nombre,
+      activo: usuarioExistente.activo,
     }
 
     const usuarioActualizado = await prisma.user.update({
       where: { id },
       data: { activo: activo === true },
+    })
+
+    // Registrar auditoría
+    const auditData = getAuditData(request)
+    await crearAuditoria(prisma, {
+      usuarioId: auth.dbUser.id,
+      rol: auth.user?.roles ? (Array.isArray(auth.user.roles) ? auth.user.roles.join(', ') : auth.user.roles) : null,
+      entidad: 'User',
+      entidadId: id,
+      accion: 'UPDATE',
+      detalleBefore: estadoAnterior,
+      detalleAfter: {
+        id: usuarioActualizado.id,
+        nombre: usuarioActualizado.nombre,
+        activo: usuarioActualizado.activo,
+        cambio: activo ? 'Cuenta activada' : 'Cuenta bloqueada',
+      },
+      ...auditData,
     })
 
     return successResponse({

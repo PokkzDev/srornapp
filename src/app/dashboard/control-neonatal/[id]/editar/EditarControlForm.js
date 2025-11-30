@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
+import DateTimePicker from '@/components/DateTimePicker'
 
 export default function EditarControlForm({ controlId }) {
   const router = useRouter()
@@ -17,7 +18,7 @@ export default function EditarControlForm({ controlId }) {
   const [formData, setFormData] = useState({
     rnId: '',
     episodioUrniId: '',
-    fechaHora: '',
+    fechaHora: null,
     tipo: 'SIGNOS_VITALES',
     datos: '',
     observaciones: '',
@@ -62,10 +63,8 @@ export default function EditarControlForm({ controlId }) {
         const controlData = data.data
         setControl(controlData)
         
-        // Format fechaHora for datetime-local input
-        const fechaHora = controlData.fechaHora
-          ? new Date(controlData.fechaHora).toISOString().slice(0, 16)
-          : new Date().toISOString().slice(0, 16)
+        // Convertir fechaHora a Date object para DateTimePicker
+        const fechaHora = controlData.fechaHora ? new Date(controlData.fechaHora) : new Date()
 
         setFormData({
           rnId: controlData.rnId || '',
@@ -259,7 +258,7 @@ export default function EditarControlForm({ controlId }) {
     try {
       const submitData = {
         episodioUrniId: formData.episodioUrniId || null,
-        fechaHora: formData.fechaHora ? new Date(formData.fechaHora).toISOString() : new Date().toISOString(),
+        fechaHora: formData.fechaHora ? formData.fechaHora.toISOString() : new Date().toISOString(),
         tipo: formData.tipo,
         datos: datosParsed,
         observaciones: formData.observaciones || null,
@@ -361,14 +360,14 @@ export default function EditarControlForm({ controlId }) {
           <label htmlFor="fechaHora">
             Fecha y Hora <span className={styles.required}>*</span>
           </label>
-          <input
-            type="datetime-local"
+          <DateTimePicker
             id="fechaHora"
             name="fechaHora"
-            value={formData.fechaHora}
-            onChange={handleChange}
+            selected={formData.fechaHora}
+            onChange={(date) => setFormData((prev) => ({ ...prev, fechaHora: date }))}
+            maxDate={new Date()}
             required
-            className={styles.input}
+            placeholderText="Seleccione fecha y hora"
           />
         </div>
 
