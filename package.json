@@ -6,17 +6,17 @@
     "dev": "next dev -p 3005",
     "prebuild": "prisma generate",
     "build": "next build --turbopack ",
-    "prestart": "prisma db push && node prisma/seed.js",
+    "prestart": "prisma db push && node prisma/seed.mjs",
     "start": " next start -p 3005",
     "lint": "eslint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "node prisma/seed.js",
+    "prisma:seed": "node prisma/seed.mjs",
     "sonar": "sonar-scanner"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
