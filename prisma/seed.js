@@ -1,8 +1,8 @@
 const { PrismaClient } = require('@prisma/client')
 const bcrypt = require('bcryptjs')
-const { faker } = require('@faker-js/faker/locale/es_MX')
 
 const prisma = new PrismaClient()
+let faker
 
 // ================================
 // CONFIGURACIÓN DE GENERACIÓN
@@ -289,6 +289,10 @@ const CONTEXTOS_COMPLICACION = [
 // FUNCIÓN PRINCIPAL
 // ================================
 async function main() {
+  // Dynamic import for ES Module
+  const fakerModule = await import('@faker-js/faker/locale/es_MX')
+  faker = fakerModule.faker
+
   console.log('🌱 Starting seed with Faker...')
   console.log(`📊 Configuration:`)
   console.log(`   - Mothers to generate: ${CONFIG.MADRES_COUNT}`)
