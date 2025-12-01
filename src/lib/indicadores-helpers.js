@@ -19,6 +19,75 @@ export function agruparPorFecha(date, agrupacion) {
 }
 
 /**
+ * Calcula tasa/porcentaje de un campo booleano
+ * @param {Array} items - Array de objetos
+ * @param {string} campo - Nombre del campo booleano
+ * @returns {Object} - { cantidad, total, tasa }
+ */
+export function calcularTasa(items, campo) {
+  const total = items.length
+  const cantidad = items.filter(item => item[campo] === true).length
+  return {
+    cantidad,
+    total,
+    tasa: total > 0 ? ((cantidad / total) * 100).toFixed(1) : '0.0'
+  }
+}
+
+/**
+ * Calcula tendencia comparativa entre dos períodos
+ * @param {number} actual - Valor del período actual
+ * @param {number} anterior - Valor del período anterior
+ * @returns {Object|null} - { cambio, porcentaje, direccion }
+ */
+export function calcularTendenciaComparativa(actual, anterior) {
+  if (anterior === null || anterior === undefined) return null
+  if (anterior === 0) {
+    return actual > 0 ? { cambio: actual, porcentaje: 100, direccion: 'up' } : null
+  }
+  
+  const cambio = actual - anterior
+  const porcentaje = ((cambio / anterior) * 100).toFixed(1)
+  
+  return {
+    cambio,
+    porcentaje: Math.abs(porcentaje),
+    direccion: cambio > 0 ? 'up' : cambio < 0 ? 'down' : 'neutral'
+  }
+}
+
+/**
+ * Calcula distribución por rangos de edad gestacional
+ * @param {Array} partos - Array de partos con edadGestacionalSemanas
+ * @returns {Object} - Distribución por rangos
+ */
+export function calcularEdadGestacionalRangos(partos) {
+  const total = partos.length
+  const rangos = {
+    extremadamentePretérmino: partos.filter(p => p.edadGestacionalSemanas < 28).length,
+    muyPretérmino: partos.filter(p => p.edadGestacionalSemanas >= 28 && p.edadGestacionalSemanas < 32).length,
+    pretérminoModerado: partos.filter(p => p.edadGestacionalSemanas >= 32 && p.edadGestacionalSemanas < 34).length,
+    pretérminoTardío: partos.filter(p => p.edadGestacionalSemanas >= 34 && p.edadGestacionalSemanas < 37).length,
+    término: partos.filter(p => p.edadGestacionalSemanas >= 37 && p.edadGestacionalSemanas <= 41).length,
+    postTérmino: partos.filter(p => p.edadGestacionalSemanas > 41).length,
+  }
+  
+  // Calcular promedio
+  const promedio = total > 0 
+    ? (partos.reduce((sum, p) => sum + p.edadGestacionalSemanas, 0) / total).toFixed(1)
+    : 0
+  
+  return {
+    ...rangos,
+    promedio,
+    total,
+    tasaPretérmino: total > 0 
+      ? ((rangos.extremadamentePretérmino + rangos.muyPretérmino + rangos.pretérminoModerado + rangos.pretérminoTardío) / total * 100).toFixed(1)
+      : '0.0'
+  }
+}
+
+/**
  * Construye el filtro de fecha para queries
  * Las fechas se reciben como strings YYYY-MM-DD y se convierten considerando zona horaria Chile (UTC-3)
  */

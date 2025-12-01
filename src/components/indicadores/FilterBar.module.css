@@ -1,0 +1,181 @@
+.container {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.mainRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.dateFilters {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.input,
+.select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 140px;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.select {
+  cursor: pointer;
+  min-width: 160px;
+}
+
+/* Presets */
+.presets {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.presetBtn {
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Actions */
+.actionsRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.expandBtn,
+.clearBtn,
+.exportBtn,
+.printBtn {
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.expandBtn {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.clearBtn {
+  background: var(--color-surface);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.exportBtn {
+  background: var(--color-success);
+  color: white;
+  border-color: var(--color-success);
+}
+
+.printBtn {
+  background: var(--color-info);
+  color: white;
+  border-color: var(--color-info);
+}
+
+/* Expanded row */
+.expandedRow {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 0.875rem 1rem;
+  }
+  
+  .mainRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .dateFilters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filterGroup {
+    width: 100%;
+  }
+  
+  .input,
+  .select {
+    width: 100%;
+    min-width: unset;
+  }
+  
+  .presets {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  
+  .actionsRow {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  
+  .expandedRow {
+    flex-direction: column;
+  }
+}
+
+/* Print styles */
+@media print {
+  .container {
+    display: none;
+  }
+}

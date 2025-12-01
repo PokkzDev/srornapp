@@ -1,0 +1,537 @@
+/* ============================================
+   TABS.MODULE.CSS - Estilos compartidos para tabs de indicadores
+   ============================================ */
+
+/* Layout principal del tab */
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Grid de tarjetas - responsivo */
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1200px) {
+  .cardsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .cardsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Grid de gráficos - 2 columnas */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Chart con fullWidth */
+.chartsGrid > :global(.chartCard.fullWidth),
+.chartsGrid > div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+/* Encabezados de sección */
+.sectionHeader {
+  margin-top: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-primary, #0066A4);
+}
+
+.sectionTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #1F2937);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Sección de prácticas con barras de progreso */
+.practicesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--color-background, #FFFFFF);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.practiceItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.practiceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.practiceLabel {
+  font-weight: 500;
+  color: var(--color-text-primary, #1F2937);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.practiceValue {
+  font-weight: 600;
+  color: var(--color-primary, #0066A4);
+}
+
+/* Sección de alertas */
+.alertsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background: var(--color-background, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
+}
+
+.alertIcon {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+  width: 1.25rem;
+  text-align: center;
+}
+
+.alert strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.alert p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.alertInfo {
+  background: rgba(23, 162, 184, 0.05);
+  border-color: rgba(23, 162, 184, 0.3);
+}
+
+.alertSuccess {
+  background: rgba(40, 167, 69, 0.05);
+  border-color: rgba(40, 167, 69, 0.3);
+}
+
+.alertWarning {
+  background: rgba(255, 193, 7, 0.1);
+  border-color: rgba(255, 193, 7, 0.4);
+}
+
+.alertDanger {
+  background: rgba(220, 53, 69, 0.05);
+  border-color: rgba(220, 53, 69, 0.3);
+}
+
+/* Sección de tablas */
+.tableSection {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: var(--color-background, #FFFFFF);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tableSection .sectionTitle {
+  margin-bottom: 1rem;
+}
+
+/* Totales / Resumen */
+.totalsSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--color-primary-light, #E6F0F6) 0%, #fff 100%);
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #E5E7EB);
+}
+
+.totalItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1rem;
+}
+
+.totalValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary, #0066A4);
+}
+
+.totalLabel {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6B7280);
+  margin-top: 0.25rem;
+}
+
+/* Grid comparativo */
+.comparisonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .comparisonGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comparisonCard {
+  padding: 1.5rem;
+  background: var(--color-background, #FFFFFF);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.comparisonTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6B7280);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.comparisonValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #1F2937);
+}
+
+.comparisonSubtext {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6B7280);
+  margin-top: 0.25rem;
+}
+
+/* Métricas REM */
+.remGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .remGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .remGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.remCard {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  background: var(--color-background, #FFFFFF);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border, #E5E7EB);
+}
+
+.remLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6B7280);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.remValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #1F2937);
+}
+
+.remPercentage {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+/* Empty state */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  background: var(--color-background-secondary, #F9FAFB);
+  border-radius: 8px;
+}
+
+.emptyIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #1F2937);
+  margin-bottom: 0.5rem;
+}
+
+.emptyText {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+/* Badges de estado */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.badgeSuccess {
+  background: rgba(40, 167, 69, 0.1);
+  color: var(--color-success, #28A745);
+}
+
+.badgeWarning {
+  background: rgba(255, 193, 7, 0.15);
+  color: #B45309;
+}
+
+.badgeDanger {
+  background: rgba(220, 53, 69, 0.1);
+  color: var(--color-danger, #DC3545);
+}
+
+.badgeInfo {
+  background: rgba(23, 162, 184, 0.1);
+  color: var(--color-info, #17A2B8);
+}
+
+/* Leyenda personalizada */
+.customLegend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: var(--color-background-secondary, #F9FAFB);
+  border-radius: 6px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.legendDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+/* Estilos para impresión */
+@media print {
+  .tabContent {
+    gap: 1rem;
+  }
+
+  .cardsGrid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.5rem;
+  }
+
+  .chartsGrid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem;
+  }
+
+  .alertsSection,
+  .tableSection {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .sectionHeader {
+    break-after: avoid;
+  }
+
+  .alert {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+
+  .practicesSection,
+  .tableSection,
+  .comparisonCard,
+  .remCard {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+}
+
+/* Tooltip personalizado para gráficos */
+.customTooltip {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 6px;
+  padding: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.tooltipLabel {
+  font-weight: 600;
+  color: var(--color-text-primary, #1F2937);
+  margin-bottom: 0.25rem;
+}
+
+.tooltipValue {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+/* Indicador de meta */
+.targetIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6B7280);
+  margin-top: 0.25rem;
+}
+
+.targetDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-warning, #FFC107);
+}
+
+/* Full width para charts específicos */
+.fullWidthChart {
+  grid-column: 1 / -1;
+}
+
+/* Divider horizontal */
+.divider {
+  height: 1px;
+  background: var(--color-border, #E5E7EB);
+  margin: 1rem 0;
+}
+
+/* Notas al pie */
+.footnote {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6B7280);
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+/* Sección de estadísticas inline */
+.statsInline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--color-background-secondary, #F9FAFB);
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.statInlineItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.statInlineLabel {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.statInlineValue {
+  font-weight: 600;
+  color: var(--color-text-primary, #1F2937);
+}
+
+/* Indicadores de cumplimiento */
+.compliance {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.complianceIcon {
+  font-size: 1rem;
+}
+
+.complianceText {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.complianceSuccess {
+  color: var(--color-success, #28A745);
+}
+
+.complianceWarning {
+  color: var(--color-warning, #D97706);
+}
+
+.complianceDanger {
+  color: var(--color-danger, #DC3545);
+}

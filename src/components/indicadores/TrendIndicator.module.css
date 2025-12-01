@@ -1,0 +1,49 @@
+.container {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Variants */
+.positive {
+  background: rgba(44, 159, 91, 0.1);
+  color: var(--color-success);
+}
+
+.negative {
+  background: rgba(217, 48, 37, 0.1);
+  color: var(--color-danger);
+}
+
+.neutral {
+  background: rgba(75, 85, 99, 0.1);
+  color: var(--color-text-muted);
+}
+
+.icon {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.value {
+  font-weight: 700;
+}
+
+.label {
+  font-weight: 400;
+  color: inherit;
+  opacity: 0.8;
+  margin-left: 0.125rem;
+}
+
+/* Print */
+@media print {
+  .container {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
