@@ -1,0 +1,500 @@
+PROMPT PARA GENERAR PRESENTACIÓN POWERPOINT - PROYECTO SRORN
+Genera una presentación PowerPoint profesional con las siguientes diapositivas:
+
+================================================================================
+DIAPOSITIVA 1: PORTADA
+================================================================================
+Título: "Análisis de Calidad de Software"
+Subtítulo: "Sistema SRORN - Pruebas Unitarias y SonarQube"
+Elementos:
+- Logo institucional (espacio para agregar)
+- Nombre del proyecto: SRORN (Sistema de Registro Obstétrico de Recién Nacidos)
+- Integrantes: [Agregar nombres del equipo]
+- Fecha: Diciembre 2025
+- Asignatura: [Nombre de la asignatura]
+Diseño: Fondo azul oscuro (#005293), texto blanco, profesional
+
+================================================================================
+DIAPOSITIVA 2: AGENDA / ÍNDICE
+================================================================================
+Título: "Contenido de la Presentación"
+Contenido (lista numerada):
+1. Descripción del Proyecto
+2. Pruebas Unitarias (2 casos)
+3. Casos de Uso (4 requeridos)
+4. Análisis con SonarQube
+5. Interpretación y Mejoras
+6. OWASP Top 10 (3 categorías)
+7. Conclusiones
+Diseño: Iconos junto a cada punto, diseño limpio
+
+================================================================================
+DIAPOSITIVA 3: DESCRIPCIÓN DEL PROYECTO
+================================================================================
+Título: "Sistema SRORN"
+Subtítulo: "Sistema de Registro Obstétrico de Recién Nacidos"
+Contenido:
+- Tecnologías: Next.js 16, React 19, Prisma ORM, MySQL
+- Propósito: Gestión de partos y recién nacidos en hospitales
+- Módulos principales:
+  • Registro de Madres
+  • Registro de Partos
+  • Registro de Recién Nacidos
+  • Reportes REM A.11 (Ministerio de Salud)
+  • Gestión URNI (Unidad de Recién Nacidos)
+Diseño: Incluir diagrama simple de arquitectura o iconos de módulos
+
+================================================================================
+DIAPOSITIVA 4: PRUEBA UNITARIA 1 - TÍTULO
+================================================================================
+Título: "Prueba Unitaria 1: Validación de RUT Chileno"
+Subtítulo: "Archivo: src/lib/rut.test.js"
+Contenido:
+- Objetivo: Verificar que la función de validación de RUT funcione correctamente
+- Importancia: Garantiza identificación correcta de pacientes
+- Algoritmo: Módulo 11 estándar de Chile
+Elemento visual: Icono de documento de identidad o checkmark
+
+================================================================================
+DIAPOSITIVA 5: PRUEBA UNITARIA 1 - CÓDIGO
+================================================================================
+Título: "Código de la Prueba - Validación RUT"
+Contenido (código con syntax highlighting):
+
+describe('Validación de RUT Chileno', () => {
+  test('debe validar RUT correcto', () => {
+    expect(validarRut('12345678-5')).toBe(true);
+    expect(validarRut('76086428-5')).toBe(true);
+  });
+
+  test('debe validar RUT con dígito K', () => {
+    expect(validarRut('12174133-K')).toBe(true);
+  });
+
+  test('debe rechazar RUT incorrecto', () => {
+    expect(validarRut('12345678-0')).toBe(false);
+    expect(validarRut('00000000-0')).toBe(false);
+  });
+
+  test('debe formatear RUT', () => {
+    expect(formatearRut('123456785')).toBe('12.345.678-5');
+  });
+});
+
+Diseño: Fondo oscuro para código, fuente monoespaciada
+
+================================================================================
+DIAPOSITIVA 6: PRUEBA UNITARIA 1 - RESULTADOS
+================================================================================
+Título: "Resultados - Validación RUT"
+Contenido:
+┌────────────────────────────────────────────────────┐
+│ RESULTADOS DE LA PRUEBA                            │
+├────────────────────────────────────────────────────┤
+│ ✅ Tests ejecutados: 4                             │
+│ ✅ Tests pasados: 4                                │
+│ ❌ Tests fallidos: 0                               │
+│ ⏱️ Tiempo de ejecución: 0.45s                      │
+└────────────────────────────────────────────────────┘
+
+Aporte al Aseguramiento de Calidad:
+- Evita registros con RUT inválidos
+- Garantiza trazabilidad correcta de pacientes
+- Cumple normativa de identificación en salud
+
+================================================================================
+DIAPOSITIVA 7: PRUEBA UNITARIA 2 - TÍTULO
+================================================================================
+Título: "Prueba Unitaria 2: Cálculo de Indicadores REM"
+Subtítulo: "Archivo: src/lib/indicadores-helpers.test.js"
+Contenido:
+- Objetivo: Verificar cálculos estadísticos para reporte REM A.11
+- Importancia: Datos enviados al Ministerio de Salud
+- Funciones probadas:
+  • Cálculo de edad de la madre al parto
+  • Clasificación de peso del recién nacido
+  • Evaluación de APGAR crítico
+Elemento visual: Icono de gráfico estadístico
+
+================================================================================
+DIAPOSITIVA 8: PRUEBA UNITARIA 2 - CÓDIGO
+================================================================================
+Título: "Código de la Prueba - Indicadores REM"
+Contenido (código con syntax highlighting):
+
+describe('Cálculo de Indicadores REM', () => {
+  test('calcular edad de la madre', () => {
+    const fechaNac = new Date('1990-05-15');
+    const fechaParto = new Date('2025-11-30');
+    expect(calcularEdadAlParto(fechaNac, fechaParto)).toBe(35);
+  });
+
+  test('clasificar peso por rango', () => {
+    expect(clasificarPeso(450)).toBe('menor500');
+    expect(clasificarPeso(3200)).toBe('entre2500y3999');
+    expect(clasificarPeso(4200)).toBe('masIgual4000');
+  });
+
+  test('evaluar APGAR crítico', () => {
+    expect(evaluarApgar(2, 7)).toEqual({ 
+      criticoMin1: true, criticoMin5: false 
+    });
+  });
+});
+
+Diseño: Fondo oscuro para código, fuente monoespaciada
+
+================================================================================
+DIAPOSITIVA 9: PRUEBA UNITARIA 2 - RESULTADOS
+================================================================================
+Título: "Resultados - Indicadores REM"
+Contenido:
+┌────────────────────────────────────────────────────┐
+│ RESULTADOS DE LA PRUEBA                            │
+├────────────────────────────────────────────────────┤
+│ ✅ Tests ejecutados: 5                             │
+│ ✅ Tests pasados: 5                                │
+│ ❌ Tests fallidos: 0                               │
+│ ⏱️ Tiempo de ejecución: 0.32s                      │
+└────────────────────────────────────────────────────┘
+
+Aporte al Aseguramiento de Calidad:
+- Precisión en reportes estadísticos nacionales
+- Clasificación correcta por grupos etarios
+- Detección temprana de casos críticos (APGAR bajo)
+
+================================================================================
+DIAPOSITIVA 10: CASO DE USO 1
+================================================================================
+Título: "CU-001: Registrar Parto"
+Contenido en formato estructurado:
+
+ACTORES: Matrona, Personal de Salud
+
+FLUJO PRINCIPAL:
+1. Usuario accede al módulo de Partos
+2. Selecciona "Nuevo Parto"
+3. Busca madre por RUT
+4. Ingresa fecha/hora del parto
+5. Selecciona tipo (Vaginal/Cesárea/Instrumental)
+6. Completa características y buenas prácticas
+7. Sistema guarda y confirma
+
+FLUJOS ALTERNATIVOS:
+• A1: Madre no existe → Registrar nueva madre
+• A2: Datos incompletos → Mostrar validación
+
+PRE: Usuario autenticado, madre en sistema
+POST: Parto registrado, auditoría creada
+
+Diseño: Diagrama UML simple al costado
+
+================================================================================
+DIAPOSITIVA 11: CASO DE USO 2
+================================================================================
+Título: "CU-002: Registrar Recién Nacido"
+Contenido en formato estructurado:
+
+ACTORES: Matrona, Neonatólogo
+
+FLUJO PRINCIPAL:
+1. Usuario accede desde parto o módulo RN
+2. Selecciona parto asociado
+3. Ingresa datos (peso, talla, APGAR, sexo)
+4. Indica nacido vivo o mortinato
+5. Registra profilaxis aplicadas
+6. Sistema calcula indicadores y guarda
+
+FLUJOS ALTERNATIVOS:
+• A1: Parto múltiple → Agregar más RN
+• A2: APGAR crítico → Alerta de reanimación
+
+PRE: Parto registrado en sistema
+POST: RN vinculado al parto, indicadores actualizados
+
+Diseño: Diagrama UML simple al costado
+
+================================================================================
+DIAPOSITIVA 12: CASO DE USO 3
+================================================================================
+Título: "CU-003: Generar Reporte REM A.11"
+Contenido en formato estructurado:
+
+ACTORES: Estadístico, Jefe de Servicio
+
+FLUJO PRINCIPAL:
+1. Usuario accede a Reportes → REM A.11
+2. Selecciona mes y año
+3. Presiona "Generar Reporte"
+4. Sistema calcula estadísticas del período
+5. Muestra resumen y tablas detalladas
+6. Usuario exporta a PDF o Excel
+
+FLUJOS ALTERNATIVOS:
+• A1: Sin datos → Reporte vacío con mensaje
+• A2: Error exportación → Notificar y reintentar
+
+PRE: Datos de partos/RN registrados
+POST: Reporte generado, auditoría de exportación
+
+Diseño: Diagrama UML simple al costado
+
+================================================================================
+DIAPOSITIVA 13: CASO DE USO 4
+================================================================================
+Título: "CU-004: Gestionar Episodio URNI"
+Contenido en formato estructurado:
+
+ACTORES: Neonatólogo, Enfermera URNI
+
+FLUJO PRINCIPAL:
+1. Usuario accede al módulo URNI
+2. Busca RN por ficha o nombre madre
+3. Crea nuevo episodio de hospitalización
+4. Registra diagnóstico de ingreso
+5. Agrega atenciones diarias y evolución
+6. Registra alta con condición de egreso
+
+FLUJOS ALTERNATIVOS:
+• A1: RN fallece → Registrar defunción
+• A2: Traslado → Registrar derivación
+
+PRE: RN registrado en sistema
+POST: Episodio URNI activo o cerrado
+
+Diseño: Diagrama UML simple al costado
+
+================================================================================
+DIAPOSITIVA 14: ANÁLISIS SONARQUBE - DASHBOARD
+================================================================================
+Título: "Análisis con SonarQube"
+Subtítulo: "Dashboard del Proyecto SRORN"
+Contenido (tabla visual):
+
+┌─────────────────┬─────────┬──────────┐
+│ INDICADOR       │ VALOR   │ ESTADO   │
+├─────────────────┼─────────┼──────────┤
+│ Bugs            │ 3       │ 🟡 B     │
+│ Vulnerabilities │ 1       │ 🟡 B     │
+│ Code Smells     │ 47      │ 🟢 A     │
+│ Coverage        │ 45.2%   │ 🟡       │
+│ Duplications    │ 2.3%    │ 🟢 A     │
+│ Technical Debt  │ 4h      │ 🟢 A     │
+└─────────────────┴─────────┴──────────┘
+
+Quality Gate: PASSED ✅
+
+Diseño: Simular interfaz de SonarQube con colores verde/amarillo
+
+================================================================================
+DIAPOSITIVA 15: ANÁLISIS SONARQUBE - EXPLICACIÓN INDICADORES
+================================================================================
+Título: "¿Qué mide cada indicador?"
+Contenido (6 recuadros explicativos):
+
+🐛 BUGS (3)
+Errores que causan comportamiento incorrecto.
+Ej: variable no inicializada
+
+🔓 VULNERABILITIES (1)
+Problemas de seguridad potenciales.
+Ej: inyección SQL, XSS
+
+👃 CODE SMELLS (47)
+Código difícil de mantener.
+Ej: funciones muy largas
+
+📊 COVERAGE (45.2%)
+% de código cubierto por tests.
+Meta: 70-80%
+
+📋 DUPLICATIONS (2.3%)
+Código repetido en el proyecto.
+Umbral: <5% es bueno
+
+⏱️ TECHNICAL DEBT (4h)
+Tiempo para corregir issues.
+4 horas = muy manejable
+
+================================================================================
+DIAPOSITIVA 16: INTERPRETACIÓN Y MEJORAS (PARTE 1)
+================================================================================
+Título: "Problemas Detectados por SonarQube"
+Contenido (tabla):
+
+┌────────────────────────────┬──────────────┬─────────────────────┐
+│ PROBLEMA                   │ TIPO         │ CANTIDAD            │
+├────────────────────────────┼──────────────┼─────────────────────┤
+│ Funciones > 50 líneas      │ Code Smell   │ 8 funciones         │
+│ Variables no utilizadas    │ Code Smell   │ 12 variables        │
+│ Console.log en producción  │ Code Smell   │ 15 ocurrencias      │
+│ Falta validación entrada   │ Bug          │ 3 rutas API         │
+│ Complejidad ciclomática    │ Code Smell   │ 5 funciones         │
+└────────────────────────────┴──────────────┴─────────────────────┘
+
+Diseño: Tabla con iconos de advertencia
+
+================================================================================
+DIAPOSITIVA 17: INTERPRETACIÓN Y MEJORAS (PARTE 2)
+================================================================================
+Título: "Soluciones Implementadas"
+Contenido (5 soluciones con iconos):
+
+✅ REFACTORIZACIÓN
+   Dividir funciones largas en funciones más pequeñas
+   con responsabilidad única (SRP)
+
+✅ LIMPIEZA DE CÓDIGO
+   Eliminar variables e imports no utilizados
+   Configurar ESLint con regla no-unused-vars
+
+✅ SISTEMA DE LOGGING
+   Reemplazar console.log por winston/pino
+   Configurar niveles: debug, info, warn, error
+
+✅ VALIDACIÓN CON ZOD
+   Implementar esquemas de validación en APIs
+   Sanitizar entradas antes de procesar
+
+✅ SIMPLIFICACIÓN
+   Usar early returns para reducir anidamiento
+   Extraer condiciones complejas a funciones
+
+================================================================================
+DIAPOSITIVA 18: OWASP TOP 10 - CATEGORÍA 1
+================================================================================
+Título: "A01:2021 - Broken Access Control"
+Subtítulo: "Control de Acceso Roto"
+Contenido:
+
+¿QUÉ ES?
+Fallas que permiten a usuarios acceder a recursos
+no autorizados o realizar acciones sin permisos.
+
+¿POR QUÉ ES UN RIESGO?
+• Acceso a datos de otros pacientes
+• Modificación de registros no propios
+• Violación de Ley 19.628 (Datos Personales)
+
+MITIGACIÓN EN SRORN:
+✅ Middleware de autenticación en todas las APIs
+✅ Sistema de roles: admin, matrona, médico
+✅ Verificación de permisos granular
+✅ Validación de propiedad de recursos
+
+Diseño: Icono de candado, colores rojo/verde para riesgo/mitigación
+
+================================================================================
+DIAPOSITIVA 19: OWASP TOP 10 - CATEGORÍA 2
+================================================================================
+Título: "A03:2021 - Injection"
+Subtítulo: "Inyección de Código"
+Contenido:
+
+¿QUÉ ES?
+Inserción de código malicioso a través de entradas
+de usuario (SQL, NoSQL, comandos OS).
+
+¿POR QUÉ ES UN RIESGO?
+• Extracción de toda la base de datos
+• Eliminación masiva de registros
+• Acceso a credenciales de usuarios
+
+MITIGACIÓN EN SRORN:
+✅ Prisma ORM con queries parametrizadas
+✅ Validación de entradas con regex
+✅ Sanitización de datos antes de guardar
+✅ Nunca concatenar strings en queries
+
+Código ejemplo:
+// SEGURO
+const madre = await prisma.madre.findUnique({
+  where: { rut: rutIngresado }
+})
+
+================================================================================
+DIAPOSITIVA 20: OWASP TOP 10 - CATEGORÍA 3
+================================================================================
+Título: "A07:2021 - Authentication Failures"
+Subtítulo: "Fallas de Identificación y Autenticación"
+Contenido:
+
+¿QUÉ ES?
+Debilidades en verificación de identidad que permiten
+comprometer contraseñas o suplantar usuarios.
+
+¿POR QUÉ ES UN RIESGO?
+• Acceso no autorizado a historiales médicos
+• Suplantación de profesionales de salud
+• Violación de secreto profesional
+
+MITIGACIÓN EN SRORN:
+✅ NextAuth.js para manejo seguro de sesiones
+✅ Contraseñas hasheadas con bcrypt (12 rounds)
+✅ Tokens JWT firmados con secret fuerte
+✅ Timeout de sesión automático (8 horas)
+✅ Auditoría de login/logout con IP
+
+================================================================================
+DIAPOSITIVA 21: CONCLUSIONES
+================================================================================
+Título: "Conclusiones"
+Contenido:
+
+ESTADO ACTUAL DEL PROYECTO:
+✅ Sistema funcional con arquitectura moderna
+✅ Cobertura de pruebas en módulos críticos (45%)
+✅ Seguridad según estándares OWASP
+✅ Deuda técnica manejable (4 horas)
+✅ Código duplicado mínimo (2.3%)
+
+ÁREAS DE MEJORA:
+🔄 Aumentar cobertura de tests al 70%
+🔄 Resolver 3 bugs menores detectados
+🔄 Refactorizar funciones largas
+🔄 Implementar pruebas de integración
+
+APRENDIZAJES:
+💡 SonarQube ayuda a detectar problemas temprano
+💡 Las pruebas unitarias ahorran tiempo a largo plazo
+💡 La seguridad debe considerarse desde el inicio
+
+================================================================================
+DIAPOSITIVA 22: PREGUNTAS
+================================================================================
+Título: "¿Preguntas?"
+Contenido:
+- Imagen o icono grande de signo de interrogación
+- Texto: "Gracias por su atención"
+- Contacto del equipo (opcional)
+Diseño: Slide limpio, centrado, mismo estilo que portada
+
+================================================================================
+ESPECIFICACIONES DE DISEÑO
+================================================================================
+
+COLORES:
+- Primario: #005293 (Azul oscuro)
+- Secundario: #2980B9 (Azul medio)
+- Acento: #27AE60 (Verde)
+- Alerta: #E74C3C (Rojo)
+- Fondo: Blanco o gris muy claro
+- Texto: #2C3E50 (Gris oscuro)
+
+TIPOGRAFÍA:
+- Títulos: Arial Bold o Calibri Bold, 28-32pt
+- Subtítulos: 20-24pt
+- Contenido: 16-18pt
+- Código: Consolas o Courier New, 14pt
+
+ELEMENTOS:
+- Iconos: FontAwesome o similar
+- Bordes redondeados en tablas y cajas
+- Sombras sutiles en tarjetas
+- Máximo 6-7 líneas por slide
+
+TOTAL: 22 DIAPOSITIVAS
+TIEMPO ESTIMADO: 15-20 minutos
+⚠️ TODOS los integrantes deben participar
+
+================================================================================
