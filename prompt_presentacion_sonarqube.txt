@@ -62,22 +62,23 @@ Título: "Código de la Prueba - Validación RUT"
 Contenido (código con syntax highlighting):
 
 describe('Validación de RUT Chileno', () => {
-  test('debe validar RUT correcto', () => {
-    expect(validarRut('12345678-5')).toBe(true);
-    expect(validarRut('76086428-5')).toBe(true);
+  test('debe validar RUT correcto con dígito numérico', () => {
+    expect(validarRUT('12345678-5')).toBe(true);
+    expect(validarRUT('76086428-5')).toBe(true);
   });
 
-  test('debe validar RUT con dígito K', () => {
-    expect(validarRut('12174133-K')).toBe(true);
+  test('debe validar RUT con dígito verificador K', () => {
+    expect(validarRUT('10000013-K')).toBe(true);
+    expect(validarRUT('10000013-k')).toBe(true);
   });
 
   test('debe rechazar RUT incorrecto', () => {
-    expect(validarRut('12345678-0')).toBe(false);
-    expect(validarRut('00000000-0')).toBe(false);
+    expect(validarRUT('12345678-0')).toBe(false);
+    expect(validarRUT('')).toBe(false);
   });
 
-  test('debe formatear RUT', () => {
-    expect(formatearRut('123456785')).toBe('12.345.678-5');
+  test('debe formatear RUT correctamente', () => {
+    expect(formatearRUT('123456785')).toBe('12.345.678-5');
   });
 });
 
@@ -91,10 +92,10 @@ Contenido:
 ┌────────────────────────────────────────────────────┐
 │ RESULTADOS DE LA PRUEBA                            │
 ├────────────────────────────────────────────────────┤
-│ ✅ Tests ejecutados: 4                             │
-│ ✅ Tests pasados: 4                                │
+│ ✅ Tests ejecutados: 19                            │
+│ ✅ Tests pasados: 19                               │
 │ ❌ Tests fallidos: 0                               │
-│ ⏱️ Tiempo de ejecución: 0.45s                      │
+│ ⏱️ Tiempo de ejecución: 0.37s                      │
 └────────────────────────────────────────────────────┘
 
 Aporte al Aseguramiento de Calidad:
@@ -123,22 +124,22 @@ Título: "Código de la Prueba - Indicadores REM"
 Contenido (código con syntax highlighting):
 
 describe('Cálculo de Indicadores REM', () => {
-  test('calcular edad de la madre', () => {
-    const fechaNac = new Date('1990-05-15');
-    const fechaParto = new Date('2025-11-30');
-    expect(calcularEdadAlParto(fechaNac, fechaParto)).toBe(35);
+  test('debe agrupar fechas por mes', () => {
+    const fecha = new Date('2025-11-30T10:30:00');
+    expect(agruparPorFecha(fecha, 'mes')).toBe('2025-11');
   });
 
-  test('clasificar peso por rango', () => {
-    expect(clasificarPeso(450)).toBe('menor500');
-    expect(clasificarPeso(3200)).toBe('entre2500y3999');
-    expect(clasificarPeso(4200)).toBe('masIgual4000');
+  test('debe clasificar peso por rango', () => {
+    const rn = [{ pesoNacimientoGramos: 3200 }];
+    const rangos = calcularRangosPeso(rn);
+    expect(rangos.normal).toBe(1);
   });
 
-  test('evaluar APGAR crítico', () => {
-    expect(evaluarApgar(2, 7)).toEqual({ 
-      criticoMin1: true, criticoMin5: false 
-    });
+  test('debe evaluar APGAR crítico', () => {
+    const rn = [{ apgar1min: 2 }, { apgar1min: 8 }];
+    const dist = calcularDistribucionApgar(rn, 'apgar1min');
+    expect(dist.bajo).toBe(1);
+    expect(dist.normal).toBe(1);
   });
 });
 
@@ -152,10 +153,10 @@ Contenido:
 ┌────────────────────────────────────────────────────┐
 │ RESULTADOS DE LA PRUEBA                            │
 ├────────────────────────────────────────────────────┤
-│ ✅ Tests ejecutados: 5                             │
-│ ✅ Tests pasados: 5                                │
+│ ✅ Tests ejecutados: 29                            │
+│ ✅ Tests pasados: 29                               │
 │ ❌ Tests fallidos: 0                               │
-│ ⏱️ Tiempo de ejecución: 0.32s                      │
+│ ⏱️ Tiempo de ejecución: 0.40s                      │
 └────────────────────────────────────────────────────┘
 
 Aporte al Aseguramiento de Calidad:

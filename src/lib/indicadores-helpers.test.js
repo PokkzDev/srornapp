@@ -315,3 +315,23 @@ describe('Cálculo de Indicadores REM', () => {
     })
   })
 })
+
+describe('Cálculo de Indicadores REM', () => {
+  test('debe agrupar fechas por mes', () => {
+    const fecha = new Date('2025-11-30T10:30:00');
+    expect(agruparPorFecha(fecha, 'mes')).toBe('2025-11');
+  });
+
+  test('debe clasificar peso por rango', () => {
+    const rn = [{ pesoNacimientoGramos: 3200 }];
+    const rangos = calcularRangosPeso(rn);
+    expect(rangos.normal).toBe(1);
+  });
+
+  test('debe evaluar APGAR crítico', () => {
+    const rn = [{ apgar1min: 2 }, { apgar1min: 8 }];
+    const dist = calcularDistribucionApgar(rn, 'apgar1min');
+    expect(dist.bajo).toBe(1);
+    expect(dist.normal).toBe(1);
+  });
+});
