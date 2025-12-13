@@ -1,0 +1,191 @@
+PROMPT PARA GENERAR PRESENTACIÓN PITCH - PROYECTO SRORN
+Reunión de Cierre con Hospital Clínico Herminda Martin de Chillán
+Fecha: Lunes 15 de Diciembre 2025 - 09:45 hrs - Sala 201
+
+================================================================================
+CONTEXTO DE LA PRESENTACIÓN
+================================================================================
+
+AUDIENCIA:
+- Personal del área de salud (NO técnicos)
+- Interesados directos del proyecto (stakeholders)
+- Departamento de Obstetricia del Hospital
+
+FORMATO: Pitch con foco en demostración de la solución
+ORADORES: 1-2 integrantes del equipo
+TIEMPO: Estrictamente 10 minutos o menos
+
+OBJETIVO CLAVE:
+NO mostrar "cuánto trabajamos", sino CUÁNTO VALOR aporta el software al negocio.
+
+================================================================================
+ESTRUCTURA DE LA DEMO (10 MINUTOS)
+================================================================================
+
+MINUTO 0-1: INTRODUCCIÓN Y CONTEXTO
+--------------------------------------------------------------------------------
+Contenido:
+- Saludo breve al equipo del hospital
+- Nombre del sistema: SRORN (Sistema de Registro Obstétrico de Recién Nacidos)
+- Problema que resuelve: "Antes todo se manejaba en Excel, sin control de acceso,
+  sin validaciones, con riesgo de errores y pérdida de datos"
+- Frase gancho: "Hoy les mostraremos cómo SRORN transforma su trabajo diario"
+
+================================================================================
+
+MINUTO 1-3: EL "GANCHO" DE SEGURIDAD - Inicio de Sesión
+--------------------------------------------------------------------------------
+Demostración en vivo:
+1. Mostrar pantalla de login
+2. Intentar acceder sin credenciales (mostrar que bloquea)
+3. Iniciar sesión con usuario válido
+
+Mensaje clave para la audiencia:
+"Ya no cualquiera puede entrar al sistema. Cada usuario tiene su cuenta personal
+con credenciales únicas. Esto protege la información sensible de las pacientes
+y cumple con las normativas de datos de salud."
+
+Puntos a resaltar:
+✅ Control de acceso seguro
+✅ Cada acción queda registrada con el usuario que la realizó
+✅ Diferentes roles: Matrona, Neonatólogo, Jefe de Servicio, Estadístico
+
+================================================================================
+
+MINUTO 3-6: EL "ALIVIO OPERATIVO" - Rol Matrona
+--------------------------------------------------------------------------------
+Demostración en vivo:
+1. Mostrar dashboard de la matrona
+2. Registrar un nuevo parto:
+   - Buscar madre por RUT (mostrar validación automática del RUT)
+   - Ingresar datos del parto (fecha, hora, tipo de parto)
+   - Mostrar validaciones en tiempo real (campos obligatorios, formatos)
+   - Registrar recién nacido asociado (peso, APGAR, sexo)
+3. Guardar y mostrar confirmación
+
+Mensaje clave para la audiencia:
+"En menos de 2 minutos registramos un parto completo con todos sus datos.
+El sistema valida automáticamente que no falte información crítica.
+Antes esto podía tomar mucho más tiempo y con riesgo de errores."
+
+Puntos a resaltar:
+✅ Registro rápido y guiado paso a paso
+✅ Validaciones automáticas (RUT, fechas, campos obligatorios)
+✅ Imposible guardar datos incompletos o incorrectos
+✅ Vinculación automática madre → parto → recién nacido
+
+================================================================================
+
+MINUTO 6-8: EL "ADMINISTRATIVO" - Rol Jefe/Estadístico
+--------------------------------------------------------------------------------
+Demostración en vivo:
+1. Cambiar a usuario con rol Jefe de Servicio o Estadístico
+2. Acceder al módulo de Reportes → REM A.11
+3. Seleccionar período (mes/año)
+4. Generar reporte automáticamente
+5. Mostrar las opciones de exportación:
+   - Exportar a EXCEL (para análisis adicional)
+   - Exportar a PDF (para imprimir o enviar por correo)
+6. Descargar uno de los formatos
+
+Mensaje clave para la audiencia:
+"El reporte REM que antes tomaba HORAS de trabajo manual consolidando datos
+de Excel, ahora se genera en SEGUNDOS con un solo clic. 
+Pueden exportarlo a Excel para análisis o a PDF para enviarlo directamente 
+al Ministerio de Salud."
+
+Puntos a resaltar:
+✅ Generación automática del REM A.11 (reporte ministerial)
+✅ Ahorro de horas de trabajo administrativo
+✅ Datos siempre actualizados y consistentes
+✅ Exportación a Excel y PDF
+✅ Listo para enviar por correo o imprimir
+
+================================================================================
+
+MINUTO 8-9: VALOR AGREGADO - Trazabilidad y Auditoría
+--------------------------------------------------------------------------------
+Demostración en vivo:
+1. Acceder al módulo de Auditoría (si el rol lo permite)
+2. Mostrar el registro de acciones:
+   - Quién hizo qué
+   - Cuándo lo hizo
+   - Qué datos modificó
+
+Mensaje clave para la audiencia:
+"Todo queda registrado. Si alguna vez necesitan saber quién registró un parto,
+quién modificó un dato, o quién generó un reporte, el sistema tiene la respuesta.
+Esto es fundamental para la trazabilidad clínica y auditorías."
+
+Valores adicionales del equipo:
+✅ Trazabilidad completa de todas las acciones
+✅ Registro de auditoría con IP y timestamp
+✅ Módulo URNI para recién nacidos hospitalizados
+✅ Indicadores y estadísticas en tiempo real
+✅ Sistema responsive (funciona en tablets)
+
+================================================================================
+
+MINUTO 9-10: CIERRE Y AGRADECIMIENTOS
+--------------------------------------------------------------------------------
+Contenido:
+- Resumen de beneficios:
+  • Seguridad: Control de acceso por usuario y rol
+  • Eficiencia: Registro rápido con validaciones automáticas
+  • Productividad: Reportes REM en segundos, no en horas
+  • Trazabilidad: Todo queda registrado para auditorías
+
+- Frase de cierre:
+  "SRORN no es solo un reemplazo del Excel, es una herramienta que les permite
+   enfocarse en lo más importante: la atención de las madres y sus bebés,
+   mientras el sistema se encarga de la documentación y los reportes."
+
+- Agradecimiento:
+  "Gracias por la confianza depositada en nuestro equipo. 
+   Estamos a su disposición para cualquier consulta."
+
+================================================================================
+TIPS PARA LA PRESENTACIÓN
+================================================================================
+
+HACER:
+✅ Practicar la demo completa al menos 3 veces antes
+✅ Tener datos de prueba ya cargados (madres, partos, RN)
+✅ Hablar mirando a la audiencia, no a la pantalla
+✅ Usar lenguaje simple, evitar jerga técnica
+✅ Enfatizar el VALOR para ellos, no las características técnicas
+✅ Tener un backup (capturas de pantalla) por si falla internet
+
+NO HACER:
+❌ No mencionar tecnologías (Next.js, React, Prisma, etc.)
+❌ No hablar de código, bases de datos o arquitectura
+❌ No mostrar errores o funcionalidades incompletas
+❌ No excederse del tiempo (¡10 minutos máximo!)
+❌ No leer de un papel o de las diapositivas
+
+================================================================================
+CHECKLIST ANTES DE LA PRESENTACIÓN
+================================================================================
+
+[ ] Laptop cargada y con cargador
+[ ] Sistema funcionando en localhost o servidor
+[ ] Datos de prueba cargados (al menos 5 madres, 5 partos, 5 RN)
+[ ] Usuarios de prueba para cada rol (matrona, jefe, estadístico)
+[ ] Conexión a internet verificada (o funciona offline)
+[ ] Backup de capturas de pantalla en caso de fallo
+[ ] Presentación de apoyo (opcional, máximo 3-4 slides)
+[ ] Practicada la demo cronometrada (máx 10 min)
+[ ] Vestimenta formal/semiformal
+[ ] Llegar 15 minutos antes (09:30 hrs)
+
+================================================================================
+INFORMACIÓN DEL EVENTO
+================================================================================
+
+Fecha: Lunes 15 de Diciembre 2025
+Hora: 09:45 hrs
+Lugar: Sala 201
+Tiempo por equipo: 10 minutos (estricto)
+Oradores: 1-2 personas
+
+================================================================================
