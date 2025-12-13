@@ -1,0 +1,64 @@
+# Docker Compose for SRORN Application
+# Usage:
+#   1. Copy .env.example to .env and configure values
+#   2. Create external network: docker network create web_gateway
+#   3. Create external volume: docker volume create srorn_data
+#   4. Run: docker-compose up -d
+
+services:
+  srorn:
+    image: pokkzdev/srorn:latest
+    container_name: srorn
+    restart: always
+    environment:
+      - DATABASE_URL=mysql://${DB_USER}:${DB_PASS_ENCODED}@srorn_db:3306/srorn_prod
+      - ENVIRONMENT=${ENVIRONMENT}
+      - PRISMA_LOG=${PRISMA_LOG}
+      - NEXT_PUBLIC_URL=${NEXT_PUBLIC_URL}
+      - NEXT_PUBLIC_ENVIRONMENT=${NEXT_PUBLIC_ENVIRONMENT}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASS}
+      - MYSQL_DATABASE=notaminima_prod
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASS}
+    depends_on:
+      srorn_db:
+        condition: service_healthy
+    networks:
+      - web_gateway
+      - srorn_internal
+
+  srorn_db:
+    image: mysql:8.0
+    container_name: srorn_db
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASS}
+      - MYSQL_DATABASE=srorn_prod
+      - MYSQL_USER=${DB_USER}
+      # USE RAW PASSWORD HERE
+      - MYSQL_PASSWORD=${DB_PASS}
+    volumes:
+      - srorn_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - srorn_internal
+
+# --- NETWORKS & VOLUMES ---
+networks:
+  web_gateway:
+    external: true
+
+  srorn_internal:
+    driver: bridge
+    internal: true
+
+volumes:
+  srorn_data:
+    external: true
+
